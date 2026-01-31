@@ -1,0 +1,99 @@
+# Domain: Sustainability and Green Economy
+# Problem Statement: Resource Usage and Impact Analytics Platform
+# Last Updated: 31-01-2026
+
+terms:
+  - name: Resource User
+    definition: An individual or department member who consumes resources such as electricity, water, gas, or fuel in residential, commercial, or industrial settings and tracks their consumption to identify waste and reduce costs.
+    examples:
+      - "I want to see why my electricity bill is so high this month"
+      - "Our department needs to understand our water usage patterns"
+    aliases:
+      - Consumer
+      - Resource Consumer
+
+  - name: Operations Manager
+    definition:  A facility manager,  operations coordinator are responsible for monitoring resource consumption across multiple locations, detecting anomalies, analyzing trends, and configuring alerts to prevent waste.
+    examples:
+      - "I need to set up alerts for all our building meters to catch leaks early"
+      - "Show me the energy consumption trends across all manufacturing facilities"
+    aliases:
+      - Facility Manager
+      - Operations Coordinator
+
+  - name: Sustainability Manager
+    definition: An environmental officer, sustainability director, or corporate responsibility manager who measures carbon footprint, establishes reduction targets, tracks environmental progress, and reports on sustainability performance.
+    examples:
+      - "I need to calculate our organization's carbon footprint for the annual report"
+      - "We need to set a 20% emission reduction target for next year"
+    aliases:
+      - Environmental Officer
+      - Sustainability Director
+
+  - name: System Administrator
+    definition: An IT professional or platform manager responsible for managing user accounts, configuring system parameters, maintaining platform operations, and ensuring data security and system reliability.
+    examples:
+      - "I need to create accounts for the new facility managers"
+      - "Let me configure the organizational hierarchy for our three regional offices"
+    aliases:
+      - Platform Administrator
+      - System Manager
+
+  - name: Resource Consumption
+    definition: The measured quantity of electricity, water, gas, or fuel used by an individual, department, or facility over a specific time period.
+    examples:
+      - "Our office consumed 12,500 kWh of electricity last month"
+      - "The manufacturing plant used 50,000 liters of water this week"
+    aliases:
+      - Usage Data
+      - Consumptio nRecord
+
+  - name: Usage Alert
+    definition: A notification is generated when resource consumption exceeds predefined thresholds or exhibits unusual patterns, indicating potential leaks, equipment failures, or wasteful practices.
+    examples:
+      - "I received an alert that Building A's water usage spiked by 200% overnight"
+      - "The system sent me a notification that we exceeded our monthly electricity threshold"
+    aliases:
+      - Consumption Alert
+      - Threshold Notification
+
+  - name: Carbon Footprint
+    definition: The total amount of greenhouse gas emissions, measured in carbon dioxide equivalents, generated from resource consumption activities over a specific period.
+    examples:
+      - "Our company's carbon footprint was 150 tons of CO2 last quarter"
+      - "My household generated 2.5 tons of CO2 from electricity usage this year"
+    aliases:
+      - Environmental Impact
+      - Emission Footprint
+
+  - name: Sustainability Target
+    definition: A measurable goal established to reduce resource consumption, lower carbon emissions, or improve environmental performance within a specified time period.
+    examples:
+      - "We've set a target to reduce electricity consumption by 15% by year-end"
+      - "Our goal is to achieve a 25% reduction in carbon emissions within two years"
+    aliases:
+      - Reduction Goal
+      - Environmental Objective
+
+  - name: Emission Factor
+    definition: A standard coefficient used to convert resource consumption quantities into equivalent carbon dioxide emissions, based on the type of resource and regional energy mix.
+    examples:
+      - "The emission factor for our region's grid electricity is 0.85 kg CO2 per kWh"
+      - "Natural gas has an emission factor of 2.0 kg CO2 per cubic meter"
+    aliases:
+      - Conversion Factor
+      - Carbon Coefficient
+
+
+  - name: Sustainability Report
+    definition: A document that summarizes environmental performance, carbon emissions, and progress toward reduction targets for individuals and department members.
+    examples:
+      - "I need to generate our quarterly sustainability report for the board meeting"
+      - "The annual report shows we achieved 80% of our emission reduction targets"
+    aliases:
+      - Environmental Report
+      - Impact Report
+
+
+
+
