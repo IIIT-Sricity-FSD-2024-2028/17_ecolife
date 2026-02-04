@@ -1,5 +1,5 @@
 # Team name : 17_ecolife
-# Domain : Sustainability and Green Economy 🌱
+# Domain : Sustainability and Green Economy
 
 # Problem Satement : __Resource usage and impact analytics platform__
 
