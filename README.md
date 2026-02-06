@@ -1,9 +1,7 @@
 # Team name : 17_ecolife
 # Domain : Sustainability and Green Economy
 
-#  __Resource usage and impact analytics platform__
-
-# Problem Statement :
+# Problem Statement :__Resource usage and impact analytics platform__
 Individuals and organizations face significant challenges in monitoring and managing their consumption of resources like electricity, water, gas, and fuel across homes, facilities, and departments. The lack of an integrated tracking and analytics system leads to:
 
 * **Lack of visibility into resource usage:** Consumers and departments cannot see their usage patterns, making it impossible to identify waste, compare consumption over time, or understand what drives high bills
