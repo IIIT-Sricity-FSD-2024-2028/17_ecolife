@@ -54,13 +54,15 @@ CREATE TABLE CONSUMPTION_TARGET (
     target_id INT AUTO_INCREMENT PRIMARY KEY,
     dept_id INT NOT NULL,
     set_by INT NOT NULL,
+    resource_type_id INT NOT NULL,           
     monthly_target DECIMAL(15,2) NOT NULL CHECK (monthly_target >= 0),
     alert_threshold DECIMAL(15,2) NOT NULL CHECK (alert_threshold >= 0),
     is_active BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (dept_id) REFERENCES DEPARTMENT(dept_id) ON DELETE CASCADE,
-    FOREIGN KEY (set_by) REFERENCES USER(user_id)
+    FOREIGN KEY (set_by) REFERENCES USER(user_id),
+    FOREIGN KEY (resource_type_id) REFERENCES RESOURCE_TYPE(resource_type_id)  
 );
 
 CREATE TABLE RESOURCE_TYPE (
@@ -70,8 +72,8 @@ CREATE TABLE RESOURCE_TYPE (
     dept_id INT NOT NULL,
 
     FOREIGN KEY (dept_id)
-    REFERENCES DEPARTMENT(dept_id)
-    ON DELETE CASCADE
+        REFERENCES DEPARTMENT(dept_id)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE MONTHLY_SUBMISSION (
@@ -94,8 +96,8 @@ CREATE TABLE SUBMISSION_STATUS (
     status_color VARCHAR(20),
 
     FOREIGN KEY (submission_id)
-    REFERENCES MONTHLY_SUBMISSION(submission_id)
-    ON DELETE CASCADE
+        REFERENCES MONTHLY_SUBMISSION(submission_id)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE SUBMISSION_LINE_ITEM (
@@ -105,11 +107,11 @@ CREATE TABLE SUBMISSION_LINE_ITEM (
     quantity DECIMAL(15,4) NOT NULL CHECK (quantity >= 0),
 
     FOREIGN KEY (submission_id)
-    REFERENCES MONTHLY_SUBMISSION(submission_id)
-    ON DELETE CASCADE,
+        REFERENCES MONTHLY_SUBMISSION(submission_id)
+        ON DELETE CASCADE,
 
     FOREIGN KEY (resource_type_id)
-    REFERENCES RESOURCE_TYPE(resource_type_id)
+        REFERENCES RESOURCE_TYPE(resource_type_id)
 );
 
 CREATE TABLE INVOICE (
@@ -121,7 +123,7 @@ CREATE TABLE INVOICE (
     uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (submission_id)
-    REFERENCES MONTHLY_SUBMISSION(submission_id)
+        REFERENCES MONTHLY_SUBMISSION(submission_id)
 );
 
 CREATE TABLE ALERT (
@@ -135,7 +137,7 @@ CREATE TABLE ALERT (
     triggered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (submission_id)
-    REFERENCES MONTHLY_SUBMISSION(submission_id)
+        REFERENCES MONTHLY_SUBMISSION(submission_id)
 );
 
 CREATE TABLE ALERT_RESOLUTION (
@@ -144,8 +146,8 @@ CREATE TABLE ALERT_RESOLUTION (
     last_event_note TEXT,
 
     FOREIGN KEY (alert_id)
-    REFERENCES ALERT(alert_id)
-    ON DELETE CASCADE
+        REFERENCES ALERT(alert_id)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE ESCALATION (
@@ -197,12 +199,12 @@ CREATE TABLE REPORT_SUBMISSION_COVERAGE (
     PRIMARY KEY (report_id, submission_id),
 
     FOREIGN KEY (report_id)
-    REFERENCES SUSTAINABILITY_REPORT(report_id)
-    ON DELETE CASCADE,
+        REFERENCES SUSTAINABILITY_REPORT(report_id)
+        ON DELETE CASCADE,
 
     FOREIGN KEY (submission_id)
-    REFERENCES MONTHLY_SUBMISSION(submission_id)
-    ON DELETE CASCADE
+        REFERENCES MONTHLY_SUBMISSION(submission_id)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE REPORT_APPROVAL (
@@ -211,11 +213,11 @@ CREATE TABLE REPORT_APPROVAL (
     approved_at DATETIME,
 
     FOREIGN KEY (report_id)
-    REFERENCES SUSTAINABILITY_REPORT(report_id)
-    ON DELETE CASCADE,
+        REFERENCES SUSTAINABILITY_REPORT(report_id)
+        ON DELETE CASCADE,
 
     FOREIGN KEY (approved_by)
-    REFERENCES USER(user_id)
+        REFERENCES USER(user_id)
 );
 
 CREATE TABLE REPORT_REVISION (
@@ -228,8 +230,8 @@ CREATE TABLE REPORT_REVISION (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (report_id)
-    REFERENCES SUSTAINABILITY_REPORT(report_id)
-    ON DELETE CASCADE,
+        REFERENCES SUSTAINABILITY_REPORT(report_id)
+        ON DELETE CASCADE,
 
     FOREIGN KEY (revised_by) REFERENCES USER(user_id),
     FOREIGN KEY (reviewed_by) REFERENCES USER(user_id) ON DELETE SET NULL
@@ -244,6 +246,23 @@ CREATE TABLE NOTIFICATION (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (recipient_id)
-    REFERENCES USER(user_id)
-    ON DELETE CASCADE
+        REFERENCES USER(user_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE ACTIVITY_LOG (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    actor_id INT NOT NULL,                     
+    role VARCHAR(50),                          
+    action_description TEXT,                  
+    dept_id INT,                           
+    performed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (actor_id)
+        REFERENCES USER(user_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (dept_id)
+        REFERENCES DEPARTMENT(dept_id)
+        ON DELETE SET NULL
 );
