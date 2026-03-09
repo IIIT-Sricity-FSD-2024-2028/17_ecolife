@@ -9,6 +9,7 @@ Normalization to **1NF** ensured that all attributes are atomic and repeating gr
 * Multiple revision comments were separated into the **REPORT_REVISION** table.
 * User activity history was separated into **ACTIVITY_LOG** instead of storing it in **USER** or **DEPARTMENT**.
 * Fields such as email, mobile, role, dept_name, and action_description contain only single atomic values.
+* Activity logs were maintained in **ACTIVITY_LOG** with references to user and department.
 
 ---
 
@@ -20,7 +21,6 @@ Normalization to **2NF** removed partial dependencies.
 * Carbon emission data was separated into **CARBON_EMISSION**.
 * Report approval details were separated into **REPORT_APPROVAL**.
 * Consumption targets were stored in **CONSUMPTION_TARGET** linked to both dept_id and resource_type_id.
-* Activity logs were maintained in **ACTIVITY_LOG** with references to user and department.
 
 ---
 
@@ -31,7 +31,6 @@ Normalization to **3NF** removed transitive dependencies.
 * Alert resolution details were moved to **ALERT_RESOLUTION**.
 * Escalation information was stored in **ESCALATION**.
 * Notification information was stored in **NOTIFICATION**.
-* Resource type was directly linked in **CONSUMPTION_TARGET**.
 * Role snapshot was stored directly in **ACTIVITY_LOG** to preserve the role at the time of action.
 
 ---
