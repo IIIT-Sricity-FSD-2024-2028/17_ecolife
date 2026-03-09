@@ -1,99 +1,202 @@
 # Domain: Sustainability and Green Economy
-# Problem Statement: Resource Usage and Impact Analytics Platform
-# Last Updated: 31-01-2026
+# Problem Statement: Fuel Resource Consumption Monitoring and Carbon Emission Analytics Platform
+# Last Updated: 09-03-2026
 
 terms:
-  - name: Resource User
-    definition: An individual or department member who consumes resources such as electricity, water, gas, or fuel in residential, commercial, or industrial settings and tracks their consumption to identify waste and reduce costs.
+  - name: Platform Administrator
+    definition: An IT administrator responsible for maintaining system health, monitoring audit logs, configuring platform settings, and ensuring secure and reliable operation of the platform.
     examples:
-      - "I want to see why my electricity bill is so high this month"
-      - "Our department needs to understand our water usage patterns"
+      - "I need to check system logs for unusual activity."
+      - "The platform administrator monitors server health."
     aliases:
-      - Consumer
-      - Resource Consumer
+      - System Administrator
+      - Platform Manager
 
-  - name: Operations Manager
-    definition:  A facility manager,  operations coordinator are responsible for monitoring resource consumption across multiple locations, detecting anomalies, analyzing trends, and configuring alerts to prevent waste.
+  - name: Chief Operations Officer
+    definition: A senior organizational role responsible for registering the organization, managing departments, assigning staff roles, monitoring overall consumption dashboards, and approving sustainability reports.
     examples:
-      - "I need to set up alerts for all our building meters to catch leaks early"
-      - "Show me the energy consumption trends across all manufacturing facilities"
+      - "I want to monitor fuel consumption across all departments."
+      - "Approve the sustainability report before external submission."
     aliases:
-      - Facility Manager
-      - Operations Coordinator
+      - COO
+      - Operations Head
 
-  - name: Sustainability Manager
-    definition: An environmental officer, sustainability director, or corporate responsibility manager who measures carbon footprint, establishes reduction targets, tracks environmental progress, and reports on sustainability performance.
+  - name: Department Manager
+    definition: A department-level manager responsible for collecting, validating, and submitting monthly fuel resource consumption data based on procurement invoices.
     examples:
-      - "I need to calculate our organization's carbon footprint for the annual report"
-      - "We need to set a 20% emission reduction target for next year"
+      - "I need to submit our department's fuel consumption data."
+      - "Let me validate the invoice details before submission."
     aliases:
-      - Environmental Officer
-      - Sustainability Director
+      - Department Head
+      - Unit Manager
 
-  - name: System Administrator
-    definition: An IT professional or platform manager responsible for managing user accounts, configuring system parameters, maintaining platform operations, and ensuring data security and system reliability.
+  - name: Sustainability Analyst
+    definition: A professional responsible for analyzing fuel consumption data, calculating carbon emissions, evaluating sustainability metrics, and generating environmental reports.
     examples:
-      - "I need to create accounts for the new facility managers"
-      - "Let me configure the organizational hierarchy for our three regional offices"
+      - "Generate the emission analysis for this quarter."
+      - "Analyze fuel consumption trends across departments."
     aliases:
-      - Platform Administrator
-      - System Manager
+      - Environmental Analyst
+      - Sustainability Manager
 
-  - name: Resource Consumption
-    definition: The measured quantity of electricity, water, gas, or fuel used by an individual, department, or facility over a specific time period.
+  - name: Organization
+    definition: A company or institution registered within the platform whose departments track fuel resource consumption and environmental impact.
     examples:
-      - "Our office consumed 12,500 kWh of electricity last month"
-      - "The manufacturing plant used 50,000 liters of water this week"
+      - "Register the organization before adding departments."
+      - "Each organization can have multiple departments."
     aliases:
-      - Usage Data
-      - Consumptio nRecord
+      - Company
+      - Enterprise
 
-  - name: Usage Alert
-    definition: A notification is generated when resource consumption exceeds predefined thresholds or exhibits unusual patterns, indicating potential leaks, equipment failures, or wasteful practices.
+  - name: Department
+    definition: A functional unit within an organization responsible for tracking and reporting its own fuel resource consumption.
     examples:
-      - "I received an alert that Building A's water usage spiked by 200% overnight"
-      - "The system sent me a notification that we exceeded our monthly electricity threshold"
+      - "The logistics department submitted its monthly report."
+      - "Each department has its own consumption targets."
     aliases:
-      - Consumption Alert
-      - Threshold Notification
+      - Unit
+      - Division
 
-  - name: Carbon Footprint
-    definition: The total amount of greenhouse gas emissions, measured in carbon dioxide equivalents, generated from resource consumption activities over a specific period.
+  - name: Fuel Resource Consumption
+    definition: The amount of fuel used by a department or organization within a specific reporting period.
     examples:
-      - "Our company's carbon footprint was 150 tons of CO2 last quarter"
-      - "My household generated 2.5 tons of CO2 from electricity usage this year"
+      - "The department consumed 1500 liters of diesel this month."
+      - "Fuel consumption increased compared to last quarter."
     aliases:
-      - Environmental Impact
-      - Emission Footprint
+      - Fuel Usage
+      - Resource Consumption
 
-  - name: Sustainability Target
-    definition: A measurable goal established to reduce resource consumption, lower carbon emissions, or improve environmental performance within a specified time period.
+  - name: Monthly Submission
+    definition: A monthly record submitted by a department manager containing validated fuel consumption data for that department.
     examples:
-      - "We've set a target to reduce electricity consumption by 15% by year-end"
-      - "Our goal is to achieve a 25% reduction in carbon emissions within two years"
+      - "The February submission was successfully processed."
+      - "Lock the submission after validation."
     aliases:
-      - Reduction Goal
-      - Environmental Objective
+      - Monthly Report Entry
+      - Consumption Submission
+
+  - name: Submission Line Item
+    definition: A detailed entry within a monthly submission representing the quantity of a specific fuel resource consumed.
+    examples:
+      - "Diesel consumption is recorded as a line item."
+      - "Each submission contains multiple resource line items."
+    aliases:
+      - Resource Entry
+      - Consumption Record
+
+  - name: Procurement Invoice
+    definition: A document that records fuel purchase details and is used to validate fuel consumption entries submitted by departments.
+    examples:
+      - "Upload the diesel purchase invoice for verification."
+      - "Invoices confirm the submitted fuel usage."
+    aliases:
+      - Fuel Invoice
+      - Purchase Record
+
+  - name: Consumption Target
+    definition: A predefined limit set by leadership for monthly fuel consumption within a department to encourage efficient resource usage.
+    examples:
+      - "The monthly diesel target is 1200 liters."
+      - "Departments must remain within consumption limits."
+    aliases:
+      - Usage Limit
+      - Consumption Goal
+
+  - name: Alert Threshold
+    definition: A predefined value that triggers a system alert when resource consumption exceeds the expected limit.
+    examples:
+      - "An alert is triggered when usage exceeds the threshold."
+      - "Thresholds help detect abnormal usage patterns."
+    aliases:
+      - Alert Limit
+      - Threshold Value
+
+  - name: Consumption Alert
+    definition: A system-generated notification indicating abnormal or excessive fuel consumption within a department.
+    examples:
+      - "The system triggered an alert for high fuel consumption."
+      - "Managers receive alerts for unusual usage."
+    aliases:
+      - Usage Alert
+      - Threshold Alert
+
+  - name: Carbon Emission
+    definition: The quantity of carbon dioxide released due to fuel consumption, calculated using emission factors.
+    examples:
+      - "The department produced 300 kg of CO2 emissions."
+      - "Carbon emissions increased this quarter."
+    aliases:
+      - CO2 Emission
+      - Greenhouse Gas Emission
 
   - name: Emission Factor
-    definition: A standard coefficient used to convert resource consumption quantities into equivalent carbon dioxide emissions, based on the type of resource and regional energy mix.
+    definition: A standardized coefficient used to convert fuel consumption quantities into equivalent carbon dioxide emissions.
     examples:
-      - "The emission factor for our region's grid electricity is 0.85 kg CO2 per kWh"
-      - "Natural gas has an emission factor of 2.0 kg CO2 per cubic meter"
+      - "Diesel emission factor is 2.68 kg CO2 per liter."
+      - "Emission factors convert fuel usage into emissions."
     aliases:
-      - Conversion Factor
-      - Carbon Coefficient
-
+      - Carbon Conversion Factor
+      - Emission Coefficient
 
   - name: Sustainability Report
-    definition: A document that summarizes environmental performance, carbon emissions, and progress toward reduction targets for individuals and department members.
+    definition: A document summarizing fuel consumption data, calculated carbon emissions, and environmental performance across departments.
     examples:
-      - "I need to generate our quarterly sustainability report for the board meeting"
-      - "The annual report shows we achieved 80% of our emission reduction targets"
+      - "Generate the annual sustainability report."
+      - "The report summarizes emission performance."
     aliases:
       - Environmental Report
-      - Impact Report
+      - Emission Report
 
+  - name: Report Approval
+    definition: The final authorization provided by the COO before a sustainability report is submitted externally.
+    examples:
+      - "The report requires approval before publishing."
+      - "COO approval finalizes the sustainability report."
+    aliases:
+      - Report Authorization
+      - Final Approval
 
+  - name: Report Revision
+    definition: A modification or correction made to a sustainability report during the review process.
+    examples:
+      - "The analyst updated the report after review."
+      - "Add comments for the revision round."
+    aliases:
+      - Report Update
+      - Review Revision
 
+  - name: Dashboard
+    definition: A visual interface that displays consolidated consumption data, alerts, targets, and environmental metrics.
+    examples:
+      - "The dashboard shows fuel usage trends."
+      - "Managers monitor performance using dashboards."
+    aliases:
+      - Monitoring Panel
+      - Analytics Dashboard
 
+  - name: Notification
+    definition: A message sent by the system to inform users about alerts, updates, or important system events.
+    examples:
+      - "You received a notification about a new alert."
+      - "Notifications inform users about report approvals."
+    aliases:
+      - System Alert
+      - User Notification
+
+  - name: Escalation
+    definition: A process in which unresolved alerts or critical issues are forwarded to higher-level authorities for action.
+    examples:
+      - "The alert was escalated to the COO."
+      - "Critical alerts trigger escalation procedures."
+    aliases:
+      - Issue Escalation
+      - Alert Escalation
+
+  - name: Audit Log
+    definition: A record of system activities that tracks user actions and system events for security and monitoring purposes.
+    examples:
+      - "Check the audit log to see who modified the report."
+      - "Audit logs help maintain system transparency."
+    aliases:
+      - Activity Log
+      - System Log
