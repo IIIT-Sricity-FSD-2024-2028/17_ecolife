@@ -1,108 +1,135 @@
 # Team name : 17_ecolife
+
 # Domain : Sustainability and Green Economy
 
-# Problem Statement :__Resource usage and impact analytics platform__
-Individuals and organizations face significant challenges in monitoring and managing their consumption of resources like electricity, water, gas, and fuel across homes, facilities, and departments. The lack of an integrated tracking and analytics system leads to:
+# Problem Statement : **Fuel Resource Consumption Monitoring and Carbon Emission Analytics Platform**
 
-* **Lack of visibility into resource usage:** Consumers and departments cannot see their usage patterns, making it impossible to identify waste, compare consumption over time, or understand what drives high bills
-* **Delayed problem detection:** Operations teams lack real-time monitoring and alerts, resulting in undetected leaks, equipment failures, and abnormal consumption spikes that waste resources and increase costs
-* **Unmeasured environmental impact:** Sustainability-focused individuals and leaders cannot calculate their carbon footprint, set realistic reduction targets, or demonstrate progress toward environmental commitments
+Fuel resource consumption represents a significant operational expense for organizations, yet many mid-sized organizations lack a centralized system to effectively monitor, analyze, and report this usage across departments. Most organizations still depend on manual spreadsheets and traditional processes to record fuel consumption from procurement invoices. These manual methods lead to several operational challenges:
 
-This platform aims to provide comprehensive consumption tracking, real-time alerting, environmental impact calculations, and intuitive dashboards and reports that empower everyone—from individual households to large organizations—to conserve resources, reduce costs, and achieve their sustainability goals.
+* **Limited visibility of fuel consumption:** Departments track fuel usage independently, making it difficult for leadership to obtain a consolidated view of organization-wide resource consumption.
+
+* **High risk of data errors and inefficiencies:** Manual data entry through spreadsheets increases the risk of inconsistencies, duplication, and reporting delays.
+
+* **Delayed detection of abnormal consumption:** Without automated monitoring and alerts, unusual consumption patterns or inefficiencies remain unnoticed for long periods.
+
+* **Difficulty in environmental compliance reporting:** Organizations increasingly need to monitor and report carbon emissions due to regulatory requirements and sustainability initiatives. Without a centralized platform, collecting and analyzing fuel consumption data for emission reporting becomes time-consuming and inefficient.
+
+This platform addresses these challenges by providing a centralized, role-based web system that enables organizations to track fuel resource consumption, automatically calculate carbon emissions, monitor department performance, and generate sustainability reports for regulatory compliance and environmental management.
+
+---
 
 # Identified Actors
 
-The system supports four primary user roles:
+The system supports five primary user roles:
 
-* **Resource User:** Individuals or department members who consume electricity, water, gas, and fuel, and need to track their usage to reduce waste and costs.
+* **Platform Administrator:** Responsible for maintaining system health, monitoring audit logs, and ensuring platform reliability and security.
 
-* **Operations Manager:** Facility managers responsible for monitoring consumption, detecting problems like leaks or equipment failures, analyzing trends, and configuring alerts.
+* **Chief Operations Officer (COO):** Responsible for registering the organization, managing departments, assigning roles to staff, monitoring organization-wide consumption dashboards, setting consumption targets, and approving sustainability reports.
 
-* **Sustainability Manager:** Environmental officers who calculate carbon footprints, set reduction targets, track environmental progress, and generate sustainability reports.
+* **Department Manager:** Responsible for submitting monthly fuel consumption data based on procurement invoices and validating departmental submissions before processing.
 
-* **System Administrator:** IT staff responsible for managing user accounts, configuring the platform, and ensuring reliable system operations.
+* **Sustainability Analyst:** Responsible for reviewing processed consumption data, analyzing trends, calculating environmental impact, and generating sustainability reports.
+
+* **Department Staff / Resource User:** Individuals within departments who provide resource usage information and support managers in recording consumption data.
+
+---
 
 # Actor Features
 
-## Resource User Features
+## Department Manager Features
 
-**1. Submit Resource Usage Data**
-* Manual entry of meter readings: Input consumption data for electricity, water, gas, and fuel meters
-* Upload utility bills and consumption records: Submit digital copies of bills for automatic data extraction
-* Set measurement frequency and units: Configure how often and in what units consumption is recorded
-* Track multiple meters across different locations: Monitor various meters for homes, departments, or facilities
+**1. Submit Monthly Resource Consumption**
 
-**2. View Personal Usage Dashboard**
-* Visualize consumption patterns over time: See daily, weekly, monthly, and yearly usage trends through charts and graphs
-* Compare current usage against historical data: Analyze consumption changes and identify patterns
-* View cost breakdowns by resource type: Understand spending distribution across different resources
-* Access usage predictions and forecasts: See projected future consumption based on historical trends
-* Set personal conservation goals: Define and track individual or departmental reduction targets
+* Record monthly fuel resource consumption derived from procurement invoices
+* Submit department-wise consumption records for processing
+* Validate data entries before final submission
+* Upload invoice documents for verification and record keeping
 
-**3. Receive Usage Alerts**
-* Get notifications for unusual consumption spikes: Receive alerts when usage exceeds normal patterns
-* Receive threshold breach warnings: Get notified when consumption crosses configured limits
-* View alert history and resolution status: Track past alerts and how they were addressed
-* Configure notification preferences: Customize how and when to receive alerts (email, SMS, app)
+**2. Monitor Department Consumption**
 
-## Operations Manager Features
+* View historical fuel consumption trends within the department
+* Compare current usage with previous months
+* Monitor department consumption against assigned targets
 
-**1. Monitor Resource Consumption**
-* Real-time consumption monitoring across facilities: Track live usage data from multiple locations
-* View aggregated and location-specific dashboards: See overall consumption and drill down to specific meters
-* Detect anomalies and unusual patterns automatically: Identify potential leaks, failures, or irregular usage
-* Compare consumption across different departments or buildings: Benchmark usage between organizational units
+**3. Respond to Alerts**
 
-**2. Analyze Consumption Trends**
-* Generate historical trend reports: Analyze consumption patterns over months and years
-* Identify peak usage periods and patterns: Understand when and why consumption spikes occur
-* Perform cost-benefit analysis of conservation measures: Evaluate the impact of efficiency initiatives
-* Forecast future resource needs: Plan for upcoming consumption requirements based on trends
+* Receive alerts when departmental consumption exceeds defined thresholds
+* Provide explanations and corrective actions for abnormal usage
+* Track alert resolution status
 
-**3. Configure Alert Thresholds**
-* Set consumption limits for different resources and locations: Define acceptable usage ranges
-* Configure escalation rules for critical alerts: Establish notification hierarchies for urgent issues
-* Define business rules for alert triggering: Customize when and how alerts are generated
-* Schedule maintenance windows to suppress alerts: Temporarily disable alerts during planned maintenance
+---
 
-## Sustainability Manager Features
+## Sustainability Analyst Features
 
-**1. Review Environmental Impact**
-* Calculate carbon footprint from resource consumption: Determine greenhouse gas emissions based on usage
-* View emission breakdowns by resource type and location: Understand which resources and facilities contribute most to emissions
-* Access environmental impact dashboards with visual analytics: See comprehensive environmental metrics
-* Compare organizational footprint against industry benchmarks: Evaluate performance relative to peers
+**1. Analyze Consumption Data**
 
-**2. Set Sustainability Targets**
-* Define reduction goals for emissions and resource consumption: Establish measurable environmental objectives
-* Set timeline-based milestones: Create phased targets with specific deadlines
-* Allocate targets across departments or facilities: Distribute reduction responsibilities organizationally
-* Configure target alerts and progress notifications: Get updates on goal achievement status
+* Review validated fuel consumption data from all departments
+* Analyze trends and patterns across reporting periods
+* Compare departmental consumption performance
+
+**2. Calculate Carbon Emissions**
+
+* Automatically calculate CO₂ emissions based on standard emission factors
+* View emission breakdowns by department and resource type
+* Monitor environmental impact across the organization
 
 **3. Generate Sustainability Reports**
-* Create comprehensive environmental impact reports: Produce detailed documentation of carbon footprint and resource usage
-* Generate compliance reports for regulatory requirements: Prepare submissions for environmental regulations
-* Export data for certification programs: Provide documentation for sustainability certifications
-* Share progress reports with stakeholders: Communicate environmental performance to leadership and external parties
-* Schedule automated report generation and distribution: Set up recurring reports to be sent automatically
 
-**4. Track Progress Against Targets**
-* Monitor real-time progress toward reduction goals: See current status of sustainability objectives
-* View variance analysis between targets and actual performance: Identify gaps between goals and achievements
-* Receive milestone achievement notifications: Get alerted when key targets are reached
-* Generate forecasts for target completion dates: Predict when goals will be achieved based on current trends
+* Generate compliance-ready sustainability reports
+* Produce environmental performance summaries for leadership
+* Export reports for regulatory submissions or sustainability initiatives
 
-## System Administrator Features
+---
 
-**1. Manage Users & Configure System**
-* Create, edit, and deactivate user accounts: Complete user account lifecycle management
-* Assign roles and permissions to users: Configure access levels for different actor types
-* Configure system-wide settings and parameters: Establish global platform configurations
-* Manage organizational hierarchy and structure: Define departments, facilities, and reporting relationships
-* Reset passwords and manage authentication settings: Handle security administration
-* Generate user activity logs and audit trails: Monitor system usage and maintain compliance records
+## Chief Operations Officer (COO) Features
 
-## Use Case diagram
+**1. Manage Organizational Structure**
 
-View Use Case Diagram here : 
+* Register and configure the organization within the platform
+* Create and manage departments
+* Assign staff roles and permissions
+
+**2. Monitor Organization-Wide Consumption**
+
+* Access consolidated dashboards showing fuel consumption across departments
+* Compare departmental resource usage
+* Monitor overall organizational performance
+
+**3. Configure Targets and Alerts**
+
+* Define monthly fuel consumption targets for each department
+* Configure alert thresholds to detect abnormal usage
+* Receive automated notifications when departments exceed defined limits
+
+**4. Approve Sustainability Reports**
+
+* Review reports generated by sustainability analysts
+* Provide final approval before external submission
+
+---
+
+## Platform Administrator Features
+
+**1. System Maintenance**
+
+* Monitor system health and operational status
+* Maintain platform reliability and performance
+
+**2. Manage Platform Security**
+
+* Maintain audit logs and track user activities
+* Ensure secure access control and platform integrity
+
+**3. Support System Operations**
+
+* Assist in troubleshooting technical issues
+* Maintain system configurations and updates
+
+---
+
+# Use Case Diagram
+
+View Use Case Diagram here:
 [UseCase Diagram](https://drive.google.com/drive/folders/13aRuFmgrEjUhsK0v3V9-y_TWwLpiql1H?usp=drive_link)
+
+---
