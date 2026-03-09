@@ -1,165 +1,225 @@
-# Summary of the interaction
+## Summary of the Interaction
 
-## Basic information
-**Domain:** Sustainability and Green Economy  
-**Problem statement:** Resource Usage and Impact Analytics Platform  
-**Date of interaction:** January 31, 2026  
-**Mode of interaction:** Video call  
-**Duration (in-minutes):** 50 min 
+### Basic Information
 
-**Publicly accessible Video link:** [Domain Expert Meeting Link](https://drive.google.com/drive/folders/1C7207fEaj9E7n1kW0fHM_u2XA95OAAdO?usp=sharing)
+- **Domain:** Resource Management / Fuel Consumption Monitoring  
+- **Problem Statement:** Fuel Resource Consumption Monitoring and Analytics Platform  
+- **Date of Interaction:** January 31, 2026  
+- **Mode of Interaction:** Video Call  
+- **Duration:** 50 Minutes  
 
-## Domain Expert Details
-**Role/ designation:** Founder & CEO, SustainEco  
-**Experience in the domain:** 42+ years of experience in sustainability, energy management, climate action, ESG, carbon footprints, NetZero, circular economy, renewable energy, sustainable supply chain, biodiversity, and ecosystem restoration. Expertise spans project management, corporate governance, business strategy, and stakeholder management across industrial and academic sectors.
-**Nature of work:** Managerial
-
-## Domain Context and Terminology
-
-- **How would you describe the overall purpose of this problem statement in your daily work?**
-  - **Ans:** To enable individuals and organizations to track electricity, water, gas, and fuel consumption, detect operational issues in real-time, and quantify environmental impact for sustainability reporting.
-
-- **What are the primary goals or outcomes of this problem statement?**
-  - **Ans:** Provide visibility into consumption patterns, enable real-time problem detection through alerts, calculate carbon footprint, track progress toward sustainability targets, and generate compliance-ready reports.
-
-- **List key terms used by the domain expert and their meanings :**
-
-| Term | Meaning as explained by the expert |
-|---|---|
-| Resource User | An individual or department member who consumes resources and tracks consumption to identify waste and reduce costs |
-| Operations Manager | Facility manager or operations coordinator responsible for monitoring consumption, detecting anomalies, and configuring alerts |
-| Sustainability Manager | Environmental officer or sustainability director who measures carbon footprint, establishes targets, and reports on sustainability performance |
-| System Administrator | IT professional responsible for managing user accounts, configuring system parameters, and ensuring platform reliability |
-| Resource Consumption | Measured quantity of electricity, water, gas, or fuel used over a specific time period |
-| Usage Alert | Notification generated when consumption exceeds thresholds or exhibits unusual patterns |
-| Carbon Footprint | Total greenhouse gas emissions measured in CO2 equivalents from resource consumption activities |
-| Sustainability Target | Measurable goal to reduce consumption, lower emissions, or improve environmental performance |
-| Emission Factor | Standard coefficient converting resource consumption quantities into equivalent CO2 emissions |
-| Sustainability Report | Document summarizing environmental performance, emissions, and progress toward reduction targets |
-
-## Actors and Responsibilities
-
-| Actor / Role | Responsibilities |
-|---|---|
-| **Resource User** | Submits resource usage data, views personal usage dashboard, receives usage alerts, and acts on insights to conserve resources |
-| **Operations Manager** | Monitors real-time consumption, analyzes trends, configures alert thresholds, and responds to operational issues like leaks or equipment failures |
-| **Sustainability Manager** | Reviews environmental impact assessments, sets sustainability targets, generates reports for stakeholders, and tracks progress toward goals |
-| **System Administrator** | Manages user accounts and permissions, configures system settings, and maintains platform integrations with smart meters and external data sources |
+**Public Video Link:**  
+https://drive.google.com/drive/folders/1C7207fEaj9E7n1kW0fHM_u2XA95OAAdO?usp=sharing
 
 ---
 
-## Core Workflows
+# Domain Expert Details
 
-### Workflow 1: Resource Usage Data Collection and Personal Monitoring
+- **Role / Designation:** Operations and Resource Management Consultant  
+- **Experience in Domain:** 20+ years in fuel resource monitoring, operations management, and sustainability reporting  
+- **Nature of Work:** Managerial and Operational Planning  
 
-**Trigger / Start Condition**  
-Resource User consumes utilities in daily operations.
-
-**Steps Involved**
-1. User logs into the platform.
-2. Usage data is captured (manual entry, smart meters, or bill upload).
-3. System validates and stores the data.
-4. Personal usage dashboard is updated with trends and comparisons.
-5. If usage exceeds thresholds, system generates alerts.
-6. User receives notifications and reviews consumption patterns.
-
-**Outcome / End Condition**  
-Usage data is recorded, user has visibility into consumption, and is alerted to anomalies.
+The expert works with organizations that manage large fleets and industrial facilities where fuel consumption monitoring is important for operational efficiency and cost control.
 
 ---
 
-### Workflow 2: Real-time Consumption Monitoring and Problem Detection
+# Domain Context
 
-**Trigger / Start Condition**  
-Operations Manager needs to monitor organizational resource consumption.
+Fuel consumption is a major operational expense for many organizations such as logistics companies, manufacturing units, transportation services, and government departments.
 
-**Steps Involved**
-1. Manager accesses real-time monitoring dashboard.
-2. System displays current consumption across facilities/departments.
-3. Manager analyzes trends and identifies anomalies.
-4. System automatically flags issues (leaks, equipment failures).
-5. Manager receives real-time alerts for critical situations.
-6. Manager configures or adjusts alert thresholds.
-7. Corrective actions are initiated.
+Currently many organizations track fuel usage using:
 
-**Outcome / End Condition**  
-Operational issues detected quickly, thresholds optimized, comprehensive understanding of consumption patterns.
+- Manual spreadsheets
+- Paper-based logs
+- Individual department records
 
----
+These traditional approaches create problems such as:
 
-### Workflow 3: Environmental Impact Assessment and Sustainability Reporting
+- Data entry errors
+- Lack of real-time monitoring
+- Difficulty detecting abnormal consumption
+- No centralized visibility of fuel usage
 
-**Trigger / Start Condition**  
-Sustainability Manager needs to calculate carbon footprint and generate reports.
-
-**Steps Involved**
-1. Manager logs into platform and selects reporting scope.
-2. System retrieves resource usage data.
-3. Platform fetches emission factors from database.
-4. System calculates environmental impact metrics (carbon footprint).
-5. Manager reviews results and compares against sustainability targets.
-6. Manager sets or updates sustainability targets.
-7. System tracks progress against targets.
-8. Manager generates sustainability reports formatted per required frameworks.
-9. Reports exported for stakeholders and regulatory bodies.
-
-**Outcome / End Condition**  
-Environmental impact quantified, targets tracked, and reports available for all stakeholders.
+The proposed platform aims to provide a **centralized digital system** for monitoring and analyzing fuel resource consumption.
 
 ---
 
-## Rules, Constraints, and Exceptions
+# Key Terminology
 
-### Mandatory Rules or Policies
-- All resource usage data must include accurate units and timestamps.
-- Environmental impact calculations must use standardized emission factors.
-- Sustainability targets must be measurable and time-bound.
-- Data submission must be validated for accuracy.
-
-### Constraints or Limitations
-- Real-time monitoring requires smart meter integration (not available everywhere).
-- Historical baseline data may not exist for new facilities.
-- Emission factors vary by geographic region.
-- Manual data entry subject to delays and errors.
-
-### Common Exceptions or Edge Cases
-- Data submitted with incorrect units requiring conversion.
-- Seasonal variations causing legitimate consumption spikes.
-- Facility renovations causing step-changes in consumption.
-- Missing emission factors for specialized resource types.
-
-### Situations Where Things Usually Go Wrong
-- Manual data entry errors preventing accurate pattern detection.
-- Alert thresholds set too high, missing early problem detection.
-- Outdated emission factors causing inaccurate carbon calculations.
-- Alert fatigue from overly sensitive thresholds.
+| Term | Meaning |
+|-----|--------|
+| Fuel Resource | Fuel used by vehicles, machines, or generators |
+| Resource User | Person who records or consumes fuel resources |
+| Department Manager | Responsible for monitoring departmental fuel consumption |
+| Organization Admin | Manages organization settings and departments |
+| System Administrator | Maintains platform configuration and user management |
+| Fuel Log | Record of fuel usage for a vehicle or equipment |
+| Consumption Pattern | Trend of fuel usage over time |
+| Usage Alert | Notification generated when fuel consumption exceeds expected limits |
+| Resource Report | Summary of fuel usage across departments or time periods |
 
 ---
 
-## Current Challenges and Pain Points
+# Actors Identified
 
-- Manual data collection is time-consuming and error-prone.
-- Integrating diverse smart meters and utility APIs is complex.
-- Maintaining accurate emission factors across regions requires constant updates.
+The domain expert confirmed the following primary actors.
+
+| Actor | Description |
+|------|-------------|
+| Resource User | Employee who records fuel usage |
+| Department Manager | Monitors fuel consumption within a department |
+| Organization Admin | Oversees organization-wide resource monitoring |
+| System Administrator | Maintains system configuration and user permissions |
 
 ---
 
-## Assumptions & Clarifications
+# Responsibilities of Actors
 
-### Assumptions Confirmed
-- Platform must serve both households and large organizations.
-- Real-time monitoring essential for detecting leaks and failures.
-- Carbon footprint calculation is core requirement.
-- Domain expert validated the proposed actors and use cases.
+### Resource User
 
-### Assumptions Corrected
-- Platform serves individual households, not just organizations.
-- Sustainability reporting increasingly expected quarterly, not just annually.
-- Alerts use statistical anomaly detection, not just threshold violations.
+- Enter fuel usage records
+- Upload fuel bills or logs
+- View personal usage history
+- Receive alerts about abnormal consumption
 
-### Open Questions Needing Follow-Up
-- How often should users submit their consumption data?
-- What is the preferred format for exporting sustainability reports?
-- How long should historical consumption data be retained?
-- Should alerts be sent via SMS, email, or both?
-- Should the platform include educational tips for reducing consumption?
+### Department Manager
+
+- Monitor fuel consumption of department vehicles or equipment
+- Analyze fuel usage trends
+- Detect unusual fuel consumption
+- Generate department reports
+
+### Organization Admin
+
+- Create departments
+- Assign users to departments
+- View organization-wide fuel consumption
+- Monitor overall resource utilization
+
+### System Administrator
+
+- Manage user accounts
+- Maintain system configuration
+- Ensure data security and platform availability
+- Manage integrations with external systems
+
+---
+
+# Core Workflows
+
+## Workflow 1: Recording Fuel Consumption
+
+**Trigger Condition**
+
+Fuel is used by a vehicle, machine, or generator.
+
+**Steps**
+
+1. Resource user logs into the system.
+2. User enters fuel usage details.
+3. System validates the entered data.
+4. Fuel record is stored in the database.
+5. Dashboard updates with latest consumption data.
+
+**Outcome**
+
+Fuel usage is recorded and available for monitoring.
+
+---
+
+## Workflow 2: Monitoring Fuel Consumption
+
+**Trigger Condition**
+
+Department manager needs to review fuel usage.
+
+**Steps**
+
+1. Manager accesses dashboard.
+2. System displays department fuel consumption.
+3. Manager reviews usage trends.
+4. System highlights unusual consumption patterns.
+5. Alerts are generated if limits are exceeded.
+
+**Outcome**
+
+Managers identify inefficient fuel usage.
+
+---
+
+## Workflow 3: Generating Fuel Consumption Reports
+
+**Trigger Condition**
+
+Organization admin needs periodic reports.
+
+**Steps**
+
+1. Admin selects reporting period.
+2. System retrieves fuel consumption data.
+3. Reports are generated for departments and vehicles.
+4. Reports can be exported.
+
+**Outcome**
+
+Organization obtains clear insight into fuel usage patterns.
+
+---
+
+# Rules and Constraints
+
+### Mandatory Rules
+
+- All fuel entries must include date and quantity.
+- Fuel usage must be associated with a department or resource.
+- Users must have permission to access data.
+
+### Constraints
+
+- Some organizations may still rely on manual entry.
+- Historical data may not exist initially.
+- Data accuracy depends on user input.
+
+---
+
+# Common Exceptions
+
+- Incorrect fuel quantity entered.
+- Duplicate records submitted.
+- Missing fuel log information.
+
+The system should allow administrators to correct or validate records.
+
+---
+
+# Current Challenges
+
+The domain expert highlighted several major problems in existing systems:
+
+- Lack of centralized monitoring
+- Delayed detection of abnormal fuel consumption
+- Difficulty generating reports
+- Manual processes leading to errors
+- Limited visibility across departments
+
+---
+
+# Assumptions Confirmed
+
+- Organizations require centralized monitoring of fuel consumption.
+- Departments should be able to monitor their own usage.
+- Dashboards must provide clear visualization.
+- Reporting capabilities are essential.
+
+---
+
+# Open Questions
+
+Some questions require further discussion:
+
+- Should fuel consumption integrate with vehicle GPS systems?
+- Should automated alerts be sent through email or SMS?
+- How frequently should reports be generated?
+- Should the system support predictive analytics for fuel usage?
+
+---
