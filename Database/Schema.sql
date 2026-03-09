@@ -50,6 +50,18 @@ CREATE TABLE DEPARTMENT (
         ON DELETE SET NULL
 );
 
+CREATE TABLE RESOURCE_TYPE (
+    resource_type_id INT AUTO_INCREMENT PRIMARY KEY,
+    resource_name VARCHAR(255) NOT NULL,
+    default_unit VARCHAR(50),
+    dept_id INT NOT NULL,
+    co2_conversion_factor DECIMAL(10,4)
+
+    FOREIGN KEY (dept_id)
+        REFERENCES DEPARTMENT(dept_id)
+        ON DELETE CASCADE
+);
+
 CREATE TABLE CONSUMPTION_TARGET (
     target_id INT AUTO_INCREMENT PRIMARY KEY,
     dept_id INT NOT NULL,
@@ -63,17 +75,6 @@ CREATE TABLE CONSUMPTION_TARGET (
     FOREIGN KEY (dept_id) REFERENCES DEPARTMENT(dept_id) ON DELETE CASCADE,
     FOREIGN KEY (set_by) REFERENCES USER(user_id),
     FOREIGN KEY (resource_type_id) REFERENCES RESOURCE_TYPE(resource_type_id)  
-);
-
-CREATE TABLE RESOURCE_TYPE (
-    resource_type_id INT AUTO_INCREMENT PRIMARY KEY,
-    resource_name VARCHAR(255) NOT NULL,
-    default_unit VARCHAR(50),
-    dept_id INT NOT NULL,
-
-    FOREIGN KEY (dept_id)
-        REFERENCES DEPARTMENT(dept_id)
-        ON DELETE CASCADE
 );
 
 CREATE TABLE MONTHLY_SUBMISSION (
