@@ -2,167 +2,65 @@
 
 ## 1NF (First Normal Form)
 
-Normalization to 1NF ensured all attributes are atomic and removed repeating groups across relations.
+Normalization to **1NF** ensured that all attributes are atomic and repeating groups were removed.
 
-- Multiple resource types entered within a single monthly submission were separated into the **SUBMISSION_LINE_ITEM** relation instead of storing multiple fuel entries inside **MONTHLY_SUBMISSION**.
-- Invoice files attached to a submission were separated into the **INVOICE** relation instead of storing multiple file references inside **MONTHLY_SUBMISSION**.
-- Revision comments across multiple rounds were separated into the **REPORT_REVISION** relation instead of storing multiple comment entries inside **SUSTAINABILITY_REPORT**.
-- Atomic attributes were ensured in relations such as **USER**, **ORGANIZATION**, and **DEPARTMENT** so fields like email, mobile, role, and dept_name contain single values only.
-- This reduced data duplication within single rows and improved clarity of relations such as **MONTHLY_SUBMISSION**, **SUSTAINABILITY_REPORT**, and **ALERT**.
+* Multiple resource types in a submission were moved to **SUBMISSION_LINE_ITEM** instead of storing them in **MONTHLY_SUBMISSION**.
+* Multiple invoice files were separated into the **INVOICE** table.
+* Multiple revision comments were separated into the **REPORT_REVISION** table.
+* User activity history was separated into **ACTIVITY_LOG** instead of storing it in **USER** or **DEPARTMENT**.
+* Fields such as email, mobile, role, dept_name, and action_description contain only single atomic values.
 
 ---
 
 ## 2NF (Second Normal Form)
 
-Normalization to 2NF removed partial dependencies where non-key attributes depended on only part of a composite key.
+Normalization to **2NF** removed partial dependencies.
 
-Submission validation details were separated from core submission data:
-
-MONTHLY_SUBMISSION(
-submission_id,
-dept_id,
-submitted_by,
-reporting_month,
-reporting_year,
-is_locked,
-submission_date
-)
-
-SUBMISSION_STATUS(
-submission_id,
-validation_status,
-processed_status,
-status_color
-)
-
-Carbon emission details were separated from submission and resource data:
-
-CARBON_EMISSION(
-emission_id,
-submission_id,
-resource_type_id,
-co2_kg,
-calculated_by,
-calculated_at
-)
-
-Report approval details were separated from report generation details:
-
-SUSTAINABILITY_REPORT(
-report_id,
-generated_by,
-report_content,
-pdf_file_path,
-from_month,
-from_year,
-to_month,
-to_year,
-status,
-submitted_at
-)
-
-REPORT_APPROVAL(
-report_id,
-approved_by,
-approved_at
-)
-
-This reduced duplicate storage of status, approval, and emission data across multiple records.
+* Submission validation details were separated into **SUBMISSION_STATUS**.
+* Carbon emission data was separated into **CARBON_EMISSION**.
+* Report approval details were separated into **REPORT_APPROVAL**.
+* Consumption targets were stored in **CONSUMPTION_TARGET** linked to both dept_id and resource_type_id.
+* Activity logs were maintained in **ACTIVITY_LOG** with references to user and department.
 
 ---
 
 ## 3NF (Third Normal Form)
 
-Normalization to 3NF removed transitive dependencies where non-key attributes were determined by other non-key attributes.
+Normalization to **3NF** removed transitive dependencies.
 
-Alert resolution details were separated from alert trigger details:
-
-ALERT(
-alert_id,
-submission_id,
-severity,
-cause_type,
-status,
-explanation,
-corrective_action,
-triggered_at
-)
-
-ALERT_RESOLUTION(
-alert_id,
-resolved_at,
-last_event_note
-)
-
-Escalation details were separated from alert data:
-
-ESCALATION(
-escalation_id,
-alert_id,
-escalated_by,
-acknowledged_by,
-escalation_message,
-coo_response,
-escalated_at,
-responded_at
-)
-
-Notification details were separated from user and department data:
-
-NOTIFICATION(
-notification_id,
-recipient_id,
-type,
-message,
-is_read,
-created_at
-)
-
-Consumption target and alert threshold details were separated from department records:
-
-CONSUMPTION_TARGET(
-target_id,
-dept_id,
-set_by,
-monthly_target,
-alert_threshold,
-is_active,
-created_at
-)
-
-User role information was kept in a single USER relation with a role attribute to avoid redundant role tables while maintaining clarity across COO, Manager, Analyst, and Admin roles.
-
-This reduced indirect attribute dependencies and redundant storage of alert, escalation, and notification information.
+* Alert resolution details were moved to **ALERT_RESOLUTION**.
+* Escalation information was stored in **ESCALATION**.
+* Notification information was stored in **NOTIFICATION**.
+* Resource type was directly linked in **CONSUMPTION_TARGET**.
+* Role snapshot was stored directly in **ACTIVITY_LOG** to preserve the role at the time of action.
 
 ---
 
 ## BCNF (Boyce–Codd Normal Form)
 
-Normalization to BCNF ensured that every determinant in each relation is a candidate key, fully eliminating update, insertion, and deletion anomalies.
+Normalization to **BCNF** ensured every determinant is a candidate key.
 
-Each entity now has a clear primary key dependency:
+* Each entity has a primary key:
 
-USER → user_id  
-ORGANIZATION → org_id  
-DEPARTMENT → dept_id  
-MONTHLY_SUBMISSION → submission_id  
-ALERT → alert_id  
-SUSTAINABILITY_REPORT → report_id  
+  * USER → user_id
+  * ORGANIZATION → org_id
+  * DEPARTMENT → dept_id
+  * MONTHLY_SUBMISSION → submission_id
+  * ALERT → alert_id
+  * SUSTAINABILITY_REPORT → report_id
+  * CONSUMPTION_TARGET → target_id
+  * ACTIVITY_LOG → log_id
 
-The redundant dept_id was removed from ALERT and CARBON_EMISSION since it could be derived transitively through:
+* Redundant attributes were removed:
 
-submission_id → MONTHLY_SUBMISSION.dept_id
+  * dept_id removed from **ALERT** and **CARBON_EMISSION**
+  * org_id removed from **SUSTAINABILITY_REPORT**
+  * dept_id removed from **NOTIFICATION**
 
-The redundant org_id was removed from SUSTAINABILITY_REPORT since it could be derived through:
+* Supporting relations like **SUBMISSION_STATUS**, **ALERT_RESOLUTION**, and **REPORT_APPROVAL** were separated to maintain BCNF.
 
-generated_by → USER.org_id
+---
 
-The redundant dept_id was removed from NOTIFICATION since it could be derived through:
+## Result
 
-recipient_id → USER → DEPARTMENT
-
-REPORT_SUBMISSION_LINK was introduced as a junction table to resolve the Many-to-Many relationship between SUSTAINABILITY_REPORT and MONTHLY_SUBMISSION.
-
-SUBMISSION_STATUS, ALERT_RESOLUTION, and REPORT_APPROVAL were decomposed as separate relations to ensure every non-key attribute depends solely on the primary key of its own relation.
-
-This eliminated update, insertion, and deletion anomalies across the complete schema.
+The schema now eliminates redundancy, prevents update anomalies, and ensures all relations follow proper normalization rules up to **BCNF**.
