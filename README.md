@@ -30,8 +30,6 @@ The system supports five primary user roles:
 
 * **Sustainability Analyst:** Responsible for reviewing processed consumption data, analyzing trends, calculating environmental impact, and generating sustainability reports.
 
-* **Department Staff / Resource User:** Individuals within departments who provide resource usage information and support managers in recording consumption data.
-
 ---
 
 # Actor Features
