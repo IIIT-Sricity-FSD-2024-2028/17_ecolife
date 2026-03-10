@@ -12,11 +12,11 @@ CREATE TABLE USER (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     org_id INT,
     name VARCHAR(255) NOT NULL,
-    email VARCHAR(150) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     mobile VARCHAR(20),
-    profile_photo VARCHAR(500),
-    role VARCHAR(50) NOT NULL,
+    profile_photo VARCHAR(255),
+    role VARCHAR(40) NOT NULL,
     is_activated BOOLEAN DEFAULT FALSE,
     credentials_sent_at DATETIME,
     credentials_resent_at DATETIME,
@@ -53,7 +53,7 @@ CREATE TABLE DEPARTMENT (
 CREATE TABLE RESOURCE_TYPE (
     resource_type_id INT AUTO_INCREMENT PRIMARY KEY,
     resource_name VARCHAR(255) NOT NULL,
-    default_unit VARCHAR(50),
+    default_unit VARCHAR(40),
     dept_id INT NOT NULL,
     co2_conversion_factor DECIMAL(10,4)
 
@@ -92,8 +92,8 @@ CREATE TABLE MONTHLY_SUBMISSION (
 
 CREATE TABLE SUBMISSION_STATUS (
     submission_id INT PRIMARY KEY,
-    validation_status VARCHAR(50),
-    processed_status VARCHAR(50),
+    validation_status VARCHAR(40),
+    processed_status VARCHAR(40),
     status_color VARCHAR(20),
 
     FOREIGN KEY (submission_id)
@@ -118,7 +118,7 @@ CREATE TABLE SUBMISSION_LINE_ITEM (
 CREATE TABLE INVOICE (
     invoice_id INT AUTO_INCREMENT PRIMARY KEY,
     submission_id INT NOT NULL,
-    file_path VARCHAR(500),
+    file_path VARCHAR(255),
     invoice_total DECIMAL(15,2) CHECK (invoice_total >= 0),
     is_matched BOOLEAN DEFAULT FALSE,
     uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -130,9 +130,9 @@ CREATE TABLE INVOICE (
 CREATE TABLE ALERT (
     alert_id INT AUTO_INCREMENT PRIMARY KEY,
     submission_id INT NOT NULL,
-    severity VARCHAR(50),
-    cause_type VARCHAR(100),
-    status VARCHAR(50),
+    severity VARCHAR(20),
+    cause_type VARCHAR(255),
+    status VARCHAR(40),
     explanation TEXT,
     corrective_action TEXT,
     triggered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -183,12 +183,12 @@ CREATE TABLE SUSTAINABILITY_REPORT (
     report_id INT AUTO_INCREMENT PRIMARY KEY,
     generated_by INT NOT NULL,
     report_content TEXT,
-    pdf_file_path VARCHAR(500),
+    pdf_file_path VARCHAR(255),
     from_month TINYINT NOT NULL CHECK (from_month BETWEEN 1 AND 12),
     from_year YEAR NOT NULL,
     to_month TINYINT NOT NULL CHECK (to_month BETWEEN 1 AND 12),
     to_year YEAR NOT NULL,
-    status VARCHAR(50),
+    status VARCHAR(40),
     submitted_at DATETIME,
 
     FOREIGN KEY (generated_by) REFERENCES USER(user_id)
@@ -241,7 +241,7 @@ CREATE TABLE REPORT_REVISION (
 CREATE TABLE NOTIFICATION (
     notification_id INT AUTO_INCREMENT PRIMARY KEY,
     recipient_id INT NOT NULL,
-    type VARCHAR(100),
+    type VARCHAR(255),
     message TEXT,
     is_read BOOLEAN DEFAULT FALSE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -254,7 +254,7 @@ CREATE TABLE NOTIFICATION (
 CREATE TABLE ACTIVITY_LOG (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     actor_id INT NOT NULL,                     
-    role VARCHAR(50),                          
+    role VARCHAR(255),                          
     action_description TEXT,                  
     dept_id INT,                           
     performed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
