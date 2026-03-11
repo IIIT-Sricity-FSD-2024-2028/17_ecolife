@@ -53,9 +53,9 @@ CREATE TABLE DEPARTMENT (
 CREATE TABLE RESOURCE_TYPE (
     resource_type_id INT AUTO_INCREMENT PRIMARY KEY,
     resource_name VARCHAR(255) NOT NULL,
-    default_unit VARCHAR(40),
+    resource_unit VARCHAR(40),
     dept_id INT NOT NULL,
-    co2_conversion_factor DECIMAL(10,4)
+    co2_conversion_factor DECIMAL(10,4),
 
     FOREIGN KEY (dept_id)
         REFERENCES DEPARTMENT(dept_id)
