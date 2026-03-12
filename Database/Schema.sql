@@ -54,11 +54,11 @@ CREATE TABLE RESOURCE_TYPE (
     resource_type_id INT AUTO_INCREMENT PRIMARY KEY,
     resource_name VARCHAR(255) NOT NULL,
     resource_unit VARCHAR(40),
-    dept_id INT NOT NULL,
+    org_id INT NOT NULL,
     co2_conversion_factor DECIMAL(10,4),
 
-    FOREIGN KEY (dept_id)
-        REFERENCES DEPARTMENT(dept_id)
+    FOREIGN KEY (org_id)
+        REFERENCES ORGANIZATION(org_id)
         ON DELETE CASCADE
 );
 
@@ -94,7 +94,6 @@ CREATE TABLE SUBMISSION_STATUS (
     submission_id INT PRIMARY KEY,
     validation_status VARCHAR(40),
     processed_status VARCHAR(40),
-    status_color VARCHAR(20),
 
     FOREIGN KEY (submission_id)
         REFERENCES MONTHLY_SUBMISSION(submission_id)
@@ -255,7 +254,7 @@ CREATE TABLE ACTIVITY_LOG (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     actor_id INT NOT NULL,                     
     role VARCHAR(255),                          
-    action_description TEXT,                  
+    actor_description TEXT,                  
     dept_id INT,                           
     performed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
