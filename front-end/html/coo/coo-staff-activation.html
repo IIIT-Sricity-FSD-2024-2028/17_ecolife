@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Activation - Rorizon COO</title>
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+.hero{background:linear-gradient(145deg,#eff6ff 0%,#f8fafc 100%);border:1px solid #dbeafe;border-radius:20px;padding:24px;margin-bottom:24px}
+.hero__head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.hero__title{margin:0 0 8px 0;font-size:30px;font-weight:700;color:#0f172a}
+.hero__sub{margin:0;color:#64748b;font-size:14px;max-width:720px}
+.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:20px 0 0}
+.summary-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px}
+.summary-card__label{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+.summary-card__value{font-size:28px;font-weight:700;color:#0f172a;margin:8px 0 4px}
+.summary-card__meta{font-size:13px;color:#64748b}
+.page-grid{display:grid;grid-template-columns:1fr;gap:24px}
+.toolbar{display:grid;grid-template-columns:minmax(180px,220px) minmax(180px,220px) minmax(240px,1fr);gap:12px;margin:18px 0}
+.staff-cell{display:flex;flex-direction:column;gap:4px}
+.staff-cell small{color:#64748b;font-size:12px}
+.scope-pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:600}
+.detail-panel{padding:24px}
+.detail-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:20px}
+.detail-avatar{width:64px;height:64px;border-radius:18px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700}
+.detail-title{margin:0;font-size:22px;color:#0f172a}
+.detail-sub{margin:6px 0 0;color:#64748b;font-size:14px}
+.detail-list{display:grid;gap:14px;margin-bottom:20px}
+.detail-item{padding:14px 16px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}
+.detail-item strong{display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.helper-note{padding:14px 16px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:13px;line-height:1.5}
+.table-wrapper tr.is-selected{background:#f8fbff}
+@media(max-width:1080px){.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-actions{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr}}
+@media(max-width:720px){.summary-grid{grid-template-columns:1fr}.hero__head{flex-direction:column}}
+</style>
+</head>
+<body>
+<div id="app-layout" data-title="Staff Activation" data-subtitle="Activate managers and analysts in your organization">
+  <div class="hero">
+    <div class="hero__head">
+      <div>
+        <h2 class="hero__title">Staff Access Control</h2>
+        <p class="hero__sub">Activate managers and analysts, resend credentials quickly, and keep the shared staff directory aligned with the rest of your COO management pages.</p>
+      </div>
+      <span class="kpi-tag kpi-tag--muted" id="staffSummary">0 staff records</span>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card"><div class="summary-card__label">Active Staff</div><div class="summary-card__value" id="activeCount">0</div><div class="summary-card__meta">Can sign in today</div></div>
+      <div class="summary-card"><div class="summary-card__label">Pending Approval</div><div class="summary-card__value" id="pendingCount">0</div><div class="summary-card__meta">Need activation follow-up</div></div>
+      <div class="summary-card"><div class="summary-card__label">Inactive</div><div class="summary-card__value" id="inactiveCount">0</div><div class="summary-card__meta">Access currently blocked</div></div>
+      <div class="summary-card"><div class="summary-card__label">Departments Covered</div><div class="summary-card__value" id="coverageCount">0</div><div class="summary-card__meta">Across your organization</div></div>
+    </div>
+  </div>
+
+  <div class="page-grid">
+    <div class="card">
+      <div class="chart-header">
+        <h2 class="card__title">Staff Directory</h2>
+        <span class="kpi-tag kpi-tag--muted">Shared organization records</span>
+      </div>
+      <div class="toolbar">
+        <select class="form-input" id="statusFilter"><option value="all">All statuses</option><option value="Active">Active</option><option value="Inactive">Inactive</option><option value="Pending Approval">Pending Approval</option></select>
+        <select class="form-input" id="roleFilter"><option value="all">All roles</option><option value="Manager">Managers</option><option value="Analyst">Analysts</option></select>
+        <input class="form-input" id="nameFilter" placeholder="Search by name or email">
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead><tr><th>STAFF MEMBER</th><th>ROLE</th><th>SCOPE</th><th>STATUS</th><th>LAST LOGIN</th><th>ACTIONS</th></tr></thead>
+          <tbody id="staffRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card detail-panel">
+      <div class="detail-header">
+        <div style="display:flex;gap:14px;align-items:center;">
+          <div class="detail-avatar" id="selectedAvatar">--</div>
+          <div>
+            <h3 class="detail-title" id="selectedName">Select a staff member</h3>
+            <p class="detail-sub" id="selectedRole">Use the table to load their credential actions.</p>
+          </div>
+        </div>
+        <span class="status-badge status-badge--amber" id="selectedStatus">Waiting</span>
+      </div>
+      <div class="detail-list">
+        <div class="detail-item"><strong>Email</strong><span id="selectedEmail">--</span></div>
+        <div class="detail-item"><strong>Department Scope</strong><span id="selectedScope">--</span></div>
+        <div class="detail-item"><strong>Last Login</strong><span id="selectedLastLogin">--</span></div>
+      </div>
+      <div class="helper-note" id="credentialPreview">Select a manager or analyst to prepare a credential message with sign-in email, role, and scope details.</div>
+      <div class="detail-actions" style="margin-top:18px;">
+        <button class="btn-primary" type="button" id="toggleSelectedBtn" disabled>Activate</button>
+        <button class="btn-outline" type="button" id="resendSelectedBtn" disabled>Resend Credentials</button>
+        <button class="btn-outline" type="button" id="copySelectedBtn" disabled style="grid-column:1/-1;">Copy Sign-in Details</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast toast--success" id="toastMessage"><div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt=""></div><p class="toast__text" id="toastText"></p></div>
+<script src="../../js/data.js"></script><script src="../../js/utils.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+const currentUser=JSON.parse(localStorage.getItem('currentUser')||'null');
+const $=id=>document.getElementById(id);
+let selectedStaffId=null;
+const badge=status=>status==='Active'?'green':(status==='Pending Approval'?'amber':'red');
+function getDB(){const state=Utils.getDB();state.users=state.users||[];state.notifications=state.notifications||[];state.departments=state.departments||[];return state;}
+function getScopedStaff(db){return db.users.filter(user=>['Manager','Analyst'].includes(user.role)).filter(user=>!currentUser||user.organizationId===currentUser.organizationId);}
+function getDepartmentScope(user,db){const ids=user.role==='Analyst'?(Array.isArray(user.assignedDepartmentIds)?user.assignedDepartmentIds:[]):[user.departmentId].filter(Boolean);const names=ids.map(id=>(db.departments||[]).find(dept=>dept.id===id)?.name).filter(Boolean);return names.length?names.join(', '):(user.department&&user.department!=='Multi-Department Review'?user.department:'Organization review pool');}
+function filteredStaff(){const db=getDB();const term=$('nameFilter').value.trim().toLowerCase();const status=$('statusFilter').value;const role=$('roleFilter').value;return getScopedStaff(db).filter(user=>status==='all'||(user.status||'Inactive')===status).filter(user=>role==='all'||user.role===role).filter(user=>!term||user.name.toLowerCase().includes(term)||user.email.toLowerCase().includes(term));}
+function buildCredentialText(user,db){return[`Name: ${user.name}`,`Role: ${user.role}`,`Email: ${user.email}`,`Status: ${user.status||'Inactive'}`,`Department Scope: ${getDepartmentScope(user,db)}`,`Password: ${user.password||'ChangeMe@123'}`,'Ask the staff member to change the password after first login.'].join('\n');}
+function renderSelected(){const db=getDB();const user=(db.users||[]).find(entry=>String(entry.id)===String(selectedStaffId));if(!user){$('selectedAvatar').textContent='--';$('selectedName').textContent='Select a staff member';$('selectedRole').textContent='Use the table to load their credential actions.';$('selectedStatus').textContent='Waiting';$('selectedStatus').className='status-badge status-badge--amber';$('selectedEmail').textContent='--';$('selectedScope').textContent='--';$('selectedLastLogin').textContent='--';$('credentialPreview').textContent='Select a manager or analyst to prepare a credential message with sign-in email, role, and scope details.';$('toggleSelectedBtn').disabled=true;$('resendSelectedBtn').disabled=true;$('copySelectedBtn').disabled=true;return;}$('selectedAvatar').textContent=(user.name||'--').split(' ').map(word=>word[0]).join('').slice(0,2).toUpperCase();$('selectedName').textContent=user.name;$('selectedRole').textContent=`${user.role} | ${getDepartmentScope(user,db)}`;$('selectedStatus').textContent=user.status||'Inactive';$('selectedStatus').className=`status-badge status-badge--${badge(user.status||'Inactive')}`;$('selectedEmail').textContent=user.email||'--';$('selectedScope').textContent=getDepartmentScope(user,db);$('selectedLastLogin').textContent=user.lastLogin||'Never';$('credentialPreview').textContent=buildCredentialText(user,db);$('toggleSelectedBtn').disabled=false;$('resendSelectedBtn').disabled=false;$('copySelectedBtn').disabled=false;$('toggleSelectedBtn').textContent=(user.status==='Active'?'Deactivate':'Activate')+' Account';}
+function render(){const db=getDB();const rows=filteredStaff();const active=rows.filter(user=>user.status==='Active').length;const pending=rows.filter(user=>user.status==='Pending Approval').length;const inactive=rows.length-active-pending;const coverage=new Set(getScopedStaff(db).flatMap(user=>user.role==='Analyst'?(user.assignedDepartmentIds||[]):[user.departmentId].filter(Boolean)));$('staffSummary').textContent=`${rows.length} staff record${rows.length===1?'':'s'}`;$('activeCount').textContent=active;$('pendingCount').textContent=pending;$('inactiveCount').textContent=inactive;$('coverageCount').textContent=coverage.size;if(selectedStaffId&&!rows.some(user=>String(user.id)===String(selectedStaffId))){const stillExists=getScopedStaff(db).some(user=>String(user.id)===String(selectedStaffId));if(!stillExists)selectedStaffId=null;}if(!selectedStaffId&&rows[0])selectedStaffId=rows[0].id;$('staffRows').innerHTML=rows.map(user=>`<tr class="${String(user.id)===String(selectedStaffId)?'is-selected':''}" onclick="selectStaff(${user.id})"><td><div class="staff-cell"><span class="td--bold">${user.name}</span><small>${user.email}</small></div></td><td class="td--muted">${user.role}</td><td><span class="scope-pill">${getDepartmentScope(user,db)}</span></td><td><span class="status-badge status-badge--${badge(user.status||'Inactive')}">${user.status||'Inactive'}</span></td><td class="td--muted">${user.lastLogin||'Never'}</td><td><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-outline" type="button" onclick="event.stopPropagation();toggleStaff(${user.id})">${user.status==='Active'?'Deactivate':'Activate'}</button><button class="btn-outline" type="button" onclick="event.stopPropagation();resendCredentials(${user.id})">Send Credentials</button></div></td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">No staff records match this filter.</td></tr>';renderSelected();}
+window.selectStaff=id=>{selectedStaffId=id;render();};
+window.toggleStaff=id=>{const db=getDB();const user=db.users.find(entry=>String(entry.id)===String(id));if(!user)return;user.status=user.status==='Active'?'Inactive':'Active';db.notifications.unshift({id:Date.now()+Math.random(),role:user.role,userId:user.id,title:`Account ${user.status}`,message:`Your account has been ${user.status.toLowerCase()} by the COO.`,type:'info',read:false,createdAt:new Date().toISOString()});Utils.replaceDB(db);Utils.logAction(`${user.status==='Active'?'Activated':'Deactivated'} staff account ${user.name}`,'Success',user.status==='Active'?'green':'amber');Utils.showToast(`Account ${user.status.toLowerCase()}.`);render();};
+window.resendCredentials=id=>{const db=getDB();const user=db.users.find(entry=>String(entry.id)===String(id));if(!user)return;db.notifications.unshift({id:Date.now()+Math.random(),role:user.role,userId:user.id,title:'Credentials Resent',message:`Your sign-in details were reissued by the COO for ${getDepartmentScope(user,db)}.`,type:'info',read:false,createdAt:new Date().toISOString()});Utils.replaceDB(db);Utils.logAction(`Resent credentials to ${user.name}`,'Success','green');Utils.showToast('Credentials resent successfully.');renderSelected();};
+async function copyCredentials(){const db=getDB();const user=db.users.find(entry=>String(entry.id)===String(selectedStaffId));if(!user)return;const text=buildCredentialText(user,db);try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(text);Utils.showToast('Sign-in details copied.');}else{throw new Error('clipboard-unavailable');}}catch(error){Utils.showToast('Copy is unavailable in this browser, but the sign-in details are shown in the panel.','error');}}
+$('statusFilter').addEventListener('change',render);$('roleFilter').addEventListener('change',render);$('nameFilter').addEventListener('input',render);$('toggleSelectedBtn').addEventListener('click',()=>selectedStaffId&&toggleStaff(selectedStaffId));$('resendSelectedBtn').addEventListener('click',()=>selectedStaffId&&resendCredentials(selectedStaffId));$('copySelectedBtn').addEventListener('click',copyCredentials);render();window.addEventListener('rorizon-db-updated',render);window.addEventListener('storage',render);
+});
+</script>
+</body></html>

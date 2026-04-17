@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Submission History – Rorizon</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <style>
+    /* UI Helper styles for the dropdowns and toasts defined in utils.js */
+    .notif-panel, .profile-dropdown { display: none; position: absolute; z-index: 1000; }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; }
+    .toast { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 9999; transition: opacity 0.3s ease; opacity: 0; }
+    
+    /* Animation for the detail toggle arrow */
+    .sh-toggle-btn img { transition: transform 0.3s ease; }
+    .is-rotated { transform: rotate(180deg); }
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" data-title="Submission History" data-subtitle="Operations • TechCorp Industries">
+    <div class="page-heading">
+      <div class="chart-header">
+        <h2 class="page-heading__title">Submission History</h2>
+        <span class="kpi-tag kpi-tag--blue">Operations</span>
+      </div>
+      <p class="page-heading__subtitle">View past data submissions and their status</p>
+    </div>
+
+    <div class="card">
+      <div class="chart-header">
+        <h2 class="card__title">Recent Submissions</h2>
+        <span class="kpi-tag kpi-tag--muted" id="historyEntryCount">1 Entry Showing</span>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="data-table sh-table">
+          <thead>
+            <tr>
+              <th class="sh-th--toggle"></th>
+              <th>Period</th>
+              <th>Status</th>
+              <th>Confidence Score</th>
+              <th>Submitted At</th>
+              <th>Total Consumption</th>
+              <th>Total CO2</th>
+            </tr>
+          </thead>
+          <tbody id="submissionHistoryBody">
+             <!-- JS injects dynamic rows here based on managerSubmissions array -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        // Legacy header logic removed - utils.js handles app-layout injection natively
+
+        // 3. Dynamic Data Fetching from LocalStorage
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null') || {};
+        const shBody = document.getElementById('submissionHistoryBody');
+        const entryCount = document.getElementById('historyEntryCount');
+
+        function formatNumber(value) {
+            const numeric = Number(value || 0);
+            return Number.isFinite(numeric) ? numeric.toLocaleString() : '0';
+        }
+
+        function getScopedSubmissions() {
+            const db = Utils.getDB();
+            const departments = Array.isArray(db.departments) ? db.departments : [];
+            const activeDepartment = departments.find(dept => dept.id === currentUser.departmentId) || departments.find(dept => dept.manager === currentUser.name) || null;
+            const fallbackDepartmentName = currentUser.department || activeDepartment?.name || '';
+
+            const baseSubmissions = Array.isArray(db.submissions) && db.submissions.length
+                ? db.submissions
+                : (db.managerSubmissions || []);
+
+            const normalized = baseSubmissions.map(submission => {
+                const matchedDepartment = departments.find(dept =>
+                    dept.id === submission.departmentId ||
+                    (submission.departmentName && dept.name === submission.departmentName)
+                ) || activeDepartment;
+
+                return {
+                    organizationId: submission.organizationId || matchedDepartment?.orgId || currentUser.organizationId || '',
+                    departmentId: submission.departmentId || matchedDepartment?.id || currentUser.departmentId || '',
+                    departmentName: submission.departmentName || matchedDepartment?.name || fallbackDepartmentName,
+                    managerName: submission.managerName || currentUser.name || '',
+                    managerUserId: submission.managerUserId || currentUser.id || null,
+                    ...submission
+                };
+            });
+
+            return normalized.filter(submission => {
+                const sameDepartment = currentUser.departmentId
+                    ? submission.departmentId === currentUser.departmentId || submission.departmentName === fallbackDepartmentName
+                    : true;
+                const sameManager = currentUser.id
+                    ? String(submission.managerUserId || '') === String(currentUser.id) || submission.managerName === currentUser.name
+                    : true;
+                const sameOrganization = currentUser.organizationId
+                    ? submission.organizationId === currentUser.organizationId
+                    : true;
+                return sameDepartment && sameOrganization && sameManager;
+            });
+        }
+
+        function renderHistory() {
+            const submissions = getScopedSubmissions();
+            entryCount.textContent = `${submissions.length} ${submissions.length === 1 ? 'Entry' : 'Entries'} Showing`;
+
+            if (submissions.length === 0) {
+                shBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:32px; color:#64748b;">No recent submissions found for this department.</td></tr>';
+                return;
+            }
+
+            shBody.innerHTML = '';
+
+            submissions.forEach((sub) => {
+            // Month mapping
+            const monthMap = { "01": "January", "02": "February", "03": "March", "04": "April", "05": "May", "06": "June", "07": "July", "08": "August", "09": "September", "10": "October", "11": "November", "12": "December"};
+            let displayPeriod = sub.period;
+            if (sub.period && sub.period.includes(' ')) {
+                let [mId, yId] = sub.period.split(' ');
+                if (monthMap[mId]) displayPeriod = `${monthMap[mId]} ${yId}`;
+            }
+
+            const mainRow = document.createElement('tr');
+            mainRow.className = 'sh-main-row';
+            
+            let statusClass = 'status-badge--amber';
+            if((sub.status || '').toLowerCase() === 'approved') statusClass = 'status-badge--green';
+            if((sub.status || '').toLowerCase() === 'rejected') statusClass = 'status-badge--red';
+
+            mainRow.innerHTML = `
+              <td class="sh-td--toggle">
+                <button class="sh-toggle-btn" type="button" aria-expanded="false" style="background:none; border:none; cursor:pointer;">
+                  <img src="../assets/icons/chevron-down-icon0.svg" class="toggle-icon" alt="Toggle Detail" />
+                </button>
+              </td>
+              <td class="td--bold">${displayPeriod}</td>
+              <td><span class="status-badge ${statusClass}">${sub.status || 'Pending'}</span></td>
+              <td><span class="status-badge status-badge--green sh-badge--score">${sub.score || 'Evaluating'}</span></td>
+              <td class="td--muted">${sub.submittedAt || '--'}</td>
+              <td class="td--muted">${formatNumber(sub.totalConsumption)} Units</td>
+              <td class="td--muted">${formatNumber(sub.totalCO2)} kg</td>
+            `;
+
+            const detailRow = document.createElement('tr');
+            detailRow.className = 'sh-detail-row';
+            detailRow.style.display = 'none';
+
+            let resourcesHtml = '';
+            if (sub.resources && sub.resources.length > 0) {
+                resourcesHtml = sub.resources.map(r => `
+                    <div class="sh-breakdown-row" style="display:flex; justify-content:space-between; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:8px;">
+                        <div style="flex:1;"><strong>Resource:</strong> ${r.type}</div>
+                        <div style="flex:1;"><strong>Quantity:</strong> ${formatNumber(r.qty)} ${r.unit}</div>
+                        <div style="flex:1;"><strong>Calc CO2:</strong> ${formatNumber((Number(r.qty) || 0) * 2.5)} kg</div>
+                    </div>
+                `).join('');
+            } else {
+                resourcesHtml = '<p style="color: #64748b; font-style: italic;">No detailed records found.</p>';
+            }
+
+            detailRow.innerHTML = `
+              <td colspan="7" class="sh-detail-cell" style="padding: 24px; background: #f8fafc;">
+                <div class="sh-section-label" style="font-weight:600; margin-bottom:12px;">Confidence Factors</div>
+                <div class="sh-confidence-grid" style="display:flex; gap:24px; margin-bottom:24px;">
+                  <div class="sh-confidence-item" style="display:flex; align-items:center; gap:8px;">
+                    <img src="../assets/icons/check-circle-20.svg" alt="" class="sh-check-icon" />
+                    <span>Invoice verified</span>
+                  </div>
+                  <div class="sh-confidence-item" style="display:flex; align-items:center; gap:8px;">
+                    <img src="../assets/icons/check-circle-20.svg" alt="" class="sh-check-icon" />
+                    <span>Submission on time</span>
+                  </div>
+                  <div class="sh-confidence-item" style="display:flex; align-items:center; gap:8px;">
+                    <img src="../assets/icons/check-circle-20.svg" alt="" class="sh-check-icon" />
+                    <span>Values match invoice</span>
+                  </div>
+                </div>
+
+                <div class="sh-section-label" style="font-weight:600; margin-bottom:12px;">Resource Breakdown</div>
+                <div class="sh-breakdown-list">
+                  ${resourcesHtml}
+                </div>
+              </td>
+            `;
+
+            // Setup Accordion Toggle Logic
+            const toggleBtn = mainRow.querySelector('.sh-toggle-btn');
+            const toggleIcon = mainRow.querySelector('.toggle-icon');
+
+            toggleBtn.addEventListener('click', () => {
+                const isHidden = detailRow.style.display === 'none';
+                if (isHidden) {
+                    detailRow.style.display = 'table-row';
+                    toggleIcon.classList.add('is-rotated');
+                    toggleBtn.setAttribute('aria-expanded', 'true');
+                } else {
+                    detailRow.style.display = 'none';
+                    toggleIcon.classList.remove('is-rotated');
+                    toggleBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            shBody.appendChild(mainRow);
+            shBody.appendChild(detailRow);
+            });
+        }
+
+        renderHistory();
+        window.addEventListener('rorizon-db-updated', renderHistory);
+    });
+  </script>
+</body>
+</html>

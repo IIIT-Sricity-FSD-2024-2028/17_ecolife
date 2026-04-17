@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report Generation - Rorizon</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+</head>
+<body>
+
+  <div id="app-layout" data-title="Report Generation" data-subtitle="TechCorp Industries">
+
+        <div class="page-heading">
+          <div class="chart-header">
+            <h2 class="page-heading__title">Report Generation &amp; History</h2>
+          </div>
+          <p class="page-heading__subtitle">Compile validated department data into comprehensive sustainability reports for executive review</p>
+        </div>
+
+        <div class="report-layout">
+
+          <div class="report-left">
+            <div class="card">
+              <div class="chart-header">
+                <h2 class="card__title">Report Period</h2>
+                <span class="kpi-tag kpi-tag--purple">Drafting Phase</span>
+              </div>
+              
+              <div class="select-wrapper" style="margin-top: 16px;">
+                <select class="form-select" id="reportPeriodSelect">
+                  <option value="March 2026" selected>March 2026</option>
+                  <option value="February 2026">February 2026</option>
+                  <option value="January 2026">January 2026</option>
+                  <option value="Q4 2025">Q4 2025</option>
+                </select>
+                <img src="../assets/icons/chevron-down-icon0.svg" alt="" class="select-chevron" />
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="chart-header">
+                <h2 class="card__title">Summary Statistics</h2>
+                <span class="kpi-tag kpi-tag--muted">Live Data Snapshot</span>
+              </div>
+              <ul class="dept-summary" id="saSummaryStats"></ul>
+            </div>
+          </div>
+
+          <div class="report-right">
+            <div class="card">
+              <div class="chart-header">
+                <h2 class="card__title">Report Content</h2>
+                <button class="btn-outline" type="button" id="btnAutofillDraft">Refresh From Live Data</button>
+              </div>
+
+              <div class="report-fields">
+                <div class="report-field">
+                  <label class="form-label" for="intro">Introduction</label>
+                  <textarea class="form-textarea" id="intro" rows="3" placeholder="Provide high-level context for the selected reporting period..."></textarea>
+                </div>
+                <div class="report-field">
+                  <label class="form-label" for="consumption-summary">Consumption Summary</label>
+                  <textarea class="form-textarea" id="consumption-summary" rows="4" placeholder="Describe total fuel usage trends and significant departmental contributions..."></textarea>
+                </div>
+                <div class="report-field">
+                  <label class="form-label" for="emissions-analysis">Emissions Analysis</label>
+                  <textarea class="form-textarea" id="emissions-analysis" rows="4" placeholder="Analyze CO2 output and identify departments exceeding organizational thresholds..."></textarea>
+                </div>
+                <div class="report-field">
+                  <label class="form-label" for="comparisons">Comparisons</label>
+                  <textarea class="form-textarea" id="comparisons" rows="3" placeholder="Highlight year-over-year changes or performance against previous months..."></textarea>
+                </div>
+                <div class="report-field">
+                  <label class="form-label" for="conclusions">Conclusions & Recommendations</label>
+                  <textarea class="form-textarea" id="conclusions" rows="3" placeholder="Outline recommended corrective actions for department managers..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="report-gen-actions">
+              <button class="btn-outline" type="button" id="btnDownloadDraft">
+                <img src="../assets/icons/download0.svg" alt="" class="btn__icon" />
+                <span>Download Draft</span>
+              </button>
+              <button class="btn-primary btn-primary--wide" type="button" id="btnSubmitToCoo">
+                <img src="../assets/icons/send0.svg" alt="" class="btn__icon" />
+                <span>Submit to COO</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="chart-header">
+            <h2 class="card__title">Report History</h2>
+            <span class="kpi-tag kpi-tag--purple">Historical Logs</span>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Report Title</th>
+                  <th>Period</th>
+                  <th>Generated Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="saReportHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+  </div>
+
+  <div class="modal-overlay" id="viewReportModal">
+    <div class="modal" style="width: 800px; max-width: 90vw;"> 
+      <div class="modal__alert-header" style="border-bottom: 1px solid var(--color-border); padding-bottom: 16px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <h2 class="modal__alert-title" id="viewModalTitle">Report Details</h2>
+            <p class="text--muted" id="viewModalDate" style="margin-top: 6px; font-size: 14px;">Generated: --</p>
+          </div>
+          <span class="status-badge" id="viewModalStatus" style="font-size: 14px; padding: 6px 12px;">Status</span>
+        </div>
+      </div>
+
+      <div class="modal__alert-desc" style="max-height: 60vh; overflow-y: auto; text-align: left; padding-right: 12px;">
+          <div id="viewModalContentWrapper"></div>
+      </div>
+
+      <div class="modal__alert-footer" style="border-top: 1px solid var(--color-border); padding-top: 16px; margin-top: 16px;">
+        <button class="btn-outline" type="button" onclick="downloadViewedReport()">
+            <img src="../assets/icons/download0.svg" alt="" class="btn__icon" /> Download PDF
+        </button>
+        <button class="btn-primary" type="button" onclick="Utils.toggleModal('viewReportModal', false)">Close Report</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    let viewedReportId = null;
+
+    function getDBReports() {
+      const db = Utils.getDB();
+      if (!Array.isArray(db.reports)) db.reports = [];
+      return db.reports;
+    }
+
+    function periodToSubmissionCode(period) {
+      const monthMap = {
+        January: '01',
+        February: '02',
+        March: '03',
+        April: '04',
+        May: '05',
+        June: '06',
+        July: '07',
+        August: '08',
+        September: '09',
+        October: '10',
+        November: '11',
+        December: '12'
+      };
+
+      if (period.startsWith('Q')) return period;
+      const [monthName, year] = period.split(' ');
+      return `${monthMap[monthName] || '01'} ${year}`;
+    }
+
+    function getPeriodSubmissions(period) {
+      const db = Utils.getDB();
+      const code = periodToSubmissionCode(period);
+      const currentUser = Utils.getCurrentUser();
+      const scopedDepartmentIds = Utils.getUserDepartmentScope(currentUser, db);
+      return (db.submissions || []).filter(submission => submission.period === code && submission.locked).filter(submission => !scopedDepartmentIds.length || scopedDepartmentIds.includes(submission.departmentId));
+    }
+
+    function getSubmissionMetrics(period) {
+      const submissions = getPeriodSubmissions(period);
+      const totalConsumption = submissions.reduce((sum, submission) => sum + (Number(submission.totalConsumption) || 0), 0);
+      const totalCO2 = submissions.reduce((sum, submission) => sum + (Number(submission.totalCO2) || 0), 0);
+      const thresholdBreaches = submissions.filter(submission => submission.validation && submission.validation.state === 'threshold_breach').length;
+      const anomalies = submissions.filter(submission => submission.validation && submission.validation.state === 'anomalous').length;
+      return { submissions, totalConsumption, totalCO2, thresholdBreaches, anomalies };
+    }
+
+    function buildAutoDraft(period) {
+      const { submissions, totalConsumption, totalCO2, thresholdBreaches, anomalies } = getSubmissionMetrics(period);
+      const departmentNames = submissions.map(submission => submission.departmentName);
+      const topDepartment = submissions.slice().sort((a, b) => (b.totalConsumption || 0) - (a.totalConsumption || 0))[0];
+
+      return {
+        intro: submissions.length
+          ? `This report consolidates validated department submissions for ${period}, covering ${departmentNames.join(', ')}.`
+          : `This report is prepared for ${period}. No validated department submissions have been locked yet for this reporting period.`,
+        consumption: submissions.length
+          ? `Validated submissions total ${totalConsumption.toLocaleString(undefined, { maximumFractionDigits: 2 })} units of resource consumption. ${topDepartment ? `${topDepartment.departmentName} contributed the highest share at ${Number(topDepartment.totalConsumption).toLocaleString(undefined, { maximumFractionDigits: 2 })} units.` : ''}`
+          : 'No validated consumption data is currently available for the selected period.',
+        analysis: submissions.length
+          ? `Estimated emissions total ${totalCO2.toLocaleString(undefined, { maximumFractionDigits: 2 })} kg CO2e. ${thresholdBreaches ? `${thresholdBreaches} department submission(s) crossed threshold limits.` : 'No department threshold breaches were recorded.'} ${anomalies ? `${anomalies} submission(s) were flagged for anomaly review.` : 'No anomaly flags remain open.'}`
+          : 'Emissions analysis will populate once at least one validated submission is available.',
+        comparisons: submissions.length
+          ? `This draft is based on ${submissions.length} validated submission(s) for ${period}. Historical comparison should focus on changes in department totals and threshold exceptions versus the prior reporting cycle.`
+          : 'Historical comparisons cannot be calculated until validated submissions are available.',
+        conclusions: submissions.length
+          ? `Recommended next steps are to review high-consumption departments${thresholdBreaches ? ', monitor departments with threshold breaches,' : ''} and finalize the executive summary for COO review.`
+          : 'Await department submissions before completing recommendations.'
+      };
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const defaultPeriod = document.getElementById('reportPeriodSelect').value;
+      renderSummaryStats(defaultPeriod);
+      hydrateAutoDraft(defaultPeriod);
+      loadReportHistory();
+
+      document.getElementById('btnSubmitToCoo').addEventListener('click', submitReportToCoo);
+      document.getElementById('btnDownloadDraft').addEventListener('click', downloadDraft);
+      document.getElementById('btnAutofillDraft').addEventListener('click', () => {
+        const period = document.getElementById('reportPeriodSelect').value;
+        hydrateAutoDraft(period);
+        Utils.showToast('Draft refreshed from live submission data.');
+      });
+      document.getElementById('reportPeriodSelect').addEventListener('change', (event) => {
+        renderSummaryStats(event.target.value);
+        hydrateAutoDraft(event.target.value);
+      });
+    });
+
+    function loadReportHistory() {
+      const currentUser = Utils.getCurrentUser();
+      renderHistoryTable(getDBReports().filter(report => !currentUser?.id || String(report.analystUserId) === String(currentUser.id)));
+    }
+
+    function renderHistoryTable(reports) {
+      const tbody = document.getElementById('saReportHistoryBody');
+      tbody.innerHTML = reports.map(report => `
+        <tr>
+          <td class="td--bold">${report.title}</td>
+          <td class="td--muted">${report.period}</td>
+          <td class="td--muted">${report.date || '--'}</td>
+          <td><span class="status-badge status-badge--${report.statusClass}">${report.status}</span></td>
+          <td><button class="btn-view" type="button" onclick="viewReport(${report.id})">View</button></td>
+        </tr>
+      `).join('') || '<tr><td colspan="5" style="text-align:center;">No reports generated yet.</td></tr>';
+    }
+
+    function hydrateAutoDraft(period) {
+      const draft = buildAutoDraft(period);
+      document.getElementById('intro').value = draft.intro;
+      document.getElementById('consumption-summary').value = draft.consumption;
+      document.getElementById('emissions-analysis').value = draft.analysis;
+      document.getElementById('comparisons').value = draft.comparisons;
+      document.getElementById('conclusions').value = draft.conclusions;
+    }
+
+    function submitReportToCoo() {
+      const db = Utils.getDB();
+      const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { name: 'Analyst', id: null };
+      const intro = document.getElementById('intro').value;
+      const cons = document.getElementById('consumption-summary').value;
+      const analysis = document.getElementById('emissions-analysis').value;
+      const comps = document.getElementById('comparisons').value;
+      const concl = document.getElementById('conclusions').value;
+      const period = document.getElementById('reportPeriodSelect').value;
+      const periodSubmissions = getPeriodSubmissions(period);
+
+      if (!intro || !cons) {
+        Utils.showToast('Please complete at least the Introduction and Consumption Summary fields.', 'error');
+        return;
+      }
+
+      const newReport = {
+        id: Date.now(),
+        title: `Emissions Report - ${period}`,
+        period,
+        date: new Date().toLocaleDateString(),
+        status: 'Pending Review',
+        statusClass: 'amber',
+        analystName: currentUser.name || 'Analyst',
+        analystUserId: currentUser.id || null,
+        sourceSubmissionIds: periodSubmissions.map(submission => submission.id),
+        signature: {
+          signedBy: currentUser.name || 'Analyst',
+          signedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        },
+        revision: {
+          required: false,
+          comment: '',
+          requestedBy: '',
+          requestedAt: ''
+        },
+        content: {
+          intro,
+          consumption: cons,
+          analysis: analysis || 'No specific analysis provided.',
+          comparisons: comps || 'No comparisons provided.',
+          conclusions: concl || 'No conclusions provided.'
+        }
+      };
+
+      if (!Array.isArray(db.reports)) db.reports = [];
+      if (!Array.isArray(db.notifications)) db.notifications = [];
+      db.reports.unshift(newReport);
+      db.notifications.unshift({
+        id: Date.now(),
+        role: 'COO',
+        title: 'New Report Pending Review',
+        body: `${newReport.title} was submitted for executive approval.`,
+        timestamp: 'Just now',
+        read: false,
+        details: `Signed by ${newReport.signature.signedBy} at ${newReport.signature.signedAt}.`
+      });
+      Utils.replaceDB(db);
+      Utils.logAction(`Analyst Submitted Report: ${newReport.title}`, 'Success', 'green');
+
+      loadReportHistory();
+      hydrateAutoDraft(period);
+      Utils.showToast('Report officially submitted to the COO!');
+    }
+
+    function viewReport(reportId) {
+      const report = getDBReports().find(item => String(item.id) === String(reportId));
+      if (!report) return;
+      viewedReportId = report.id;
+
+      document.getElementById('viewModalTitle').textContent = report.title;
+      document.getElementById('viewModalDate').textContent = `Generated: ${report.date || '--'}  |  Reporting Period: ${report.period}`;
+
+      const statusBadge = document.getElementById('viewModalStatus');
+      statusBadge.textContent = report.status;
+      statusBadge.className = 'status-badge status-badge--' + report.statusClass;
+
+      const wrapper = document.getElementById('viewModalContentWrapper');
+      wrapper.innerHTML = `
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 16px; font-weight: 600; color: var(--color-text-dark); margin-bottom: 8px;">Introduction</h4>
+          <p style="font-size: 15px; line-height: 1.6; color: var(--color-text-main); white-space: pre-wrap;">${report.content.intro}</p>
+        </div>
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 16px; font-weight: 600; color: var(--color-text-dark); margin-bottom: 8px;">Consumption Summary</h4>
+          <p style="font-size: 15px; line-height: 1.6; color: var(--color-text-main); white-space: pre-wrap;">${report.content.consumption}</p>
+        </div>
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 16px; font-weight: 600; color: var(--color-text-dark); margin-bottom: 8px;">Emissions Analysis</h4>
+          <p style="font-size: 15px; line-height: 1.6; color: var(--color-text-main); white-space: pre-wrap;">${report.content.analysis}</p>
+        </div>
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 16px; font-weight: 600; color: var(--color-text-dark); margin-bottom: 8px;">Comparisons</h4>
+          <p style="font-size: 15px; line-height: 1.6; color: var(--color-text-main); white-space: pre-wrap;">${report.content.comparisons}</p>
+        </div>
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 16px; font-weight: 600; color: var(--color-text-dark); margin-bottom: 8px;">Conclusions & Recommendations</h4>
+          <p style="font-size: 15px; line-height: 1.6; color: var(--color-text-main); white-space: pre-wrap;">${report.content.conclusions}</p>
+        </div>
+        <div style="padding: 16px; border-radius: 8px; background: var(--bg-surface);">
+          <p style="margin: 0 0 8px; font-size: 13px; color: var(--text-muted);">Digital Signature</p>
+          <p style="margin: 0; font-size: 14px; color: var(--color-text-main);">Signed by ${report.signature.signedBy} on ${report.signature.signedAt}</p>
+        </div>
+      `;
+
+      Utils.toggleModal('viewReportModal', true);
+    }
+
+    function downloadViewedReport() {
+      const title = document.getElementById('viewModalTitle').textContent;
+      const metadata = document.getElementById('viewModalDate').textContent;
+      const wrapper = document.getElementById('viewModalContentWrapper');
+      let contentText = '';
+
+      wrapper.querySelectorAll('div').forEach(section => {
+        const heading = section.querySelector('h4') ? section.querySelector('h4').textContent : '';
+        const body = section.querySelector('p') ? section.querySelector('p').textContent : section.innerText;
+        if (heading) contentText += `=== ${heading.toUpperCase()} ===\n${body}\n\n`;
+      });
+
+      const text = `${title.toUpperCase()}\n${metadata}\n\n--------------------------------------------------\n\n${contentText}`;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${title.replace(/\s+/g, '_')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      Utils.showToast('Archived report downloaded successfully.');
+    }
+
+    function downloadDraft() {
+      const period = document.getElementById('reportPeriodSelect').value;
+      const intro = document.getElementById('intro').value;
+      const cons = document.getElementById('consumption-summary').value;
+      const analysis = document.getElementById('emissions-analysis').value;
+
+      if (!intro && !cons && !analysis) {
+        Utils.showToast('Cannot download an empty draft.', 'error');
+        return;
+      }
+
+      const text = `DRAFT REPORT - ${period}\n\n=== INTRODUCTION ===\n${intro}\n\n=== CONSUMPTION ===\n${cons}\n\n=== ANALYSIS ===\n${analysis}`;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Draft_Report_${period.replace(/\s+/g, '_')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      Utils.showToast('Draft downloaded successfully.');
+    }
+
+    function renderSummaryStats(period) {
+      const container = document.getElementById('saSummaryStats');
+      const { submissions, totalConsumption, totalCO2, thresholdBreaches } = getSubmissionMetrics(period);
+      container.innerHTML = `
+        <li class="dept-summary__row"><span class="dept-summary__name">Validated Submissions</span><span class="dept-summary__value">${submissions.length}</span></li>
+        <li class="dept-summary__row"><span class="dept-summary__name">Total Consumption</span><span class="dept-summary__value">${totalConsumption ? totalConsumption.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' Units' : '--'}</span></li>
+        <li class="dept-summary__row"><span class="dept-summary__name">Total Emissions</span><span class="dept-summary__value">${totalCO2 ? totalCO2.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' kg' : '--'}</span></li>
+        <li class="dept-summary__row"><span class="dept-summary__name">Threshold Breaches</span><span class="dept-summary__value">${thresholdBreaches}</span></li>
+      `;
+    }
+  </script>
+  
+</body>
+</html>

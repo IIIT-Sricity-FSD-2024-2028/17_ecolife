@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Health - Rorizon Super User</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <div id="app-layout" data-title="Infrastructure Health" data-subtitle="Real-time Platform Monitoring">
+    <div class="kpi-grid kpi-grid--3">
+      <div class="kpi-card"><div class="kpi-card__top"><span class="kpi-tag kpi-tag--green">Healthy</span></div><p class="kpi-card__value" id="admValUptime">--</p><p class="kpi-card__label">Platform Uptime</p></div>
+      <div class="kpi-card"><div class="kpi-card__top"><span class="kpi-tag kpi-tag--blue">Optimal</span></div><p class="kpi-card__value" id="admValLatency">--</p><p class="kpi-card__label">API Response Time</p></div>
+      <div class="kpi-card"><div class="kpi-card__top"><span class="kpi-tag kpi-tag--amber">Peak Usage</span></div><p class="kpi-card__value text--amber" id="admValServerLoad">--</p><p class="kpi-card__label">Server Load</p></div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;">
+      <h2 class="card__title" style="margin-bottom:16px;">Platform Usage Overview</h2>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">
+        <div class="kpi-card" style="border:1px solid var(--border-light);background:transparent;box-shadow:none;"><p class="kpi-card__label" style="margin-bottom:4px;">Total Users</p><p class="kpi-card__value" id="admValUsers" style="font-size:28px;color:var(--text-hero);">--</p></div>
+        <div class="kpi-card" style="border:1px solid var(--border-light);background:transparent;box-shadow:none;"><p class="kpi-card__label" style="margin-bottom:4px;">Active Organizations</p><p class="kpi-card__value" id="admValOrgs" style="font-size:28px;color:var(--text-hero);">--</p></div>
+        <div class="kpi-card" style="border:1px solid var(--border-light);background:transparent;box-shadow:none;"><p class="kpi-card__label" style="margin-bottom:4px;">Unread Notifications</p><p class="kpi-card__value text--amber" id="admValNotifs" style="font-size:28px;">--</p></div>
+        <a href="adm-profile-settings.html" class="kpi-card" style="border:1px solid var(--border-light);background:transparent;box-shadow:none;text-decoration:none;"><p class="kpi-card__label" style="margin-bottom:4px;">Quick Access</p><p class="kpi-card__value" style="font-size:22px;color:var(--text-hero);">Profile</p><p class="kpi-card__label">Open Profile &amp; Settings</p></a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chart-header"><h2 class="card__title">Module Connectivity</h2><span class="kpi-tag kpi-tag--muted">Real-time Status</span></div>
+      <ul class="dept-summary" id="moduleContainer"></ul>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      function renderDashboard() {
+        const db = Utils.getDB();
+        const metrics = db.systemMetrics || {};
+        const modules = db.modules || [];
+        document.getElementById('admValUptime').textContent = metrics.uptime || '--';
+        document.getElementById('admValLatency').textContent = metrics.latency || '--';
+        document.getElementById('admValServerLoad').textContent = metrics.serverLoad || '--';
+        document.getElementById('admValUsers').textContent = (db.users || []).length;
+        document.getElementById('admValOrgs').textContent = (db.organizations || []).length;
+        document.getElementById('admValNotifs').textContent = (db.notifications || []).filter(n => !n.read && n.role === 'Super User').length;
+        document.getElementById('moduleContainer').innerHTML = modules.map(mod => `
+          <li class="dept-summary__row">
+            <span class="dept-summary__name">${mod.name}</span>
+            <span class="status-badge status-badge--${mod.type}">${mod.status}</span>
+          </li>
+        `).join('');
+      }
+
+      renderDashboard();
+      window.addEventListener('rorizon-db-updated', renderDashboard);
+    });
+  </script>
+</body>
+</html>

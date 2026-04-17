@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alerts - Rorizon Manager</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+
+  <div id="app-layout" data-title="Active Alerts" data-subtitle="Respond to threshold warnings">
+    <div class="page-heading">
+      <div class="chart-header">
+        <h2 class="page-heading__title">Manager Alert Inbox</h2>
+        <span class="kpi-tag kpi-tag--red" id="managerAlertCount">0 Active Alerts</span>
+      </div>
+      <p class="page-heading__subtitle">Live alert state synced across Manager, Analyst, and COO workflows.</p>
+    </div>
+
+    <div class="card">
+      <div class="chart-header">
+        <h2 class="card__title">Pending Responses</h2>
+        <a class="btn-primary" href="dm-alerts-response.html">Open Response Workspace</a>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Department</th>
+              <th>Alert Level</th>
+              <th>Trigger Reason</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="managerAlertTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+
+      function getManagerAlerts() {
+        const db = Utils.getDB();
+        const alerts = Array.isArray(db.alerts) ? db.alerts : [];
+        return alerts.filter(alert => {
+          const scopedToManager = Array.isArray(alert.roleScope) && alert.roleScope.includes('Manager');
+          const sameDepartment = currentUser.departmentId ? alert.departmentId === currentUser.departmentId : true;
+          const sameOrganization = currentUser.organizationId ? alert.organizationId === currentUser.organizationId : true;
+          return scopedToManager && sameDepartment && sameOrganization;
+        });
+      }
+
+      function renderAlerts() {
+        const alerts = getManagerAlerts();
+        const tbody = document.getElementById('managerAlertTableBody');
+        const activeCount = alerts.filter(alert => alert.status !== 'Resolved').length;
+        document.getElementById('managerAlertCount').textContent = `${activeCount} Active Alert${activeCount === 1 ? '' : 's'}`;
+
+        if (!alerts.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No alerts assigned to this manager.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = alerts.map(alert => {
+          const statusType = alert.status === 'Resolved' ? 'green' : alert.status === 'Assigned Review' ? 'amber' : 'red';
+          return `
+            <tr>
+              <td class="td--muted">${(alert.updatedAt || alert.createdAt || '--').replace('T', ' ')}</td>
+              <td class="td--bold">${alert.departmentName}</td>
+              <td><span class="status-badge status-badge--${alert.severity === 'Critical' ? 'red' : 'amber'}">${alert.severity}</span></td>
+              <td class="td--muted">${alert.message}</td>
+              <td><span class="status-badge status-badge--${statusType}">${alert.status}</span></td>
+              <td><a class="btn-outline" href="dm-alerts-response.html">Respond</a></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      renderAlerts();
+      window.addEventListener('rorizon-db-updated', renderAlerts);
+    });
+  </script>
+</body>
+</html>

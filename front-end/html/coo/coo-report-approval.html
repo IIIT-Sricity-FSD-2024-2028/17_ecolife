@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Approval - Rorizon COO</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .dept-summary-card{border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;background:#f8fafc;margin-bottom:12px}
+    .dept-summary-card:last-child{margin-bottom:0}
+    .dept-summary-card__head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px}
+    .dept-summary-card__meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .dept-summary-card__meta div{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px}
+    .dept-summary-card__meta strong{display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+    .issue-note{margin-top:10px;padding:10px 12px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;font-size:13px;line-height:1.5}
+    @media(max-width:960px){.report-layout{grid-template-columns:1fr !important}.dept-summary-card__meta{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" data-title="Report Approval" data-subtitle="TechCorp Industries">
+
+    <div class="page-heading" style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <div class="chart-header">
+          <h2 class="page-heading__title">Executive Review Queue</h2>
+        </div>
+        <p class="page-heading__subtitle">Review analyst-submitted sustainability reports and finalize their status.</p>
+      </div>
+      <span class="kpi-tag" id="pendingReportCount" style="background:#f8fafc; border:1px solid #cbd5e1; color:#0f172a; font-weight:600;">0 Pending Reports</span>
+    </div>
+
+    <div class="report-layout" style="display:grid; grid-template-columns: 1fr 2fr; gap:24px;">
+      <div class="report-left">
+        <div class="card" style="margin-bottom:24px;">
+          <div class="chart-header">
+            <h2 class="card__title">Review Queue</h2>
+            <span class="kpi-tag kpi-tag--muted">Live Shared State</span>
+          </div>
+          <div class="select-wrapper" style="margin-top:16px;">
+            <select class="form-select" id="pendingReportSelect"></select>
+            <img src="../assets/icons/chevron-down-icon0.svg" alt="" class="select-chevron" />
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:24px;">
+          <h2 class="card__title" style="font-size:14px; font-weight:700; color:#1e293b; margin-bottom:16px;">Data Reference</h2>
+          <div style="margin-bottom:16px;">
+            <p style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Period</p>
+            <p id="reportPeriodValue" style="font-size:14px; font-weight:600; color:#1e293b; margin:0;">--</p>
+          </div>
+          <div style="margin-bottom:16px;">
+            <p style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Author</p>
+            <p id="reportAuthorValue" style="font-size:14px; font-weight:600; color:#1e293b; margin:0;">--</p>
+          </div>
+          <div style="margin-bottom:16px;">
+            <p style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Generated At</p>
+            <p id="reportGeneratedValue" style="font-size:14px; font-weight:600; color:#1e293b; margin:0;">--</p>
+          </div>
+          <div>
+            <p style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Source Submissions</p>
+            <p id="reportSourceValue" style="font-size:14px; font-weight:600; color:#1e293b; margin:0;">--</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title" style="font-size:14px; font-weight:700; color:#1e293b; margin-bottom:16px;">Department Summary</h2>
+          <ul id="reportDepartmentSummary" style="list-style:none; padding:0; margin:0;"></ul>
+        </div>
+      </div>
+
+      <div class="report-right">
+        <div class="card" style="margin-bottom:24px;">
+          <h2 class="card__title" id="reviewReportTitle" style="font-size:16px; font-weight:700; color:#0f172a; margin-bottom:8px;">No Pending Reports</h2>
+          <span class="status-badge status-badge--amber" id="reviewStatusBadge" style="display:inline-flex; align-items:center; margin-bottom:24px;">Awaiting Selection</span>
+
+          <div style="margin-bottom:20px;">
+            <h3 style="font-size:14px; font-weight:600; color:#475569; margin-bottom:8px;">Introduction</h3>
+            <p id="reviewIntro" style="font-size:13px; color:#64748b; line-height:1.5; margin:0; white-space:pre-wrap;">--</p>
+          </div>
+          <div style="margin-bottom:20px;">
+            <h3 style="font-size:14px; font-weight:600; color:#475569; margin-bottom:8px;">Consumption Summary</h3>
+            <p id="reviewConsumption" style="font-size:13px; color:#64748b; line-height:1.5; margin:0; white-space:pre-wrap;">--</p>
+          </div>
+          <div style="margin-bottom:20px;">
+            <h3 style="font-size:14px; font-weight:600; color:#475569; margin-bottom:8px;">Emissions Analysis</h3>
+            <p id="reviewAnalysis" style="font-size:13px; color:#64748b; line-height:1.5; margin:0; white-space:pre-wrap;">--</p>
+          </div>
+          <div style="margin-bottom:20px;">
+            <h3 style="font-size:14px; font-weight:600; color:#475569; margin-bottom:8px;">Comparisons</h3>
+            <p id="reviewComparisons" style="font-size:13px; color:#64748b; line-height:1.5; margin:0; white-space:pre-wrap;">--</p>
+          </div>
+          <div>
+            <h3 style="font-size:14px; font-weight:600; color:#475569; margin-bottom:8px;">Conclusions & Recommendations</h3>
+            <p id="reviewConclusions" style="font-size:13px; color:#64748b; line-height:1.5; margin:0; white-space:pre-wrap;">--</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 class="card__title" style="font-size:14px; font-weight:700; color:#1e293b; margin:0;">Official Decision</h2>
+            <span style="font-size:11px; font-weight:600; color:#475569;">Required Action</span>
+          </div>
+
+          <textarea class="form-input" id="cooDecisionComment" rows="4" placeholder="Provide approval note or revision feedback for the analyst..." style="width:100%; border-color:#cbd5e1; margin-bottom:16px;"></textarea>
+
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <button class="btn-outline" id="requestRevisionBtn" type="button" style="border:1px solid #cbd5e1; color:#0f172a; min-width:170px;">Request Revision</button>
+            <button class="btn-primary" id="approveReportBtn" type="button" style="background:#2563eb; border-color:#2563eb; min-width:150px;">Approve Report</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <div class="chart-header" style="margin-bottom:16px;">
+        <h2 class="card__title" style="font-size:15px; font-weight:700; color:#1e293b;">Report History</h2>
+        <span style="font-size:12px; font-weight:600; color:#3b82f6;">Shared Report Ledger</span>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>TITLE</th>
+              <th>PERIOD</th>
+              <th>DECISION DATE</th>
+              <th>STATUS</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="cooReportHistoryBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    let activeReportId = null;
+
+    function getReports() {
+      const db = Utils.getDB();
+      if (!Array.isArray(db.reports)) db.reports = [];
+      return db.reports;
+    }
+
+    function getPendingReports() {
+      return getReports().filter(report => report.status === 'Pending Review');
+    }
+
+    function getSubmissionsForReport(report) {
+      const db = Utils.getDB();
+      const ids = Array.isArray(report.sourceSubmissionIds) ? report.sourceSubmissionIds : [];
+      return (db.submissions || []).filter(submission => ids.includes(submission.id));
+    }
+
+    function populateQueue() {
+      const pendingReports = getPendingReports();
+      const select = document.getElementById('pendingReportSelect');
+      document.getElementById('pendingReportCount').textContent = `${pendingReports.length} Pending Report${pendingReports.length === 1 ? '' : 's'}`;
+      select.innerHTML = pendingReports.length
+        ? pendingReports.map(report => `<option value="${report.id}">${report.title}</option>`).join('')
+        : '<option value="">No pending reports</option>';
+
+      if (pendingReports.length) {
+        activeReportId = pendingReports.some(report => String(report.id) === String(activeReportId)) ? activeReportId : pendingReports[0].id;
+        select.value = String(activeReportId);
+      } else {
+        activeReportId = null;
+      }
+    }
+
+    function renderDepartmentSummary(report) {
+      const submissions = getSubmissionsForReport(report);
+      const host = document.getElementById('reportDepartmentSummary');
+      if (!submissions.length) {
+        host.innerHTML = '<li style="padding:12px 0; color:#64748b;">No linked department submissions.</li>';
+        return;
+      }
+
+      host.innerHTML = submissions.map(submission => {
+        const validationState = submission.validation && submission.validation.state ? submission.validation.state : 'valid';
+        const validationLabel = validationState === 'threshold_breach' ? 'Threshold Breach' : validationState === 'anomalous' ? 'Anomaly Review' : 'Within Range';
+        const validationClass = validationState === 'threshold_breach' ? 'red' : validationState === 'anomalous' ? 'amber' : 'green';
+        const issueNote = submission.validation && submission.validation.deviationReason
+          ? submission.validation.deviationReason
+          : (validationState === 'threshold_breach'
+            ? 'Consumption exceeded the configured department threshold.'
+            : validationState === 'anomalous'
+              ? 'Analyst validation flagged this submission for abnormal behavior review.'
+              : '');
+        return `
+          <li class="dept-summary-card">
+            <div class="dept-summary-card__head">
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#0f172a;">${submission.departmentName}</div>
+                <div style="font-size:12px;color:#64748b;margin-top:4px;">Manager: ${submission.managerName || '--'}</div>
+              </div>
+              <span class="status-badge status-badge--${validationClass}">${validationLabel}</span>
+            </div>
+            <div class="dept-summary-card__meta">
+              <div><strong>Consumption</strong><span>${Number(submission.totalConsumption || 0).toLocaleString()} units</span></div>
+              <div><strong>CO2 Emissions</strong><span>${Number(submission.totalCO2 || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} kg</span></div>
+            </div>
+            ${issueNote ? `<div class="issue-note"><strong style="display:block;margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">Issue Note</strong>${issueNote}</div>` : ''}
+          </li>
+        `;
+      }).join('');
+    }
+
+    function renderActiveReport() {
+      const report = getReports().find(item => String(item.id) === String(activeReportId));
+      const select = document.getElementById('pendingReportSelect');
+      const approveBtn = document.getElementById('approveReportBtn');
+      const revisionBtn = document.getElementById('requestRevisionBtn');
+
+      if (!report) {
+        document.getElementById('reviewReportTitle').textContent = 'No Pending Reports';
+        document.getElementById('reviewStatusBadge').textContent = 'Awaiting Selection';
+        document.getElementById('reviewStatusBadge').className = 'status-badge status-badge--amber';
+        document.getElementById('reportPeriodValue').textContent = '--';
+        document.getElementById('reportAuthorValue').textContent = '--';
+        document.getElementById('reportGeneratedValue').textContent = '--';
+        document.getElementById('reportSourceValue').textContent = '--';
+        document.getElementById('reviewIntro').textContent = '--';
+        document.getElementById('reviewConsumption').textContent = '--';
+        document.getElementById('reviewAnalysis').textContent = '--';
+        document.getElementById('reviewComparisons').textContent = '--';
+        document.getElementById('reviewConclusions').textContent = '--';
+        document.getElementById('reportDepartmentSummary').innerHTML = '<li style="padding:12px 0; color:#64748b;">No linked department submissions.</li>';
+        select.disabled = true;
+        approveBtn.disabled = true;
+        revisionBtn.disabled = true;
+        return;
+      }
+
+      select.disabled = false;
+      approveBtn.disabled = false;
+      revisionBtn.disabled = false;
+
+      document.getElementById('reviewReportTitle').textContent = report.title;
+      document.getElementById('reviewStatusBadge').textContent = report.status;
+      document.getElementById('reviewStatusBadge').className = `status-badge status-badge--${report.statusClass}`;
+      document.getElementById('reportPeriodValue').textContent = report.period;
+      document.getElementById('reportAuthorValue').textContent = report.analystName || '--';
+      document.getElementById('reportGeneratedValue').textContent = report.signature && report.signature.signedAt ? report.signature.signedAt : (report.date || '--');
+      document.getElementById('reportSourceValue').textContent = Array.isArray(report.sourceSubmissionIds) && report.sourceSubmissionIds.length ? `${report.sourceSubmissionIds.length} linked submission(s)` : '0 linked submissions';
+      document.getElementById('reviewIntro').textContent = report.content && report.content.intro ? report.content.intro : '--';
+      document.getElementById('reviewConsumption').textContent = report.content && report.content.consumption ? report.content.consumption : '--';
+      document.getElementById('reviewAnalysis').textContent = report.content && report.content.analysis ? report.content.analysis : '--';
+      document.getElementById('reviewComparisons').textContent = report.content && report.content.comparisons ? report.content.comparisons : '--';
+      document.getElementById('reviewConclusions').textContent = report.content && report.content.conclusions ? report.content.conclusions : '--';
+      document.getElementById('cooDecisionComment').value = report.revision && report.revision.required ? (report.revision.comment || '') : '';
+      renderDepartmentSummary(report);
+    }
+
+    function renderHistory() {
+      const reports = getReports();
+      const tbody = document.getElementById('cooReportHistoryBody');
+      tbody.innerHTML = reports.map(report => `
+        <tr>
+          <td style="font-size:13px; color:#0f172a; font-weight:600;">${report.title}</td>
+          <td style="font-size:13px; color:#475569;">${report.period}</td>
+          <td style="font-size:13px; color:#475569;">${report.decisionDate || report.date || '--'}</td>
+          <td><span class="status-badge status-badge--${report.statusClass}">${report.status}</span></td>
+          <td><button class="btn-outline" type="button" onclick="previewHistoryReport(${report.id})">View</button></td>
+        </tr>
+      `).join('') || '<tr><td colspan="5" style="text-align:center;">No reports available.</td></tr>';
+    }
+
+    function syncPage() {
+      populateQueue();
+      renderActiveReport();
+      renderHistory();
+    }
+
+    function updateReportStatus(mode) {
+      const db = Utils.getDB();
+      const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { name: 'COO', id: null };
+      const report = (db.reports || []).find(item => String(item.id) === String(activeReportId));
+      const comment = document.getElementById('cooDecisionComment').value.trim();
+      if (!report) return;
+
+      if (!Array.isArray(db.notifications)) db.notifications = [];
+
+      if (mode === 'revision' && !comment) {
+        Utils.showToast('Please provide revision comments before requesting a revision.', 'error');
+        return;
+      }
+
+      report.decisionDate = new Date().toLocaleDateString();
+      report.reviewedBy = currentUser.name || 'COO';
+      report.reviewedByUserId = currentUser.id || null;
+
+      if (mode === 'approve') {
+        report.status = 'Approved';
+        report.statusClass = 'green';
+        report.revision = {
+          required: false,
+          comment: comment,
+          requestedBy: '',
+          requestedAt: ''
+        };
+        db.notifications.unshift({
+          id: Date.now(),
+          role: 'Analyst',
+          title: 'Report Approved',
+          body: `${report.title} was approved by the COO.`,
+          timestamp: 'Just now',
+          read: false,
+          details: comment || 'No additional approval comment provided.'
+        });
+        Utils.logAction(`COO Approved Report: ${report.title}`, 'Success', 'green');
+        Utils.showToast('Report approved successfully.');
+      } else {
+        report.status = 'Revision Required';
+        report.statusClass = 'red';
+        report.revision = {
+          required: true,
+          comment: comment,
+          requestedBy: currentUser.name || 'COO',
+          requestedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        };
+        db.notifications.unshift({
+          id: Date.now(),
+          role: 'Analyst',
+          title: 'Revision Requested',
+          body: `${report.title} was sent back for revision.`,
+          timestamp: 'Just now',
+          read: false,
+          details: comment
+        });
+        Utils.logAction(`COO Requested Revision: ${report.title}`, 'Warning', 'amber');
+        Utils.showToast('Revision request sent to analyst.');
+      }
+
+      Utils.replaceDB(db);
+      document.getElementById('cooDecisionComment').value = '';
+      syncPage();
+    }
+
+    window.previewHistoryReport = function(reportId) {
+      activeReportId = reportId;
+      renderActiveReport();
+      const report = getReports().find(item => String(item.id) === String(reportId));
+      if (report) {
+        document.getElementById('pendingReportSelect').value = getPendingReports().some(item => String(item.id) === String(reportId)) ? String(reportId) : document.getElementById('pendingReportSelect').value;
+      }
+      Utils.showToast('Report preview refreshed below.');
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      syncPage();
+
+      document.getElementById('pendingReportSelect').addEventListener('change', (event) => {
+        activeReportId = event.target.value;
+        renderActiveReport();
+      });
+
+      document.getElementById('approveReportBtn').addEventListener('click', () => updateReportStatus('approve'));
+      document.getElementById('requestRevisionBtn').addEventListener('click', () => updateReportStatus('revision'));
+      window.addEventListener('rorizon-db-updated', syncPage);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile Settings - Rorizon Manager</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .profile-grid{display:grid;grid-template-columns:minmax(280px,340px) 1fr;gap:24px}
+    .profile-card{padding:32px}
+    .summary-card{padding:28px;background:linear-gradient(160deg,#eff6ff 0%,#f8fafc 100%)}
+    .summary-avatar{width:72px;height:72px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin-bottom:18px}
+    .summary-meta{font-size:14px;color:var(--text-muted);margin-top:6px}
+    .security-box{margin-top:20px;padding:16px;border:1px solid var(--border-light);border-radius:12px;background:#f8fafc}
+    .security-box p{margin:0 0 8px 0;color:var(--text-muted);font-size:14px}
+    @media(max-width:900px){.profile-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" data-title="Profile Settings" data-subtitle="Manage your department account">
+    <div class="profile-grid">
+      <div class="card summary-card">
+        <div class="summary-avatar" id="profileAvatar">DM</div>
+        <h2 class="card__title" id="summaryName" style="margin-bottom:6px;">Department Manager</h2>
+        <p class="summary-meta" id="summaryRole">Manager</p>
+        <p class="summary-meta" id="summaryEmail">--</p>
+        <div class="security-box">
+          <p>Account scope</p>
+          <strong id="summaryScope">Department-level submission and operational oversight</strong>
+        </div>
+      </div>
+      <div class="card profile-card">
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:24px;border-bottom:1px solid var(--border-light);padding-bottom:12px;">Personal Details</h2>
+        <form id="profileForm" novalidate>
+          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Full Name</label><input type="text" class="form-input" id="profName" required></div>
+          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Email Address</label><input type="email" class="form-input" id="profEmail" disabled style="background:var(--bg-surface);"></div>
+          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Phone</label><input type="text" class="form-input" id="profPhone" required></div>
+          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Role</label><input type="text" class="form-input" id="profRole" disabled style="background:var(--bg-surface);"></div>
+          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Organization</label><input type="text" class="form-input" id="profOrg" disabled style="background:var(--bg-surface);"></div>
+          <div class="form-group" style="margin-bottom:24px;"><label class="form-label">Department</label><input type="text" class="form-input" id="profDept" disabled style="background:var(--bg-surface);"></div>
+          <button type="submit" class="btn-primary" id="btnSaveProfile">Update Profile</button>
+        </form>
+        <div class="security-box">
+          <p>Security</p>
+          <strong style="display:block;margin-bottom:14px;">Change account password</strong>
+          <form id="passwordForm" novalidate>
+            <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Current Password</label><input type="password" class="form-input" id="currentPassword" placeholder="Enter current password" required></div>
+            <div class="form-group" style="margin-bottom:12px;"><label class="form-label">New Password</label><input type="password" class="form-input" id="newPassword" placeholder="Minimum 8 characters" required></div>
+            <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Confirm New Password</label><input type="password" class="form-input" id="confirmPassword" placeholder="Re-enter new password" required></div>
+            <button type="submit" class="btn-primary">Change Password</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="toast toast--success" id="toastMessage"><div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt=""></div><p class="toast__text" id="toastText"></p></div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const sessionUser = JSON.parse(localStorage.getItem('currentUser'));
+      const db = Utils.getDB();
+      const user = sessionUser ? (db.users || []).find(entry => String(entry.id) === String(sessionUser.id)) || sessionUser : null;
+      const organization = user ? (db.organizations || []).find(org => org.id === user.organizationId) : null;
+      const department = user ? (db.departments || []).find(dept => dept.id === user.departmentId) : null;
+
+      if (user) {
+        document.getElementById('profName').value = user.name || '';
+        document.getElementById('profEmail').value = user.email || '';
+        document.getElementById('profPhone').value = user.phone || '';
+        document.getElementById('profRole').value = user.role || '';
+        document.getElementById('profOrg').value = organization ? organization.name : '--';
+        document.getElementById('profDept').value = department ? department.name : (user.department || '--');
+        document.getElementById('summaryName').textContent = user.name || '';
+        document.getElementById('summaryRole').textContent = user.role || 'Manager';
+        document.getElementById('summaryEmail').textContent = user.email || '';
+        document.getElementById('summaryScope').textContent = department ? `${department.name} department management` : 'Department-level submission and operational oversight';
+        document.getElementById('profileAvatar').textContent = (user.name || 'DM').split(' ').map(word => word[0]).join('').slice(0,2).toUpperCase();
+      }
+
+      document.getElementById('profileForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newName = document.getElementById('profName').value.trim();
+        const newPhone = document.getElementById('profPhone').value.trim();
+        if (!newName || !Utils.validatePhone(newPhone)) {
+          return Utils.showToast('Provide valid name and phone details', 'error');
+        }
+
+        const liveDb = Utils.getDB();
+        const userDbIndex = (liveDb.users || []).findIndex(entry => String(entry.id) === String(user.id));
+        if (userDbIndex !== -1) {
+          liveDb.users[userDbIndex].name = newName;
+          liveDb.users[userDbIndex].phone = newPhone;
+          Utils.syncUserDerivedFields(liveDb, user.id);
+          Utils.replaceDB(liveDb);
+          const updatedUser = liveDb.users[userDbIndex];
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+          Utils.syncSessionUser();
+          document.getElementById('summaryName').textContent = newName;
+          document.getElementById('profileAvatar').textContent = newName.split(' ').map(word => word[0]).join('').slice(0,2).toUpperCase();
+          Utils.logAction('Updated profile details', 'Success', 'green');
+          Utils.showToast('Profile updated successfully!');
+        }
+      });
+
+      document.getElementById('passwordForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        if (newPassword !== confirmPassword) {
+          return Utils.showToast('New password confirmation does not match', 'error');
+        }
+        const result = Utils.updateUserPassword(user.id, currentPassword, newPassword);
+        if (!result.ok) {
+          return Utils.showToast(result.message, 'error');
+        }
+        Utils.logAction('Changed account password', 'Success', 'green');
+        document.getElementById('passwordForm').reset();
+        Utils.showToast('Password updated successfully!');
+      });
+    });
+  </script>
+</body>
+</html>
+

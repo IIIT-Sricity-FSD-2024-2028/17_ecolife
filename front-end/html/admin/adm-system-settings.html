@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Settings – Rorizon Super User</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .settings-grid { display: flex; flex-direction: column; gap: 24px; max-width: 1000px; }
+    
+    .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    input:checked + .slider { background-color: #2563eb; }
+    input:checked + .slider:before { transform: translateX(20px); }
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" data-title="Platform Configurations" data-subtitle="Global system settings and security policies">
+    <div class="settings-grid">
+      
+      <!-- Card 1 -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-light); padding-bottom:16px; margin-bottom:24px;">
+          <h2 class="card__title" style="margin:0;">Global Security Policies</h2>
+          <span style="font-size:13px; font-weight:600; color:var(--text-hero);">System Vitals</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-weight:500; font-size:13px;">Password Lockout Threshold</label>
+            <input type="number" id="setLockout" class="form-input" style="background:#fff;" placeholder="e.g. 5" />
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-weight:500; font-size:13px;">Session Duration (Minutes)</label>
+            <input type="number" id="setSession" class="form-input" style="background:#fff;" placeholder="e.g. 240" />
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-weight:500; font-size:13px;">OTP Expiry (Minutes)</label>
+            <input type="number" id="setOtp" class="form-input" style="background:#fff;" placeholder="e.g. 15" />
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-weight:500; font-size:13px;">Max Users Per Organization</label>
+            <input type="number" id="setMaxUsers" class="form-input" style="background:#fff;" placeholder="e.g. 100" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-light); padding-bottom:16px; margin-bottom:16px;">
+          <h2 class="card__title" style="margin:0;">Feature Flags</h2>
+          <span style="font-size:12px; font-weight:600; color:#2563eb; background:#eff6ff; padding:4px 12px; border-radius:12px;">Operational</span>
+        </div>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-bottom:1px solid var(--border-light);">
+          <div>
+            <div style="font-size:15px; font-weight:600; color:var(--text-hero); margin-bottom:4px;">Maintenance Mode</div>
+            <div style="font-size:13px; color:var(--text-muted);">Restrict access to Admins only during system updates</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="flagMain">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-bottom:1px solid var(--border-light);">
+          <div>
+            <div style="font-size:15px; font-weight:600; color:var(--text-hero); margin-bottom:4px;">Email Notifications</div>
+            <div style="font-size:13px; color:var(--text-muted);">Send automated alerts for threshold breaches</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="flagEmail" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0;">
+          <div>
+            <div style="font-size:15px; font-weight:600; color:var(--text-hero); margin-bottom:4px;">Two-Factor Authentication</div>
+            <div style="font-size:13px; color:var(--text-muted);">Require OTP verification for all logins</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="flag2fa">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div style="display:flex; justify-content:flex-end; gap:16px; margin-top:8px;">
+        <button type="button" class="btn-outline" style="background:#fff; font-weight:600; border-color:var(--border-light); color:var(--text-hero);" onclick="discardSettings()">Discard Changes</button>
+        <button type="button" class="btn-primary" onclick="saveSettings()">Save System Changes</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', loadSettings);
+
+    function loadSettings() {
+      const db = Utils.getDB();
+      const settings = db.globalSettings || {
+        lockout: '5', session: '240', otpExp: '15', maxUsers: '100',
+        flagMain: false, flagEmail: true, flag2fa: false
+      };
+
+      document.getElementById('setLockout').value = settings.lockout;
+      document.getElementById('setSession').value = settings.session;
+      document.getElementById('setOtp').value = settings.otpExp;
+      document.getElementById('setMaxUsers').value = settings.maxUsers;
+
+      document.getElementById('flagMain').checked = settings.flagMain;
+      document.getElementById('flagEmail').checked = settings.flagEmail;
+      document.getElementById('flag2fa').checked = settings.flag2fa;
+    }
+
+    function discardSettings() {
+      loadSettings();
+      Utils.showToast('Changes discarded');
+    }
+
+    function saveSettings() {
+      const db = Utils.getDB();
+      db.globalSettings = {
+        lockout: document.getElementById('setLockout').value,
+        session: document.getElementById('setSession').value,
+        otpExp: document.getElementById('setOtp').value,
+        maxUsers: document.getElementById('setMaxUsers').value,
+        flagMain: document.getElementById('flagMain').checked,
+        flagEmail: document.getElementById('flagEmail').checked,
+        flag2fa: document.getElementById('flag2fa').checked
+      };
+
+      Utils.saveToDB('globalSettings', db.globalSettings);
+      if (typeof Utils.logAction === 'function') Utils.logAction('Modified Global Security Policies', 'Success', 'green');
+      Utils.showToast('System configuration saved', 'success');
+    }
+  </script>
+</body>
+</html>

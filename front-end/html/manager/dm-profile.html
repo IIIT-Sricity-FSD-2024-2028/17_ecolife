@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile &amp; Settings – Rorizon</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+</head>
+<body>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__logo">
+          <img src="../assets/icons/leaf0.svg" alt="Rorizon logo" />
+        </div>
+        <span class="sidebar__name">Rorizon</span>
+      </div>
+      <p class="sidebar__role">Department Manager</p>
+
+      <nav class="sidebar__nav">
+        <a href="dm-dashboard.html" class="nav-item">
+          <img src="../assets/icons/icon3.svg" alt="" class="nav-item__icon" />
+          <span>Dashboard</span>
+        </a>
+        <a href="dm-data-submission.html" class="nav-item">
+          <img src="../assets/icons/icon4.svg" alt="" class="nav-item__icon" />
+          <span>Data Submission</span>
+        </a>
+        <a href="dm-submission-history.html" class="nav-item">
+          <img src="../assets/icons/icon5.svg" alt="" class="nav-item__icon" />
+          <span>Submission History</span>
+        </a>
+        <a href="dm-alerts-response.html" class="nav-item">
+          <img src="../assets/icons/icon6.svg" alt="" class="nav-item__icon" />
+          <span>Alerts &amp; Response</span>
+        </a>
+        <a href="dm-profile.html" class="nav-item nav-item--active">
+          <img src="../assets/icons/icon9.svg" alt="" class="nav-item__icon" />
+          <span>Profile &amp; Settings</span>
+        </a>
+      </nav>
+      </aside>
+
+    <div class="main-wrapper">
+      <header class="header">
+        <div class="header__left">
+          <h1 class="header__title">Profile &amp; Settings</h1>
+          <p class="header__subtitle">Operations • TechCorp Industries</p>
+        </div>
+        <div class="header__right">
+          <button class="header__notif" id="notifToggle" type="button">
+            <img src="../assets/icons/bell0.svg" alt="Notifications" />
+            <span class="notif-badge" id="notifBadge" style="display:none;"></span>
+          </button>
+          
+          <div class="user-pill user-pill--cyan" id="profileToggle" style="cursor: pointer;">
+            <div class="user-pill__avatar user-pill__avatar--cyan" id="headerAvatar">SM</div>
+            <div class="user-pill__info">
+              <span class="user-pill__name" id="headerName">Sarah Miller</span>
+              <span class="user-pill__role">Manager</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="page-heading">
+          <div class="chart-header">
+            <h2 class="page-heading__title">Your Account</h2>
+            <span class="kpi-tag kpi-tag--cyan">Manager Account</span>
+          </div>
+          <p class="page-heading__subtitle">Manage your personal credentials and contact details</p>
+        </div>
+
+        <div class="card pf-card">
+          <div class="chart-header">
+            <h2 class="card__title">Profile Information</h2>
+          </div>
+          <hr class="pf-divider" />
+
+          <div class="pf-identity">
+            <div class="pf-avatar pf-avatar--cyan" id="mainAvatar">SM</div>
+            <div class="pf-identity__info">
+              <p class="pf-identity__name" id="mainName">Sarah Miller</p>
+              <p class="pf-identity__role">Department Manager</p>
+            </div>
+          </div>
+
+          <div class="pf-fields">
+            <div class="pf-field">
+              <label class="form-label" for="dm-fullname">Full Name</label>
+              <input class="form-input" id="dm-fullname" type="text" value="Sarah Miller" />
+              <span class="form-error" id="err-name" style="display:none; color:red; font-size:12px;">Name is required.</span>
+            </div>
+
+            <div class="pf-field">
+              <label class="form-label" for="dm-email">Email Address</label>
+              <input class="form-input pf-input--disabled" id="dm-email" type="email" value="sarah.miller@techcorp.com" disabled />
+              <p class="pf-hint">Email can only be changed by the System Admin</p>
+            </div>
+
+            <div class="pf-field">
+              <label class="form-label" for="dm-mobile">Mobile Number</label>
+              <input class="form-input" id="dm-mobile" type="tel" value="+1 (555) 019-8235" />
+              <span class="form-error" id="err-mobile" style="display:none; color:red; font-size:12px;">Digits only (min 7 digits).</span>
+            </div>
+
+            <div class="pf-field">
+              <label class="form-label" for="dm-org">Department</label>
+              <input class="form-input pf-input--disabled" id="dm-org" type="text" value="Operations" disabled />
+            </div>
+          </div>
+
+          <div class="pf-actions">
+            <button class="btn-primary" type="button" id="btnUpdateProfile">
+              <img src="../assets/icons/save0.svg" alt="" class="btn__icon" />
+              <span>Update Profile</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card pf-card">
+          <div class="chart-header">
+            <h2 class="card__title">Security Settings</h2>
+          </div>
+
+          <div class="pf-pw-fields">
+            <div class="pf-field">
+              <label class="form-label" for="dm-cur-pw">Current Password</label>
+              <div class="pf-pw-wrap">
+                <input class="form-input" id="dm-cur-pw" type="password" placeholder="Enter current password" />
+                <button class="pf-eye-btn" type="button" onclick="toggleDmPw('dm-cur-pw')">
+                  <img src="../assets/icons/eye0.svg" alt="" />
+                </button>
+              </div>
+            </div>
+
+            <div class="pf-field">
+              <label class="form-label" for="dm-new-pw">New Password</label>
+              <div class="pf-pw-wrap">
+                <input class="form-input" id="dm-new-pw" type="password" placeholder="Minimum 8 characters" />
+                <button class="pf-eye-btn" type="button" onclick="toggleDmPw('dm-new-pw')">
+                  <img src="../assets/icons/eye0.svg" alt="" />
+                </button>
+              </div>
+            </div>
+
+            <div class="pf-field">
+              <label class="form-label" for="dm-conf-pw">Confirm New Password</label>
+              <div class="pf-pw-wrap">
+                <input class="form-input" id="dm-conf-pw" type="password" placeholder="Re-enter new password" />
+                <button class="pf-eye-btn" type="button" onclick="toggleDmPw('dm-conf-pw')">
+                  <img src="../assets/icons/eye0.svg" alt="" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pf-actions">
+            <button class="btn-primary" type="button" id="btnUpdatePassword">
+              <span>Change Password</span>
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel__header">
+      <span class="notif-panel__title">Notifications</span>
+      <button class="notif-panel__mark" type="button" id="markAllRead">Mark all as read</button>
+    </div>
+    <div class="notif-list" id="notificationList"></div>
+    <div class="notif-panel__footer">
+      <button class="notif-panel__view-all" type="button">View All Notifications</button>
+    </div>
+  </div>
+
+  <div class="profile-dropdown" id="profileDropdown">
+    <a href="dm-profile.html" class="profile-dropdown__item">
+      <img src="../assets/icons/icon9.svg" alt="" />Profile &amp; Settings
+    </a>
+    <div class="profile-dropdown__divider"></div>
+    <div class="profile-dropdown__item profile-dropdown__item--danger" onclick="Utils.toggleModal('logoutModal', true)">
+      <img src="../assets/icons/log-out0.svg" alt="" />Logout
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="logoutModal">
+    <div class="modal modal--sm">
+      <div class="modal__alert-header"><h2 class="modal__alert-title">Log out?</h2></div>
+      <div class="modal__alert-footer">
+        <button class="btn-outline" onclick="Utils.toggleModal('logoutModal', false)">Cancel</button>
+        <button class="btn-danger" onclick="Utils.logout()">Log Out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast toast--success" id="toastMessage" role="alert">
+    <div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt="" /></div>
+    <p class="toast__text" id="toastText">Success!</p>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const DB_KEY = 'rorizon_dm_profile';
+
+        // 1. Initialize Profile Data
+        const defaultProfile = {
+            name: 'Sarah Miller',
+            mobile: '+1 (555) 019-8235'
+        };
+
+        // Get saved data or fallback to default
+        let userProfile = JSON.parse(localStorage.getItem(DB_KEY)) || defaultProfile;
+        updateProfileUI(userProfile);
+
+        // 2. Profile Action (Save Data)
+        document.getElementById('btnUpdateProfile').addEventListener('click', () => {
+            if (validateDmProfile()) {
+                // Save to localStorage
+                userProfile.name = document.getElementById('dm-fullname').value.trim();
+                userProfile.mobile = document.getElementById('dm-mobile').value.trim();
+                localStorage.setItem(DB_KEY, JSON.stringify(userProfile));
+                
+                // Update visuals immediately
+                updateProfileUI(userProfile);
+                Utils.showToast("Manager profile updated successfully!");
+            }
+        });
+
+        // 3. Password Action
+        document.getElementById('btnUpdatePassword').addEventListener('click', () => {
+            const npw = document.getElementById('dm-new-pw').value;
+            const cpw = document.getElementById('dm-conf-pw').value;
+            if (npw.length < 8) { Utils.showToast("Min. 8 characters required.", "error"); return; }
+            if (npw !== cpw) { Utils.showToast("Passwords do not match.", "error"); return; }
+            
+            // Clear inputs on success
+            document.getElementById('dm-cur-pw').value = '';
+            document.getElementById('dm-new-pw').value = '';
+            document.getElementById('dm-conf-pw').value = '';
+            Utils.showToast("Password changed successfully!");
+        });
+
+        // 4. Render Notifications 
+        const notifList = document.getElementById('notificationList');
+        if (notifList && RorizonData.auditLogs) {
+            notifList.innerHTML = RorizonData.auditLogs.map(log => `
+                <div class="notif-item">
+                    <p class="notif-item__title">${log.action}</p>
+                    <p class="notif-item__time">${log.timestamp}</p>
+                </div>
+            `).join('');
+        }
+
+        // --- Helper Functions ---
+        function updateProfileUI(profile) {
+            document.getElementById('dm-fullname').value = profile.name;
+            document.getElementById('dm-mobile').value = profile.mobile;
+
+            // Generate initials
+            const initials = profile.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+
+            // Update UI elements
+            document.getElementById('headerName').innerText = profile.name;
+            document.getElementById('headerAvatar').innerText = initials;
+            document.getElementById('mainName').innerText = profile.name;
+            document.getElementById('mainAvatar').innerText = initials;
+        }
+
+    });
+
+    // Global Functions (attached to window for inline onclick use)
+    window.validateDmProfile = function() {
+        const name = document.getElementById('dm-fullname').value.trim();
+        const mobile = document.getElementById('dm-mobile').value.trim();
+        const phoneRegex = /^[\d\s\+\-\(\)]+$/;
+        let valid = true;
+
+        if (!name) { 
+            document.getElementById('err-name').style.display='block'; 
+            valid=false; 
+        } else { 
+            document.getElementById('err-name').style.display='none'; 
+        }
+
+        if (!phoneRegex.test(mobile) || mobile.length < 7) { 
+            document.getElementById('err-mobile').style.display='block'; 
+            valid=false; 
+        } else { 
+            document.getElementById('err-mobile').style.display='none'; 
+        }
+        
+        return valid;
+    }
+
+    window.toggleDmPw = function(id) {
+        const input = document.getElementById(id);
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+  </script>
+</body>
+</html>

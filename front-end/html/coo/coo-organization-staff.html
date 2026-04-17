@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organization & Staff - Rorizon COO</title>
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+.org-staff-hero{background:#eef3ff;border:1px solid #dde7ff;border-radius:18px;padding:22px 24px;margin-bottom:24px}.org-staff-hero__head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.org-staff-hero__title{font-size:31px;font-weight:700;color:#0f172a;margin:0 0 8px 0}.org-staff-hero__sub{font-size:14px;color:#64748b;margin:0}.org-staff-grid{display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start}.summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:24px}.summary-card{padding:18px 20px;background:#fff;border:1px solid var(--border-light);border-radius:16px}.summary-card__value{font-size:26px;font-weight:700;color:#0f172a;margin:6px 0}.summary-card__label{font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.04em}.dept-stack{display:grid;gap:12px}.dept-card{padding:16px;border:1px solid var(--border-light);border-radius:14px;background:#fff;cursor:pointer;transition:all .2s}.dept-card.active{background:#eff6ff;border-color:#3b82f6;box-shadow:0 4px 12px rgba(59,130,246,.12)}.dept-card__title{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px}.dept-card__meta{font-size:12px;color:#64748b}.panel-card{padding:0;overflow:hidden}.panel-head{display:flex;justify-content:space-between;align-items:center;padding:24px 24px 16px}.panel-sub{padding:0 24px 20px;color:#64748b;font-size:13px}.editor{display:none;padding:0 24px 20px}.editor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.editor-actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}.table-shell{padding:0 24px 24px}.staff-empty{padding:28px;text-align:center;color:#64748b}.inline-actions{display:flex;gap:8px;flex-wrap:wrap}.mini-stat{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#f8fafc;border:1px solid #e2e8f0;font-size:12px;color:#475569}.section-card{padding:22px}.section-card .chart-header{margin-bottom:16px}.section-note{font-size:13px;color:#64748b;margin:0 0 18px}.btn-quiet{background:#fff;border:1px solid var(--border-light);color:#0f172a;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}.btn-quiet:hover{background:#f8fafc}.assignment-box{grid-column:1/-1;padding:14px;border:1px solid var(--border-light);border-radius:12px;background:#f8fafc}.assignment-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.assignment-item{display:flex;align-items:center;gap:8px;font-size:14px;color:#0f172a}.hidden{display:none!important}@media(max-width:980px){.org-staff-grid,.summary-grid{grid-template-columns:1fr}.org-staff-hero__head,.panel-head{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<div id="app-layout" data-title="Organization & Staff" data-subtitle="Manage departments and assigned staff for your organization">
+  <div class="org-staff-hero">
+    <div class="org-staff-hero__head">
+      <div>
+        <h2 class="org-staff-hero__title">Organization Structure</h2>
+        <p class="org-staff-hero__sub">Review department ownership, maintain staff assignments, and keep the operating structure aligned with admin changes.</p>
+      </div>
+      <span class="kpi-tag kpi-tag--muted" id="orgScopeBadge" style="background:#fff;border:1px solid #dbe3f4;color:#0f172a;font-weight:600;">Current Organization</span>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="summary-card__label">Departments</div>
+      <div class="summary-card__value" id="deptCountValue">0</div>
+      <div class="text--muted" style="font-size:13px;">Active departments in your organization</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Assigned Staff</div>
+      <div class="summary-card__value" id="staffCountValue">0</div>
+      <div class="text--muted" style="font-size:13px;">Managers and analysts linked to departments</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Organization Limit</div>
+      <div class="summary-card__value" id="orgLimitValue">0 L</div>
+      <div class="text--muted" style="font-size:13px;">Combined departmental target</div>
+    </div>
+  </div>
+
+  <div class="org-staff-grid">
+    <div class="card section-card">
+      <div class="chart-header" style="margin-bottom:18px;"><h2 class="card__title">Departments</h2><button class="btn-primary" id="addDeptBtn" type="button">+ Add</button></div>
+      <p class="section-note">Select a department within your organization to manage its assigned staff and operational ownership.</p>
+      <div id="deptList" class="dept-stack"></div>
+    </div>
+
+    <div class="card panel-card">
+      <div class="panel-head"><h2 class="card__title" id="staffTitle">Assigned Staff</h2><button class="btn-primary" id="addStaffBtn" type="button">+ Add Staff</button></div>
+      <p class="panel-sub" id="staffHint">0 members</p>
+
+      <div id="deptEditor" class="editor">
+        <div class="editor-grid">
+          <input class="form-input" id="deptName" placeholder="Department name">
+          <input class="form-input" id="deptManager" placeholder="Manager name">
+          <input class="form-input" id="deptTarget" placeholder="Target, e.g. 5000 L">
+          <input class="form-input" id="deptThreshold" placeholder="Threshold, e.g. 5500 L">
+        </div>
+        <div class="editor-actions"><button class="btn-primary" id="saveDeptBtn" type="button">Save Department</button><button class="btn-outline" id="cancelDeptBtn" type="button">Cancel</button></div>
+      </div>
+
+      <div id="staffEditor" class="editor">
+        <div class="editor-grid">
+          <input class="form-input" id="staffName" placeholder="Full name">
+          <input class="form-input" id="staffEmail" placeholder="Email">
+          <select class="form-input" id="staffRole"><option>Manager</option><option>Analyst</option></select>
+          <select class="form-input" id="staffStatus"><option>Active</option><option>Inactive</option><option>Pending Approval</option></select>
+          <div class="assignment-box hidden" id="staffAssignmentBox"><div class="assignment-list" id="staffAssignmentList"></div></div>
+        </div>
+        <div class="editor-actions"><button class="btn-primary" id="saveStaffBtn" type="button">Save Staff</button><button class="btn-outline" id="cancelStaffBtn" type="button">Cancel</button></div>
+      </div>
+
+      <div class="table-shell">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>NAME</th><th>EMAIL</th><th>ROLE</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+            <tbody id="staffRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast toast--success" id="toastMessage"><div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt=""></div><p class="toast__text" id="toastText"></p></div>
+<script src="../../js/data.js"></script><script src="../../js/utils.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+const $=id=>document.getElementById(id);let activeDeptId='';let editingDeptId='';let editingStaffId='';
+const db=()=>Utils.ensureCollections(Utils.getDB());
+function registrationBadge(status){return status==='Approved'?'green':(status==='Pending Approval'?'amber':'red');}
+function currentOrganization(){const state=db();const currentUser=Utils.getCurrentUser();return state.organizations.find(entry=>entry.id===currentUser?.organizationId)||state.organizations[0]||null;}
+function scopedDepartments(){const organization=currentOrganization();return organization?db().departments.filter(entry=>entry.orgId===organization.id):[];}
+function renderSummaries(){const state=db();const organization=currentOrganization();const departments=scopedDepartments();const staffCount=state.users.filter(user=>user.organizationId===organization?.id&&['Manager','Analyst'].includes(user.role)).length;$('orgScopeBadge').textContent=organization?.name||'Current Organization';$('deptCountValue').textContent=departments.length;$('staffCountValue').textContent=staffCount;$('orgLimitValue').textContent=organization?.target||'0 L';}
+function renderDepartments(){const organization=currentOrganization();const departments=scopedDepartments();renderSummaries();if(!departments.some(dept=>dept.id===activeDeptId))activeDeptId=departments[0]?.id||'';$('deptList').innerHTML=departments.map(dept=>`<div class="dept-card ${dept.id===activeDeptId?'active':''}" onclick="pickDepartment('${dept.id}')"><div class="dept-card__title">${dept.name}</div><div class="dept-card__meta">${organization?.name||'--'} | <span class="status-badge status-badge--${registrationBadge(organization?.registrationStatus||'Approved')}">${organization?.registrationStatus||'Approved'}</span></div><div class="dept-card__meta" style="margin-top:8px;display:flex;justify-content:space-between;gap:12px;"><span>Target ${dept.target||'--'}</span><span>Threshold ${dept.threshold||'--'}</span></div><div class="inline-actions" style="margin-top:10px;"><button class="btn-quiet" type="button" onclick="event.stopPropagation();editDepartment('${dept.id}')">Edit</button><button class="btn-outline" type="button" onclick="event.stopPropagation();removeDepartment('${dept.id}')">Delete</button></div></div>`).join('')||'<div class="staff-empty">No departments available.</div>';renderStaff();}
+function renderStaff(){const state=db();const department=state.departments.find(entry=>entry.id===activeDeptId);const organization=currentOrganization();if(!department){$('staffTitle').textContent='Assigned Staff';$('staffHint').textContent='0 members';$('staffRows').innerHTML='<tr><td colspan="5" class="staff-empty">Select a department to see staff.</td></tr>';return;}const users=state.users.filter(user=>user.organizationId===organization?.id&&['Manager','Analyst'].includes(user.role)).filter(user=>user.role==='Manager'?user.departmentId===department.id:Array.isArray(user.assignedDepartmentIds)&&user.assignedDepartmentIds.includes(department.id));$('staffTitle').textContent=`${department.name} Staff`;$('staffHint').innerHTML=`<span class="mini-stat">${organization?.name||'--'}</span> <span class="mini-stat">${users.length} members assigned</span> <span class="mini-stat">Target ${department.target||'--'}</span>`;$('staffRows').innerHTML=users.length?users.map(user=>`<tr><td class="td--bold">${user.name}</td><td class="td--muted">${user.email}</td><td class="td--muted">${user.role}</td><td><span class="status-badge status-badge--${user.status==='Active'?'green':(user.status==='Pending Approval'?'amber':'red')}">${user.status||'Inactive'}</span></td><td><div class="inline-actions"><button class="btn-quiet" type="button" onclick="editStaff(${user.id})">Edit</button><button class="btn-outline" type="button" onclick="toggleStaff(${user.id})">${user.status==='Active'?'Deactivate':'Activate'}</button><button class="btn-outline" type="button" onclick="removeStaff(${user.id})">Remove</button></div></td></tr>`).join(''):'<tr><td colspan="5" class="staff-empty">No staff assigned yet.</td></tr>';}
+function renderStaffAssignments(selectedIds=[]){const departments=scopedDepartments();$('staffAssignmentList').innerHTML=departments.map(dept=>`<label class="assignment-item"><input type="checkbox" value="${dept.id}" ${selectedIds.includes(dept.id)?'checked':''}> <span>${dept.name}</span></label>`).join('')||'<span class="text--muted">No departments available.</span>';}
+function syncStaffRoleFields(selectedIds=[]){const isAnalyst=$('staffRole').value==='Analyst';$('staffAssignmentBox').classList.toggle('hidden',!isAnalyst);if(isAnalyst)renderStaffAssignments(selectedIds);}
+window.pickDepartment=id=>{activeDeptId=id;renderDepartments();};
+function showDeptEditor(dept){editingDeptId=dept?dept.id:'';$('deptName').value=dept?.name||'';$('deptManager').value=dept?.manager||'';$('deptTarget').value=dept?.target||'';$('deptThreshold').value=dept?.threshold||'';$('deptEditor').style.display='block';}
+function showStaffEditor(user){editingStaffId=user?String(user.id):'';$('staffName').value=user?.name||'';$('staffEmail').value=user?.email||'';$('staffRole').value=user?.role||'Manager';$('staffStatus').value=user?.status||'Active';syncStaffRoleFields(Array.isArray(user?.assignedDepartmentIds)?user.assignedDepartmentIds:[]);$('staffEditor').style.display='block';}
+$('addDeptBtn').onclick=()=>showDeptEditor();$('cancelDeptBtn').onclick=()=>$('deptEditor').style.display='none';$('addStaffBtn').onclick=()=>{if(!activeDeptId){Utils.showToast('Select a department first.','error');return;}showStaffEditor();};$('cancelStaffBtn').onclick=()=>$('staffEditor').style.display='none';$('staffRole').addEventListener('change',()=>syncStaffRoleFields());
+$('saveDeptBtn').onclick=()=>{const state=db();const organization=currentOrganization();if(!organization){Utils.showToast('No organization found for this COO.','error');return;}const name=$('deptName').value.trim();if(!name){Utils.showToast('Department name is required.','error');return;}if(state.departments.some(dept=>dept.id!==editingDeptId&&dept.orgId===organization.id&&dept.name.toLowerCase()===name.toLowerCase())){Utils.showToast('A department with this name already exists.','error');return;}const existing=state.departments.find(dept=>dept.id===editingDeptId);const payload={id:editingDeptId||`dept-${Date.now()}`,orgId:organization.id,orgName:organization.name,name,manager:$('deptManager').value.trim()||existing?.manager||'Unassigned',managerUserId:existing?.managerUserId||null,target:$('deptTarget').value.trim()||existing?.target||'0 L',threshold:$('deptThreshold').value.trim()||$('deptTarget').value.trim()||existing?.threshold||'0 L',current:existing?.current||'0 L',co2:existing?.co2||'0',status:existing?.status||'Within Target',statusType:existing?.statusType||'green'};if(editingDeptId){state.departments=state.departments.map(dept=>dept.id===editingDeptId?{...dept,...payload}:dept);Utils.logAction(`Updated department ${payload.name}`,'Success','green');}else{state.departments.push(payload);activeDeptId=payload.id;Utils.logAction(`Added department ${payload.name}`,'Success','green');}Utils.recalculateOrganizationTotals(state,organization.id);Utils.replaceDB(state);$('deptEditor').style.display='none';renderDepartments();Utils.showToast('Department saved successfully.');};
+$('saveStaffBtn').onclick=()=>{const state=db();const organization=currentOrganization();const department=state.departments.find(entry=>entry.id===activeDeptId);if(!organization||!department)return;const name=$('staffName').value.trim();const email=$('staffEmail').value.trim().toLowerCase();if(!name||!Utils.validateEmail(email)){Utils.showToast('Enter a valid staff name and email.','error');return;}if(state.users.some(user=>String(user.id)!==String(editingStaffId||'')&&user.email.toLowerCase()===email)){Utils.showToast('A user with this email already exists.','error');return;}const role=$('staffRole').value;const existing=state.users.find(user=>String(user.id)===editingStaffId);const assignedDepartmentIds=role==='Analyst'?Array.from(document.querySelectorAll('#staffAssignmentList input[type="checkbox"]:checked')).map(input=>input.value):[];if(role==='Analyst'&&!assignedDepartmentIds.length){Utils.showToast('Assign at least one department to the analyst.','error');return;}const payload={id:editingStaffId?Number(editingStaffId):Date.now(),name,email,role,password:existing?.password||'ChangeMe@123',department:role==='Analyst'?'Multi-Department Review':department.name,departmentId:role==='Manager'?department.id:'',assignedDepartmentIds,organizationId:organization.id,phone:existing?.phone||'--',status:$('staffStatus').value,lastLogin:existing?.lastLogin||'Never'};if(editingStaffId){state.users=state.users.map(user=>String(user.id)===editingStaffId?payload:user);Utils.logAction(`Updated staff ${payload.name}`,'Success','green');}else{state.users.unshift(payload);Utils.logAction(`Added staff ${payload.name}`,'Success','green');}if(payload.role==='Manager'){department.manager=payload.name;department.managerUserId=payload.id;}Utils.syncUserDerivedFields(state,payload.id);Utils.replaceDB(state);$('staffEditor').style.display='none';renderDepartments();Utils.showToast(existing?'Staff updated successfully.':'Staff saved successfully. Temporary password: ChangeMe@123');};
+window.editStaff=id=>{const user=db().users.find(entry=>entry.id===id);if(!user)return;showStaffEditor(user);};
+window.toggleStaff=id=>{const state=db();const user=state.users.find(entry=>entry.id===id);if(!user)return;user.status=user.status==='Active'?'Inactive':'Active';Utils.replaceDB(state);Utils.logAction(`${user.status==='Active'?'Activated':'Deactivated'} staff ${user.name}`,'Success',user.status==='Active'?'green':'amber');renderDepartments();Utils.showToast(`Staff ${user.status.toLowerCase()}.`);};
+window.removeStaff=id=>{if(!confirm('Remove this staff member?'))return;const state=db();const result=Utils.deleteUserCascade(state,id);if(result?.blocked){Utils.showToast(result.reason,'error');return;}Utils.replaceDB(state);Utils.logAction(`Removed staff ${result?.user?.name||id}`,'Warning','amber');renderDepartments();Utils.showToast('Staff removed.');};
+window.editDepartment=id=>{const department=db().departments.find(entry=>entry.id===id);if(!department)return;showDeptEditor(department);};
+window.removeDepartment=id=>{if(!confirm('Delete this department and all linked staff records?'))return;const state=db();const result=Utils.deleteDepartmentCascade(state,id);Utils.replaceDB(state);Utils.logAction(`Deleted department ${result?.department?.name||id}`,'Warning','amber');renderDepartments();Utils.showToast('Department deleted.');};
+renderDepartments();window.addEventListener('rorizon-db-updated',renderDepartments);window.addEventListener('storage',renderDepartments);
+});
+</script>
+</body></html>

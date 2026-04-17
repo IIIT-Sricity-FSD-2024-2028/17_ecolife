@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emissions Analysis - Rorizon</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <style>
+    .hero{background:linear-gradient(145deg,#eef4ff 0%,#f8fafc 100%);border:1px solid #dbeafe;border-radius:20px;padding:24px;margin-bottom:24px}
+    .hero__head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+    .hero__title{font-size:30px;font-weight:700;color:#0f172a;margin:0 0 8px 0}
+    .hero__sub{font-size:14px;color:#64748b;margin:0;max-width:760px}
+    .summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:20px}
+    .summary-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px}
+    .summary-card__label{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+    .summary-card__value{font-size:28px;font-weight:700;color:#0f172a;margin:8px 0 4px}
+    .summary-card__meta{font-size:13px;color:#64748b}
+    .filter-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:16px}
+    .trend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+    .trend-card{padding:16px;border:1px solid #e2e8f0;border-radius:14px;background:#fff}
+    .trend-card__period{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+    .trend-card__value{font-size:22px;font-weight:700;color:#0f172a;margin:8px 0 4px}
+    .trend-card__meta{font-size:13px;color:#64748b}
+    .trend-bar{height:8px;border-radius:999px;background:#e2e8f0;overflow:hidden;margin-top:12px}
+    .trend-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#2563eb 0%,#38bdf8 100%)}
+    @media(max-width:900px){.summary-grid,.filter-grid{grid-template-columns:1fr}.hero__head{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div id="app-layout" data-title="Emissions Analysis" data-subtitle="Strategic data insights for your assigned departments">
+    <div class="hero">
+      <div class="hero__head">
+        <div>
+          <h2 class="hero__title">Detailed Variance Analysis</h2>
+          <p class="hero__sub">Review department consumption, compare actual usage against configured targets, and track CO2 movement across the departments assigned to your analyst account.</p>
+        </div>
+        <span class="kpi-tag kpi-tag--muted" id="scopeBadge">Analyst Scope</span>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-card"><div class="summary-card__label">Tracked Emissions</div><div class="summary-card__value" id="totalEmissionCard">0 kg</div><div class="summary-card__meta">Latest scoped submission total</div></div>
+        <div class="summary-card"><div class="summary-card__label">Variance Watch</div><div class="summary-card__value" id="varianceCard">0</div><div class="summary-card__meta">Departments outside target</div></div>
+        <div class="summary-card"><div class="summary-card__label">Active Review Flags</div><div class="summary-card__value" id="flagCard">0</div><div class="summary-card__meta">Anomaly or threshold checks</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="filter-grid">
+        <div>
+          <label class="form-label">Reporting Period</label>
+          <div class="select-wrapper">
+            <select class="form-select" id="saPeriodFilter"></select>
+            <img src="../assets/icons/chevron-down-icon0.svg" class="select-chevron" alt="" />
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Department View</label>
+          <div class="select-wrapper">
+            <select class="form-select" id="saDeptFilter"></select>
+            <img src="../assets/icons/chevron-down-icon0.svg" class="select-chevron" alt="" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card chart-card" style="margin-top:24px;">
+      <div class="chart-header">
+        <h2 class="card__title">Emissions Trend</h2>
+        <span class="kpi-tag kpi-tag--blue" id="trendTag">Latest submissions</span>
+      </div>
+      <div class="trend-grid" id="trendGrid"></div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <div class="chart-header">
+        <h2 class="card__title">Department Performance Analysis</h2>
+        <span class="kpi-tag kpi-tag--muted">Actual vs target</span>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>DEPARTMENT</th>
+              <th>CONSUMPTION</th>
+              <th>TARGET</th>
+              <th>VARIANCE</th>
+              <th>CO2 EMISSIONS</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="analysisTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const deptFilter = document.getElementById('saDeptFilter');
+      const periodFilter = document.getElementById('saPeriodFilter');
+
+      function getScopedData() {
+        const db = Utils.getDB();
+        const currentUser = Utils.getCurrentUser();
+        const scopedDepartmentIds = Utils.getUserDepartmentScope(currentUser, db);
+        const departments = (db.departments || []).filter(dept => !scopedDepartmentIds.length || scopedDepartmentIds.includes(dept.id));
+        const submissions = (db.submissions || []).filter(submission => !scopedDepartmentIds.length || scopedDepartmentIds.includes(submission.departmentId));
+        return { departments, submissions };
+      }
+
+      function populateFilters() {
+        const { departments, submissions } = getScopedData();
+        const currentDept = deptFilter.value;
+        const currentPeriod = periodFilter.value;
+        deptFilter.innerHTML = `<option value="all">All Departments</option>${departments.map(dept => `<option value="${dept.id}">${dept.name}</option>`).join('')}`;
+        const periods = Array.from(new Set(submissions.map(submission => submission.period))).reverse();
+        periodFilter.innerHTML = `<option value="all">All Periods</option>${periods.map(period => `<option value="${period}">${period}</option>`).join('')}`;
+        if (currentDept && Array.from(deptFilter.options).some(option => option.value === currentDept)) deptFilter.value = currentDept;
+        if (currentPeriod && Array.from(periodFilter.options).some(option => option.value === currentPeriod)) periodFilter.value = currentPeriod;
+      }
+
+      function renderAnalysisTable() {
+        const { departments, submissions } = getScopedData();
+        const selectedDept = deptFilter.value || 'all';
+        const selectedPeriod = periodFilter.value || 'all';
+        const filteredDepartments = departments.filter(dept => selectedDept === 'all' || dept.id === selectedDept);
+        const filteredSubmissions = submissions.filter(submission => (selectedDept === 'all' || submission.departmentId === selectedDept) && (selectedPeriod === 'all' || submission.period === selectedPeriod));
+        const totalEmission = filteredSubmissions.reduce((sum, submission) => sum + Number(submission.totalCO2 || 0), 0);
+        const flagged = filteredSubmissions.filter(submission => ['threshold_breach', 'anomalous'].includes(submission.validation?.state)).length;
+        const outsideTarget = filteredDepartments.filter(dept => Utils.parseAmount(dept.current) > Utils.parseAmount(dept.target)).length;
+        document.getElementById('scopeBadge').textContent = `${filteredDepartments.length} Department${filteredDepartments.length === 1 ? '' : 's'}`;
+        document.getElementById('totalEmissionCard').textContent = `${totalEmission.toLocaleString(undefined, { maximumFractionDigits: 2 })} kg`;
+        document.getElementById('varianceCard').textContent = outsideTarget;
+        document.getElementById('flagCard').textContent = flagged;
+        document.getElementById('trendTag').textContent = selectedPeriod === 'all' ? 'Latest submissions' : selectedPeriod;
+
+        const maxEmission = Math.max(...filteredSubmissions.map(item => Number(item.totalCO2 || 0)), 1);
+        document.getElementById('trendGrid').innerHTML = filteredSubmissions.length ? filteredSubmissions.slice(-6).map(submission => {
+          const width = Math.max(10, Math.round((Number(submission.totalCO2 || 0) / maxEmission) * 100));
+          const note = submission.validation?.state === 'threshold_breach' ? 'Threshold Breach' : submission.validation?.state === 'anomalous' ? 'Anomaly Review' : 'Within Range';
+          return `<div class="trend-card"><div class="trend-card__period">${submission.period}</div><div class="trend-card__value">${Number(submission.totalCO2 || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} kg</div><div class="trend-card__meta">${submission.departmentName} | ${Number(submission.totalConsumption || 0).toLocaleString()} units</div><div class="trend-card__meta" style="margin-top:4px;">${note}</div><div class="trend-bar" title="${submission.departmentName}: ${Number(submission.totalCO2 || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} kg"><span style="width:${width}%"></span></div></div>`;
+        }).join('') : '<div class="trend-card"><div class="trend-card__period">No data</div><div class="trend-card__value">0 kg</div><div class="trend-card__meta">No submission data is available for the selected filters.</div><div class="trend-bar"><span style="width:0%"></span></div></div>';
+
+        document.getElementById('analysisTableBody').innerHTML = filteredDepartments.map(department => {
+          const departmentSubmissions = filteredSubmissions.filter(submission => submission.departmentId === department.id);
+          const latest = departmentSubmissions[departmentSubmissions.length - 1];
+          const current = latest ? latest.totalConsumption : Utils.parseAmount(department.current);
+          const target = Utils.parseAmount(department.target);
+          const variance = target > 0 ? (((current - target) / target) * 100) : 0;
+          const status = latest?.validation?.state === 'threshold_breach' ? 'Threshold Breach' : latest?.validation?.state === 'anomalous' ? 'Anomaly Review' : (department.status || 'Within Target');
+          const statusClass = latest?.validation?.state === 'threshold_breach' ? 'red' : latest?.validation?.state === 'anomalous' ? 'amber' : (department.statusType || 'green');
+          return `<tr><td class="td--bold">${department.name}</td><td>${Number(current || 0).toLocaleString()} units</td><td class="td--muted">${department.target || '--'}</td><td class="td--variance ${variance > 0 ? 'td--variance-positive' : 'td--variance-negative'}">${variance > 0 ? '+' : ''}${variance.toFixed(1)}%</td><td class="td--bold">${latest ? Number(latest.totalCO2 || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }) : Number(department.co2 || 0).toLocaleString()} kg</td><td><span class="status-badge status-badge--${statusClass}">${status}</span></td></tr>`;
+        }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">No departments available for this analysis scope.</td></tr>';
+      }
+
+      populateFilters();
+      renderAnalysisTable();
+      deptFilter.addEventListener('change', renderAnalysisTable);
+      periodFilter.addEventListener('change', renderAnalysisTable);
+      window.addEventListener('rorizon-db-updated', () => { populateFilters(); renderAnalysisTable(); });
+      window.addEventListener('storage', () => { populateFilters(); renderAnalysisTable(); });
+    });
+  </script>
+</body>
+</html>
