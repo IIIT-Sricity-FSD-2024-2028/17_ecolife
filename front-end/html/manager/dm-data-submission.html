@@ -1,0 +1,497 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Submission â€“ Rorizon</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <style>
+    .ds-checklist__item--valid { color: #22c55e; font-weight: 500; }
+    .ds-checklist__item--valid img { filter: invert(56%) sepia(54%) saturate(464%) hue-rotate(88deg) brightness(96%) contrast(89%); }
+    .ds-resource-row { display: flex; gap: 16px; align-items: flex-end; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; background: #fff; }
+    .ds-resource-row > div { flex: 1; }
+    .ds-resource-row label { display: block; margin-bottom: 8px; font-size: 13px; color: #64748b; font-weight: 500; }
+    .ds-resource-row input { width: 100%; }
+    .ds-co2-calc { font-weight: 600; color: #475569; padding-bottom: 8px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal modal--sm">
+      <div class="modal__alert-header"><h2 class="modal__alert-title">Remove Resource?</h2></div>
+      <p style="padding: 0 24px; color: #475569; font-size: 14px;">Are you sure you want to remove this resource line item? This action cannot be undone.</p>
+      <div class="modal__alert-footer">
+        <button class="btn-outline" type="button" onclick="Utils.toggleModal('confirmModal', false)">Cancel</button>
+        <button class="btn-danger" type="button" id="confirmRemoveBtn">Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-layout" data-title="Data Submission" data-subtitle="Operations â€¢ TechCorp Industries">
+    <div class="card">
+      <h2 class="card__title">Submission Period</h2>
+      <div class="ds-period-row" style="display: flex; gap: 16px; margin-top: 16px; align-items: center;">
+        <select class="form-input" id="monthSelect" style="width: 200px;">
+          <option value="01">January</option>
+          <option value="02">February</option>
+          <option value="03" selected>March</option>
+          <option value="04">April</option>
+          <option value="05">May</option>
+          <option value="06">June</option>
+          <option value="07">July</option>
+          <option value="08">August</option>
+          <option value="09">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+        <input type="number" class="form-input" id="yearSelect" value="2026" min="2000" max="2100" style="width: 150px;">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ds-section-header" style="margin-bottom: 20px;">
+        <h2 class="card__title">Resource Consumption</h2>
+        <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Update expected resources or type a custom resource.</p>
+      </div>
+
+      <div id="resourceContainer"></div>
+
+      <datalist id="resourceSuggestions">
+        <option value="Diesel"></option>
+        <option value="LPG"></option>
+        <option value="Electricity"></option>
+        <option value="Water"></option>
+      </datalist>
+      <datalist id="unitSuggestions">
+        <option value="Liters"></option>
+        <option value="Kg"></option>
+        <option value="kWh"></option>
+        <option value="Gallons"></option>
+      </datalist>
+
+      <div class="ds-resource-row" style="background: #f8fafc; border-style: dashed; margin-top: 24px;">
+        <div><label>Add Resource Type</label><input class="form-input" type="text" id="inlineType" list="resourceSuggestions" placeholder="e.g. Water" /></div>
+        <div><label>Quantity</label><input class="form-input" type="number" id="inlineQty" placeholder="0.00" step="0.01" min="0.01" /></div>
+        <div><label>Unit</label><input class="form-input" type="text" id="inlineUnit" list="unitSuggestions" placeholder="e.g. Liters" /></div>
+        <div style="flex: 0 0 auto;"><button class="btn-primary" type="button" id="inlineAddBtn" style="height: 42px;"><img src="../assets/icons/plus0.svg" alt="" class="btn__icon" /> Add</button></div>
+      </div>
+      <div id="resourceEmptyState" class="ds-empty-state" style="display: none;"><p>No resources listed.</p></div>
+    </div>
+
+    <div class="card">
+      <h2 class="card__title">Invoice Upload (Optional)</h2>
+      <div class="ds-upload-zone" id="uploadZone" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 32px; text-align: center; background: #f8fafc; cursor: pointer; margin-top: 16px;">
+        <input type="file" id="invoiceInput" style="display: none;" accept=".pdf,.jpg,.png" />
+        <img src="../assets/icons/upload0.svg" alt="" class="ds-upload-icon" style="margin-bottom: 12px;"/>
+        <p class="ds-upload-text" id="uploadStatus" style="color: #475569; margin-bottom: 16px;">Drag and drop invoice or click to browse</p>
+        <button class="btn-outline ds-upload-btn" type="button" id="browseBtn">Select File</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chart-header" style="align-items: flex-start;">
+        <div>
+          <h2 class="card__title">Validation Engine</h2>
+          <p style="color: #64748b; font-size: 14px; margin: 6px 0 0;">Live threshold and historical checks before submission lock.</p>
+        </div>
+        <span class="status-badge status-badge--amber" id="validationStateBadge">Needs Review</span>
+      </div>
+      <div style="display: grid; gap: 12px; margin-top: 20px;">
+        <div style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+          <span style="color: #64748b; font-size: 14px;">Historical average</span>
+          <strong id="historicalAverageValue">--</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+          <span style="color: #64748b; font-size: 14px;">Current total consumption</span>
+          <strong id="currentTotalValue">--</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+          <span style="color: #64748b; font-size: 14px;">Department threshold</span>
+          <strong id="thresholdValue">--</strong>
+        </div>
+      </div>
+      <p id="validationSummary" style="margin: 16px 0 0; color: #475569; font-size: 14px;">Add or update resources to run validation.</p>
+    </div>
+
+    <div class="card" id="deviationReasonCard" style="display: none;">
+      <div class="chart-header">
+        <h2 class="card__title">Deviation Reason Required</h2>
+        <span class="status-badge status-badge--red">Threshold Breach</span>
+      </div>
+      <p style="color: #64748b; font-size: 14px; margin-top: 12px;">Submission is blocked until a reason is provided for the threshold breach.</p>
+      <textarea class="form-textarea" id="deviationReason" rows="4" placeholder="Explain the cause of this deviation and any corrective actions already taken..." style="margin-top: 16px;"></textarea>
+    </div>
+
+    <div class="ds-submit-row" style="margin-top: 24px;">
+      <button class="btn-primary btn-primary--wide" type="button" id="btnSubmitData" style="width: 100%; justify-content: center;">
+        <img src="../assets/icons/lock0.svg" alt="" class="btn__icon" />
+        <span>Lock &amp; Submit</span>
+      </button>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+        const db = Utils.getDB();
+        const orgs = db.organizations || [];
+        const departments = db.departments || [];
+        const activeDepartment = departments.find(dept => dept.id === currentUser.departmentId) || departments[0] || null;
+        const activeOrg = orgs.find(org => org.id === (currentUser.organizationId || activeDepartment?.orgId)) || orgs[0] || null;
+        const departmentName = activeDepartment ? activeDepartment.name : 'Operations';
+        const historicalSubs = (db.submissions || []).filter(sub => sub.departmentId === (activeDepartment ? activeDepartment.id : null));
+        const thresholdNumeric = activeDepartment ? parseFloat(String(activeDepartment.threshold || activeDepartment.target || '0').replace(/[^\d.]/g, '')) : 0;
+
+        const subtitleHost = document.getElementById('app-layout');
+        if (subtitleHost && activeDepartment && activeOrg) {
+            subtitleHost.dataset.subtitle = `${activeDepartment.name} • ${activeOrg.name}`;
+        }
+
+        const uploadZone = document.getElementById('uploadZone');
+        const invoiceInput = document.getElementById('invoiceInput');
+        document.getElementById('browseBtn').addEventListener('click', () => invoiceInput.click());
+        uploadZone.addEventListener('click', (e) => { if(e.target !== document.getElementById('browseBtn')) invoiceInput.click(); });
+        invoiceInput.addEventListener('change', (e) => {
+            if(e.target.files.length > 0) {
+                document.getElementById('uploadStatus').textContent = `Selected: ${e.target.files[0].name}`;
+                uploadZone.style.borderColor = '#22c55e';
+            }
+        });
+
+        const resourceContainer = document.getElementById('resourceContainer');
+        const emptyState = document.getElementById('resourceEmptyState');
+        let resourceCount = 0;
+        let rowToRemove = null;
+        let latestValidation = {
+            state: 'empty',
+            statusType: 'amber',
+            totalQty: 0,
+            totalCO2: 0,
+            averageQty: 0,
+            exceedsThreshold: false,
+            anomalyScore: 0,
+            message: 'Add or update resources to run validation.'
+        };
+
+        document.getElementById('confirmRemoveBtn').addEventListener('click', () => {
+            if (rowToRemove) {
+                rowToRemove.remove();
+                resourceCount--;
+                if(resourceCount === 0) emptyState.style.display = 'block';
+                rowToRemove = null;
+                validateForm();
+            }
+            Utils.toggleModal('confirmModal', false);
+        });
+
+        function createResourceRow(typeVal, qtyVal, unitVal) {
+            const row = document.createElement('div');
+            row.className = 'ds-resource-row';
+            
+            // Build the read-only and edit state templates
+            function renderRow(t, q, u, isEditing) {
+                const co2Val = (q * 2.5).toFixed(2); 
+                if (isEditing) {
+                    row.innerHTML = `
+                        <div><label>Type</label><input type="text" class="form-input r-type" value="${t}" list="resourceSuggestions"/></div>
+                        <div><label>Quantity</label><input class="form-input r-qty" type="number" value="${q}" step="0.01" min="0.01" /></div>
+                        <div><label>Unit</label><input type="text" class="form-input r-unit" value="${u}" list="unitSuggestions"/></div>
+                        <div><label>Est. CO2</label><span class="ds-co2-calc">${co2Val} kg</span></div>
+                        <div style="flex: 0 0 auto; display: flex; align-items: flex-end; gap: 8px;">
+                            <button class="btn-primary save-btn" type="button" style="height: 42px;">Save</button>
+                        </div>
+                    `;
+                    row.querySelector('.save-btn').addEventListener('click', () => {
+                        renderRow(row.querySelector('.r-type').value, parseFloat(row.querySelector('.r-qty').value) || 0, row.querySelector('.r-unit').value, false);
+                        validateForm();
+                    });
+                } else {
+                    row.innerHTML = `
+                        <div><label>Type</label><strong><span class="r-type-disp">${t}</span></strong></div>
+                        <div><label>Quantity</label><strong><span class="r-qty-disp">${q}</span></strong></div>
+                        <div><label>Unit</label><strong><span class="r-unit-disp">${u}</span></strong></div>
+                        <div><label>Est. CO2</label><span class="ds-co2-calc">${co2Val} kg</span></div>
+                        <div style="flex: 0 0 auto; display: flex; align-items: flex-end; gap: 8px;">
+                            <button class="btn-outline edit-btn" type="button" style="height: 42px;">Edit</button>
+                            <button class="btn-outline remove-btn" type="button" style="height: 42px; color:#ef4444; border-color:#fca5a5;"><img src="../assets/icons/trash-20.svg" alt="" style="width:16px; margin-right:6px;" /> Remove</button>
+                        </div>
+                    `;
+                    row.querySelector('.edit-btn').addEventListener('click', () => {
+                        renderRow(t, q, u, true);
+                        validateForm();
+                    });
+                    row.querySelector('.remove-btn').addEventListener('click', () => {
+                        rowToRemove = row;
+                        Utils.toggleModal('confirmModal', true);
+                    });
+                }
+            }
+            
+            renderRow(typeVal, qtyVal, unitVal, false);
+            resourceContainer.appendChild(row);
+            resourceCount++;
+        }
+
+        [{type:'Diesel', qty:2500, unit:'Liters'}, {type:'LPG', qty:1800, unit:'Kg'}].forEach(r => createResourceRow(r.type, r.qty, r.unit));
+
+        document.getElementById('inlineAddBtn').addEventListener('click', () => {
+            const type = document.getElementById('inlineType').value.trim();
+            const qty = parseFloat(document.getElementById('inlineQty').value);
+            const unit = document.getElementById('inlineUnit').value.trim();
+            if(!type || isNaN(qty) || qty<=0 || !unit) { Utils.showToast("Provide valid type, quantity, unit.", "error"); return; }
+            createResourceRow(type, qty, unit);
+            emptyState.style.display = 'none';
+            document.getElementById('inlineType').value = ''; document.getElementById('inlineQty').value = ''; document.getElementById('inlineUnit').value = '';
+            validateForm();
+        });
+
+        const btnSubmit = document.getElementById('btnSubmitData');
+        const deviationReasonCard = document.getElementById('deviationReasonCard');
+        const deviationReasonInput = document.getElementById('deviationReason');
+        const validationStateBadge = document.getElementById('validationStateBadge');
+        const validationSummary = document.getElementById('validationSummary');
+        const historicalAverageValue = document.getElementById('historicalAverageValue');
+        const currentTotalValue = document.getElementById('currentTotalValue');
+        const thresholdValue = document.getElementById('thresholdValue');
+
+        function getDraftResources() {
+            return Array.from(document.getElementById('resourceContainer').querySelectorAll('.ds-resource-row')).map(row => ({
+                type: row.querySelector('.r-type-disp') ? row.querySelector('.r-type-disp').textContent : '',
+                qty: parseFloat(row.querySelector('.r-qty-disp') ? row.querySelector('.r-qty-disp').textContent : '0') || 0,
+                unit: row.querySelector('.r-unit-disp') ? row.querySelector('.r-unit-disp').textContent : ''
+            })).filter(resource => resource.type && resource.qty > 0 && resource.unit);
+        }
+
+        function calculateValidation(resources) {
+            const totalQty = resources.reduce((sum, resource) => sum + resource.qty, 0);
+            const totalCO2 = resources.reduce((sum, resource) => sum + (resource.qty * 2.5), 0);
+            const previousTotals = historicalSubs.map(sub => Number(sub.totalConsumption) || 0).filter(Boolean);
+            const averageQty = previousTotals.length ? previousTotals.reduce((sum, value) => sum + value, 0) / previousTotals.length : 0;
+            const exceedsThreshold = thresholdNumeric > 0 && totalQty > thresholdNumeric;
+            const varianceRatio = averageQty > 0 ? Math.abs(totalQty - averageQty) / averageQty : 0;
+            const anomalyScore = Math.round(varianceRatio * 100);
+            let state = 'valid';
+            let statusType = 'green';
+            let message = 'Consumption is within expected range and ready for analyst review.';
+
+            if (!resources.length) {
+                state = 'empty';
+                statusType = 'amber';
+                message = 'Add or update resources to run validation.';
+            } else if (exceedsThreshold) {
+                state = 'threshold_breach';
+                statusType = 'red';
+                message = `Total consumption exceeds the department threshold of ${thresholdNumeric.toLocaleString()} units. A deviation reason is required before locking the submission.`;
+            } else if (varianceRatio >= 0.25) {
+                state = 'anomalous';
+                statusType = 'amber';
+                message = 'Consumption deviates significantly from the historical average. Submission can proceed, but analyst review will be flagged.';
+            }
+
+            return { state, statusType, totalQty, totalCO2, averageQty, exceedsThreshold, anomalyScore, message };
+        }
+
+        function renderValidation(validation) {
+            latestValidation = validation;
+            const badgeLabelMap = {
+                empty: 'Needs Review',
+                valid: 'Validated',
+                anomalous: 'Anomaly Flag',
+                threshold_breach: 'Threshold Breach'
+            };
+
+            validationStateBadge.textContent = badgeLabelMap[validation.state] || 'Needs Review';
+            validationStateBadge.className = `status-badge status-badge--${validation.statusType}`;
+            validationSummary.textContent = validation.message;
+            historicalAverageValue.textContent = validation.averageQty ? `${validation.averageQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units` : '--';
+            currentTotalValue.textContent = validation.totalQty ? `${validation.totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units` : '--';
+            thresholdValue.textContent = thresholdNumeric ? `${thresholdNumeric.toLocaleString()} Units` : '--';
+            deviationReasonCard.style.display = validation.exceedsThreshold ? 'block' : 'none';
+            if (!validation.exceedsThreshold) {
+                deviationReasonInput.value = '';
+            }
+        }
+
+        function validateForm() {
+            const hasResource = resourceCount > 0;
+            // Any rows stuck in "edit" mode should block submission simply for UI safety
+            const isEditing = document.querySelectorAll('.save-btn').length > 0;
+            const validation = calculateValidation(getDraftResources());
+            renderValidation(validation);
+            const hasDeviationReason = !validation.exceedsThreshold || deviationReasonInput.value.trim().length > 0;
+
+            if(hasResource && !isEditing && hasDeviationReason) {
+                btnSubmit.disabled = false; btnSubmit.style.opacity = '1'; btnSubmit.style.cursor = 'pointer';
+            } else {
+                btnSubmit.disabled = true; btnSubmit.style.opacity = '0.5'; btnSubmit.style.cursor = 'not-allowed';
+            }
+            return hasResource && !isEditing && hasDeviationReason;
+        }
+
+        deviationReasonInput.addEventListener('input', validateForm);
+        validateForm();
+
+        btnSubmit.addEventListener('click', () => {
+            if(!validateForm()) return;
+
+            const dbState = Utils.getDB();
+            const resources = getDraftResources();
+            const totalQty = latestValidation.totalQty;
+            const totalCO2 = latestValidation.totalCO2;
+            const deviationReason = deviationReasonInput.value.trim();
+            
+            const mm = document.getElementById('monthSelect').value;
+            const yy = document.getElementById('yearSelect').value;
+            const formattedPeriod = `${mm} ${yy}`;
+            const periodLabel = `${yy}-${mm}`;
+
+            const newSub = {
+                id: 'sub_' + Date.now(),
+                organizationId: activeOrg ? activeOrg.id : '',
+                departmentId: activeDepartment ? activeDepartment.id : 'dept-ops',
+                departmentName,
+                managerName: currentUser.name || departmentName,
+                managerUserId: currentUser.id || null,
+                period: formattedPeriod,
+                status: 'Pending',
+                score: 'Evaluating',
+                submittedAt: new Date().toLocaleString([], {month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit'}),
+                resources: resources,
+                totalConsumption: totalQty,
+                totalCO2: totalCO2,
+                validation: {
+                    state: latestValidation.state,
+                    anomalyScore: latestValidation.anomalyScore,
+                    deviationReason: deviationReason
+                },
+                locked: true
+            };
+
+            if(!dbState.submissions) dbState.submissions = [];
+            if(!dbState.managerSubmissions) dbState.managerSubmissions = [];
+            if(!dbState.notifications) dbState.notifications = [];
+            if(!dbState.alerts) dbState.alerts = [];
+            if(!dbState.submissionTracker) dbState.submissionTracker = [];
+
+            dbState.submissions.unshift(newSub);
+            dbState.managerSubmissions.unshift({
+                id: newSub.id,
+                period: newSub.period,
+                status: newSub.status,
+                score: newSub.score,
+                submittedAt: newSub.submittedAt,
+                resources: newSub.resources,
+                totalConsumption: newSub.totalConsumption,
+                totalCO2: newSub.totalCO2
+            });
+
+            const orgRecord = (dbState.organizations || []).find(org => org.id === newSub.organizationId);
+            if (orgRecord) {
+                orgRecord.current = `${totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units`;
+                orgRecord.co2 = totalCO2.toLocaleString(undefined, { maximumFractionDigits: 0 });
+                orgRecord.lastSubmittedPeriod = periodLabel;
+                if (latestValidation.exceedsThreshold) {
+                    orgRecord.status = 'Exceeded';
+                    orgRecord.statusType = 'red';
+                } else if (latestValidation.state === 'anomalous') {
+                    orgRecord.status = 'Needs Review';
+                    orgRecord.statusType = 'amber';
+                } else {
+                    orgRecord.status = 'Submitted';
+                    orgRecord.statusType = 'green';
+                }
+            }
+
+            const deptRecord = (dbState.departments || []).find(dept => dept.id === newSub.departmentId);
+            if (deptRecord) {
+                deptRecord.current = `${totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units`;
+                deptRecord.co2 = totalCO2.toLocaleString(undefined, { maximumFractionDigits: 0 });
+                deptRecord.status = latestValidation.exceedsThreshold ? 'Exceeded' : (latestValidation.state === 'anomalous' ? 'Approaching' : 'Within Target');
+                deptRecord.statusType = latestValidation.exceedsThreshold ? 'red' : (latestValidation.state === 'anomalous' ? 'amber' : 'green');
+                deptRecord.consumption = `${totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units`;
+                deptRecord.submittedAt = newSub.submittedAt;
+            }
+
+            let trackerRecord = dbState.submissionTracker.find(item => item.name === departmentName);
+            if (!trackerRecord) {
+                trackerRecord = {
+                    id: departmentName.toLowerCase().slice(0, 3),
+                    name: departmentName,
+                    manager: currentUser.name || activeDepartment?.manager || '',
+                    status: 'pending',
+                    consumption: '--',
+                    submittedAt: '--'
+                };
+                dbState.submissionTracker.push(trackerRecord);
+            }
+            trackerRecord.status = 'submitted';
+            trackerRecord.manager = currentUser.name || activeOrg.manager;
+            trackerRecord.consumption = `${totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units`;
+            trackerRecord.submittedAt = newSub.submittedAt;
+
+            dbState.notifications.unshift({
+                id: Date.now(),
+                role: 'Analyst',
+                title: 'New Locked Submission',
+                body: `${departmentName} submitted ${formattedPeriod} resource data.`,
+                timestamp: 'Just now',
+                read: false,
+                details: `Submission ${newSub.id} is ready for analyst review with total consumption ${trackerRecord.consumption}.`
+            });
+
+            if (latestValidation.exceedsThreshold) {
+                const alertId = 'alt_' + Date.now();
+                dbState.alerts.unshift({
+                    id: alertId,
+                    type: 'Threshold Breach',
+                    severity: 'Critical',
+                    roleScope: ['Manager', 'COO'],
+                    departmentId: newSub.departmentId,
+                    departmentName,
+                    status: 'Open',
+                    message: `System detected consumption exceeding the monthly threshold by ${(totalQty - thresholdNumeric).toLocaleString(undefined, { maximumFractionDigits: 2 })} units.`,
+                    deviationReason,
+                    createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+                    updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+                });
+
+                dbState.notifications.unshift({
+                    id: Date.now() + 1,
+                    role: 'COO',
+                    title: 'Threshold Breach Raised',
+                    body: `${departmentName} exceeded its department threshold.`,
+                    timestamp: 'Just now',
+                    read: false,
+                    details: deviationReason
+                });
+                dbState.notifications.unshift({
+                    id: Date.now() + 2,
+                    role: 'Manager',
+                    title: 'Deviation Reason Logged',
+                    body: `Threshold breach for ${departmentName} was submitted for executive review.`,
+                    timestamp: 'Just now',
+                    read: false,
+                    details: deviationReason
+                });
+            }
+
+            Utils.replaceDB(dbState);
+            Utils.logAction(
+                `Locked Submission: ${departmentName} ${formattedPeriod}${latestValidation.exceedsThreshold ? ' (Threshold Breach)' : ''}`,
+                latestValidation.exceedsThreshold ? 'Warning' : 'Success',
+                latestValidation.exceedsThreshold ? 'amber' : 'green'
+            );
+            
+            Utils.showToast(latestValidation.exceedsThreshold ? "Threshold breach recorded and submitted with deviation reason." : "Data submitted successfully!");
+            btnSubmit.innerHTML = `<span>Submitted Successfully</span>`; btnSubmit.disabled = true; btnSubmit.style.backgroundColor = '#10b981'; btnSubmit.style.borderColor = '#10b981';
+            setTimeout(() => {
+                window.location.href = 'dm-submission-history.html';
+            }, 1000);
+        });
+    });
+  </script>
+</body>
+</html>

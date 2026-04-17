@@ -1,0 +1,152 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organizational Audit Trail - Rorizon COO</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .filters { display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; }
+    .filters > div { flex:1; min-width:180px; }
+  </style>
+</head>
+<body>
+  <div id="app-layout" data-title="Organizational Audit Trail" data-subtitle="Operational activity for your organization only">
+    <div class="page-heading" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px;">
+      <div>
+        <div class="chart-header"><h2 class="page-heading__title" style="font-size:20px; font-weight:700;">Organization Logs</h2></div>
+        <p class="page-heading__subtitle" style="font-size:13px; color:#64748b; margin-top:4px;">Only organization-level Manager, Analyst, and COO events for your assigned organization are shown here.</p>
+      </div>
+      <span class="kpi-tag kpi-tag--muted" style="background:#f8fafc; border:1px solid #cbd5e1; color:#0f172a; font-size:12px; font-weight:600;">Compliance Track</span>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;">
+      <div class="filters">
+        <div>
+          <label class="form-label" style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:8px;">Status</label>
+          <div class="select-wrapper">
+            <select class="form-select" id="auditStatusFilter">
+              <option value="all">All Outcomes</option>
+              <option value="Success">Success</option>
+              <option value="Warning">Warning</option>
+              <option value="Blocked">Blocked</option>
+            </select>
+            <img src="../assets/icons/chevron-down-icon0.svg" alt="" class="select-chevron" />
+          </div>
+        </div>
+        <div>
+          <label class="form-label" style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:8px;">Actor</label>
+          <div class="select-wrapper">
+            <select class="form-select" id="auditActorFilter"><option value="all">All Actors</option></select>
+            <img src="../assets/icons/chevron-down-icon0.svg" alt="" class="select-chevron" />
+          </div>
+        </div>
+        <div>
+          <label class="form-label" style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:8px;">Keyword</label>
+          <input class="form-input" id="auditKeywordFilter" type="text" placeholder="Search actions or actors" />
+        </div>
+        <button class="btn-outline" id="resetAuditFilters" type="button" style="border:1px solid #cbd5e1; color:#0f172a; padding:10px 24px;">Reset All</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-wrapper" style="background:transparent; border:none; margin-bottom:24px;">
+        <table class="data-table" style="background:transparent; border:none;">
+          <thead>
+            <tr style="border-bottom:1px solid #cbd5e1;">
+              <th>TIMESTAMP</th>
+              <th>ACTOR</th>
+              <th>ACTION TAKEN</th>
+              <th>IP</th>
+              <th>OUTCOME</th>
+            </tr>
+          </thead>
+          <tbody id="cooAuditTableBody"></tbody>
+        </table>
+      </div>
+      <p id="cooAuditEntryCount" style="font-size:13px; color:#64748b; margin:0;">Showing 0 organizational entries</p>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    function getScopedAuditLogs() {
+      const db = Utils.getDB();
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+      const organizationId = currentUser ? currentUser.organizationId : '';
+      const users = Array.isArray(db.users) ? db.users : [];
+      const logs = Array.isArray(db.auditLogs) ? db.auditLogs : [];
+
+      const allowedUsers = users.filter(user => user.organizationId === organizationId && ['COO', 'Manager', 'Analyst'].includes(user.role));
+      const allowedActors = new Set(allowedUsers.map(user => `${user.name} (${user.role})`));
+      const allowedNames = allowedUsers.map(user => user.name.toLowerCase());
+
+      return logs.filter(log => {
+        const actor = String(log.actor || '');
+        const action = String(log.action || '').toLowerCase();
+        if (!actor || actor.includes('Super User') || actor.includes('Anonymous')) return false;
+        if (allowedActors.has(actor)) return true;
+        return allowedNames.some(name => actor.toLowerCase().includes(name));
+      });
+    }
+
+    function populateActorFilter(logs) {
+      const select = document.getElementById('auditActorFilter');
+      const currentValue = select.value || 'all';
+      const actors = Array.from(new Set(logs.map(log => log.actor || 'Unknown'))).sort();
+      select.innerHTML = '<option value="all">All Actors</option>' + actors.map(actor => `<option value="${actor}">${actor}</option>`).join('');
+      select.value = actors.includes(currentValue) ? currentValue : 'all';
+    }
+
+    function filterLogs(logs) {
+      const statusValue = document.getElementById('auditStatusFilter').value;
+      const actorValue = document.getElementById('auditActorFilter').value;
+      const keywordValue = document.getElementById('auditKeywordFilter').value.trim().toLowerCase();
+      return logs.filter(log => {
+        const matchesStatus = statusValue === 'all' || (log.status || '') === statusValue;
+        const matchesActor = actorValue === 'all' || (log.actor || '') === actorValue;
+        const haystack = `${log.actor || ''} ${log.action || ''}`.toLowerCase();
+        const matchesKeyword = !keywordValue || haystack.includes(keywordValue);
+        return matchesStatus && matchesActor && matchesKeyword;
+      });
+    }
+
+    function renderAuditTable() {
+      const logs = getScopedAuditLogs();
+      populateActorFilter(logs);
+      const filteredLogs = filterLogs(logs);
+      const tbody = document.getElementById('cooAuditTableBody');
+      if (!filteredLogs.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No organization-level audit logs match the current filters.</td></tr>';
+        document.getElementById('cooAuditEntryCount').textContent = 'Showing 0 organizational entries';
+        return;
+      }
+      tbody.innerHTML = filteredLogs.map(log => `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="font-size:13px; color:#334155; font-family:monospace;">${log.timestamp || '--'}</td>
+          <td style="font-size:13px; color:#0f172a; font-weight:500;">${log.actor || 'Unknown'}</td>
+          <td style="font-size:13px; color:#475569;">${log.action || '--'}</td>
+          <td style="font-size:13px; color:#94a3b8;">${log.ip || '192.168.1.1'}</td>
+          <td><span class="status-badge status-badge--${log.statusType || 'green'}">${log.status || 'Success'}</span></td>
+        </tr>
+      `).join('');
+      document.getElementById('cooAuditEntryCount').textContent = `Showing ${filteredLogs.length} organizational entries`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAuditTable();
+      document.getElementById('auditStatusFilter').addEventListener('change', renderAuditTable);
+      document.getElementById('auditActorFilter').addEventListener('change', renderAuditTable);
+      document.getElementById('auditKeywordFilter').addEventListener('input', renderAuditTable);
+      document.getElementById('resetAuditFilters').addEventListener('click', () => {
+        document.getElementById('auditStatusFilter').value = 'all';
+        document.getElementById('auditActorFilter').value = 'all';
+        document.getElementById('auditKeywordFilter').value = '';
+        renderAuditTable();
+      });
+      window.addEventListener('rorizon-db-updated', renderAuditTable);
+    });
+  </script>
+</body>
+</html>

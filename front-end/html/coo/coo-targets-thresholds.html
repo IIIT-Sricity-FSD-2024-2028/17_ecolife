@@ -1,0 +1,217 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Targets & Thresholds - Rorizon COO</title>
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+.hero{background:linear-gradient(145deg,#eef4ff 0%,#f8fafc 100%);border:1px solid #dbeafe;border-radius:20px;padding:24px;margin-bottom:24px}
+.hero__head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.hero__title{font-size:31px;font-weight:700;color:#0f172a;margin:0 0 8px 0}
+.hero__sub{font-size:14px;color:#64748b;margin:0;max-width:760px}
+.summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:20px}
+.summary-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px}
+.summary-card__label{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+.summary-card__value{font-size:28px;font-weight:700;color:#0f172a;margin:8px 0 4px}
+.summary-card__meta{font-size:13px;color:#64748b}
+.context-card,.chart-card,.targets-card{margin-bottom:24px}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}
+.history-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.history-card{padding:16px;border:1px solid #e2e8f0;border-radius:14px;background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%)}
+.history-card__period{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.history-card__value{font-size:22px;font-weight:700;color:#0f172a;margin-bottom:4px}
+.history-card__meta{font-size:13px;color:#64748b}
+.history-bar{margin-top:12px;height:8px;border-radius:999px;background:#e2e8f0;overflow:hidden}
+.history-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#2563eb 0%,#38bdf8 100%)}
+.targets-stack{display:grid;gap:16px}
+.target-row{display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(110px,.7fr) minmax(130px,.9fr) minmax(130px,.9fr) 44px;gap:14px;align-items:end;padding:16px;border:1px solid #e2e8f0;border-radius:14px;background:#fff}
+.target-row__label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;display:block}
+.row-action{width:40px;height:40px;border:1px solid #fecaca;border-radius:10px;background:#fff;color:#dc2626;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center}
+.target-row__name{font-weight:600;color:#0f172a}
+.footer-actions{display:flex;justify-content:space-between;align-items:center;gap:16px;border-top:1px solid #e2e8f0;padding-top:20px;margin-top:20px}
+.helper-copy{font-size:13px;color:#64748b;margin:0}
+@media(max-width:1080px){.target-row{grid-template-columns:1fr 1fr}.target-row>div:last-of-type{grid-column:1/-1}.row-action{width:100%}.summary-grid{grid-template-columns:1fr}.hero__head,.section-head,.footer-actions{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<div id="app-layout" data-title="Targets & Thresholds" data-subtitle="Set consumption targets and escalation limits">
+  <div class="hero">
+    <div class="hero__head">
+      <div>
+        <h2 class="hero__title">Set Consumption Targets</h2>
+        <p class="hero__sub">Configure resource-wise monthly targets for each department, keep threshold buffers in sync, and compare the current target plan against recent department consumption.</p>
+      </div>
+      <span class="kpi-tag kpi-tag--muted" style="background:#fff;border:1px solid #dbe3f4;color:#0f172a;font-weight:600;">Executive Control</span>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card"><div class="summary-card__label">Current Monthly Target</div><div class="summary-card__value" id="targetTotalCard">--</div><div class="summary-card__meta">Combined department target</div></div>
+      <div class="summary-card"><div class="summary-card__label">Threshold Buffer</div><div class="summary-card__value" id="bufferCard">--</div><div class="summary-card__meta">Difference between threshold and target</div></div>
+      <div class="summary-card"><div class="summary-card__label">Tracked Resources</div><div class="summary-card__value" id="resourceCountCard">0</div><div class="summary-card__meta">Editable monthly resource lines</div></div>
+    </div>
+  </div>
+
+  <div class="card context-card">
+    <div class="section-head"><h2 class="card__title">Department Context</h2><span id="contextOrgName" style="font-size:12px;font-weight:600;color:#0f172a;">--</span></div>
+    <label class="form-label" style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:8px;">Select Department to Configure</label>
+    <div class="select-wrapper" style="width:min(320px,100%);">
+      <select class="form-select" id="orgSelect"></select>
+      <img src="../assets/icons/chevron-down-icon0.svg" alt="" class="select-chevron" />
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <div class="section-head"><h2 class="card__title" id="chartTitle">Historical Consumption</h2><span class="kpi-tag kpi-tag--muted">6-Month Trend</span></div>
+    <div class="history-grid" id="chartShell"></div>
+  </div>
+
+  <div class="card targets-card">
+    <div class="section-head"><div><h2 class="card__title" id="targetsTitle">Monthly Targets</h2><p class="helper-copy">Each row is editable. You can add new resource types, adjust thresholds independently, or remove outdated resource rows.</p></div><span style="font-size:12px;font-weight:600;color:#475569;">Units can vary by resource</span></div>
+    <form id="thresholdForm">
+      <div class="targets-stack" id="targetRows"></div>
+      <div class="footer-actions">
+        <button class="btn-outline" type="button" id="btnAddCustomTarget">Add Custom Resource</button>
+        <button class="btn-primary" type="submit"><img src="../assets/icons/save0.svg" alt="" class="btn__icon" style="width:14px;margin-right:6px;"><span>Save System Targets</span></button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="toast toast--success" id="toastMessage"><div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt=""></div><p class="toast__text" id="toastText"></p></div>
+<script src="../../js/data.js"></script><script src="../../js/utils.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+const $=id=>document.getElementById(id);
+const currentUser=JSON.parse(localStorage.getItem('currentUser')||'null');
+let draftTargets=[];
+
+const db=()=>{const state=Utils.getDB();state.organizations=state.organizations||[];state.departments=state.departments||[];state.submissions=state.submissions||[];return state;};
+const parseNumeric=value=>Utils.parseAmount(value||0);
+const formatAmount=(value,unit='Units')=>`${Number(value||0).toLocaleString(undefined,{maximumFractionDigits:2})} ${unit}`.trim();
+const fallbackResources=['Fuel','Diesel','LPG'];
+
+function scopedOrganization(){const state=db();return state.organizations.find(org=>org.id===currentUser?.organizationId)||state.organizations[0]||null;}
+function scopedDepartments(){const organization=scopedOrganization();return organization?db().departments.filter(dept=>dept.orgId===organization.id):[];}
+function departmentHistory(departmentId){return db().submissions.filter(sub=>sub.departmentId===departmentId).slice(-6);}
+function currentDepartment(){const state=db();return state.departments.find(entry=>entry.id===$('orgSelect').value)||scopedDepartments()[0]||null;}
+function latestSubmission(departmentId){const history=departmentHistory(departmentId);return history.length?history[history.length-1]:null;}
+function normalizeResource(resource,index){return{id:resource.id||`resource-${Date.now()}-${index}`,name:(resource.name||resource.type||`Resource ${index+1}`).trim(),unit:(resource.unit||'Units').trim(),target:Number(resource.target||0),threshold:Number(resource.threshold||resource.target||0)};}
+function deriveTargets(department){
+  const historyLatest=latestSubmission(department.id);
+  if(Array.isArray(department.resourceTargets)&&department.resourceTargets.length){
+    return department.resourceTargets.map(normalizeResource);
+  }
+  if(historyLatest&&Array.isArray(historyLatest.resources)&&historyLatest.resources.length){
+    return historyLatest.resources.map((resource,index)=>normalizeResource({name:resource.type,unit:resource.unit,target:resource.qty,threshold:Math.round(resource.qty*1.1)},index));
+  }
+  const totalTarget=parseNumeric(department.target);
+  const perResource=Math.round(totalTarget/Math.max(fallbackResources.length,1));
+  return fallbackResources.map((name,index)=>normalizeResource({name,unit:name==='LPG'?'Kg':'Liters',target:index===fallbackResources.length-1?Math.max(totalTarget-(perResource*(fallbackResources.length-1)),0):perResource,threshold:index===fallbackResources.length-1?Math.round(Math.max(totalTarget-(perResource*(fallbackResources.length-1)),0)*1.1):Math.round(perResource*1.1)},index));
+}
+function renderTargetRows(){
+  $('targetRows').innerHTML=draftTargets.map((resource,index)=>`
+    <div class="target-row">
+      <div>
+        <label class="target-row__label">Resource Type</label>
+        <input class="form-input target-input" data-index="${index}" data-field="name" value="${resource.name}" placeholder="Resource name">
+      </div>
+      <div>
+        <label class="target-row__label">Unit</label>
+        <input class="form-input target-input" data-index="${index}" data-field="unit" value="${resource.unit}" placeholder="Liters, Kg, kWh">
+      </div>
+      <div>
+        <label class="target-row__label">Monthly Target</label>
+        <input type="number" min="0" step="0.01" class="form-input target-input" data-index="${index}" data-field="target" value="${resource.target}">
+      </div>
+      <div>
+        <label class="target-row__label">Threshold</label>
+        <input type="number" min="0" step="0.01" class="form-input target-input" data-index="${index}" data-field="threshold" value="${resource.threshold}">
+      </div>
+      <div>
+        <label class="target-row__label">Remove</label>
+        <button class="row-action" type="button" data-remove-index="${index}" aria-label="Remove ${resource.name}">×</button>
+      </div>
+    </div>
+  `).join('');
+  updateSummaryCards();
+}
+function updateSummaryCards(){
+  const targetTotal=draftTargets.reduce((sum,resource)=>sum+Number(resource.target||0),0);
+  const thresholdTotal=draftTargets.reduce((sum,resource)=>sum+Number(resource.threshold||0),0);
+  $('targetTotalCard').textContent=formatAmount(targetTotal,'Units');
+  $('bufferCard').textContent=formatAmount(Math.max(thresholdTotal-targetTotal,0),'Units');
+  $('resourceCountCard').textContent=draftTargets.length;
+}
+function renderHistory(department){
+  const history=departmentHistory(department.id);
+  const maxConsumption=Math.max(...history.map(item=>Number(item.totalConsumption||0)),1);
+  $('chartShell').innerHTML=history.length?history.map(submission=>{
+    const percent=Math.max(8,Math.round((Number(submission.totalConsumption||0)/maxConsumption)*100));
+    const issue=submission.validation?.state==='threshold_breach'?'Threshold Breach':submission.validation?.state==='anomalous'?'Anomaly Review':'On Track';
+    return `<div class="history-card"><div class="history-card__period">${submission.period}</div><div class="history-card__value">${Number(submission.totalConsumption||0).toLocaleString()} units</div><div class="history-card__meta">CO2 ${Number(submission.totalCO2||0).toLocaleString(undefined,{maximumFractionDigits:2})} kg</div><div class="history-card__meta" style="margin-top:4px;">${issue}</div><div class="history-bar" title="${submission.period}: ${Number(submission.totalConsumption||0).toLocaleString()} units"><span style="width:${percent}%"></span></div></div>`;
+  }).join(''):`<div class="history-card"><div class="history-card__period">No history</div><div class="history-card__value">0 units</div><div class="history-card__meta">No recent submissions for this department yet.</div><div class="history-bar"><span style="width:0%"></span></div></div>`;
+}
+function load(){
+  const organization=scopedOrganization();
+  const department=currentDepartment();
+  if(!department||!organization)return;
+  draftTargets=deriveTargets(department);
+  $('orgSelect').value=department.id;
+  $('contextOrgName').textContent=organization.name;
+  $('chartTitle').textContent=`Historical Consumption - ${department.name}`;
+  $('targetsTitle').textContent=`Monthly Targets for ${department.name}`;
+  renderHistory(department);
+  renderTargetRows();
+}
+function populate(){
+  const departments=scopedDepartments();
+  const current=$('orgSelect').value;
+  $('orgSelect').innerHTML=departments.map(dept=>`<option value="${dept.id}">${dept.name}</option>`).join('');
+  if(current&&departments.some(dept=>dept.id===current)){$('orgSelect').value=current;}else if(departments[0]){$('orgSelect').value=departments[0].id;}
+  load();
+}
+
+$('orgSelect').addEventListener('change',load);
+$('btnAddCustomTarget').addEventListener('click',()=>{
+  draftTargets.push({id:`resource-${Date.now()}`,name:'',unit:'Units',target:0,threshold:0});
+  renderTargetRows();
+});
+$('targetRows').addEventListener('input',event=>{
+  const input=event.target.closest('.target-input');
+  if(!input)return;
+  const index=Number(input.dataset.index);
+  const field=input.dataset.field;
+  if(!draftTargets[index])return;
+  draftTargets[index][field]=field==='name'||field==='unit'?input.value:Number(input.value||0);
+  updateSummaryCards();
+});
+$('targetRows').addEventListener('click',event=>{
+  const button=event.target.closest('[data-remove-index]');
+  if(!button)return;
+  const index=Number(button.dataset.removeIndex);
+  draftTargets.splice(index,1);
+  renderTargetRows();
+});
+$('thresholdForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const state=db();
+  const organization=scopedOrganization();
+  const department=state.departments.find(entry=>entry.id===$('orgSelect').value);
+  if(!department||!organization)return;
+  const cleaned=draftTargets.map(normalizeResource).filter(resource=>resource.name&&resource.unit);
+  if(!cleaned.length){Utils.showToast('Add at least one resource target before saving.','error');return;}
+  if(cleaned.some(resource=>resource.target<0||resource.threshold<0)){Utils.showToast('Targets and thresholds must be zero or higher.','error');return;}
+  department.resourceTargets=cleaned;
+  department.target=Utils.formatVolume(cleaned.reduce((sum,resource)=>sum+resource.target,0));
+  department.threshold=Utils.formatVolume(cleaned.reduce((sum,resource)=>sum+resource.threshold,0));
+  Utils.recalculateOrganizationTotals(state,organization.id);
+  Utils.replaceDB(state);
+  Utils.logAction(`Updated thresholds for ${department.name}`,'Success','green');
+  load();
+  Utils.showToast('System targets saved successfully.');
+});
+
+populate();
+window.addEventListener('rorizon-db-updated',populate);
+window.addEventListener('storage',populate);
+});
+</script>
+</body></html>

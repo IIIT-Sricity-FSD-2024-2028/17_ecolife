@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COO Alerts - Rorizon COO</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .alert-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .alert-actions .btn-outline,.alert-actions .btn-primary{min-width:150px}
+    .alert-matrix{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px}
+    .alert-matrix p{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 4px}
+    .alert-matrix strong{font-size:16px;color:#0f172a}
+    .alert-note{padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;font-size:13px;line-height:1.5;margin-bottom:16px}
+    @media(max-width:860px){.alert-matrix{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" data-title="COO Alerts" data-subtitle="TechCorp Industries">
+    <div class="page-heading" style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <div class="chart-header">
+          <h2 class="page-heading__title" style="font-size:20px; font-weight:700;">Platform Escalations</h2>
+        </div>
+        <p class="page-heading__subtitle" style="font-size:13px; color:#64748b; margin-top:4px;">Monitor and respond to live threshold and analyst review alerts.</p>
+      </div>
+      <span id="cooAlertCounter" style="font-size:12px; font-weight:600; color:#1e293b;">0 Active Alerts</span>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:24px; border-bottom:2px solid #e2e8f0; padding-bottom:2px;">
+      <button id="showActiveBtn" class="btn-outline" type="button" style="border-radius:9999px;">Active</button>
+      <button id="showResolvedBtn" class="btn-outline" type="button" style="border-radius:9999px;">Resolved History</button>
+    </div>
+
+    <div id="cooAlertHost" style="display:grid; gap:24px;"></div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      let currentFilter = 'active';
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+      function renderAlerts() {
+        const db = Utils.getDB();
+        const alerts = (db.alerts || []).filter(alert => Array.isArray(alert.roleScope) && alert.roleScope.includes('COO') && (!currentUser?.organizationId || alert.organizationId === currentUser.organizationId));
+        const filtered = alerts.filter(alert => currentFilter === 'active' ? alert.status !== 'Resolved' : alert.status === 'Resolved');
+        const activeCount = alerts.filter(alert => alert.status !== 'Resolved').length;
+        document.getElementById('cooAlertCounter').textContent = `${activeCount} Active Alert${activeCount === 1 ? '' : 's'}`;
+        document.getElementById('showActiveBtn').style.background = currentFilter === 'active' ? '#dbeafe' : 'transparent';
+        document.getElementById('showResolvedBtn').style.background = currentFilter === 'resolved' ? '#dbeafe' : 'transparent';
+
+        const host = document.getElementById('cooAlertHost');
+        if (!filtered.length) {
+          host.innerHTML = `<div class="card"><p style="margin:0; color:#64748b;">No ${currentFilter} alerts found.</p></div>`;
+          return;
+        }
+
+        host.innerHTML = filtered.map(alert => {
+          const statusType = alert.status === 'Resolved' ? 'green' : alert.status === 'Analyst Review' ? 'amber' : alert.status === 'Manager Notified' ? 'amber' : alert.status === 'Fix Requested' ? 'red' : 'red';
+          const department = (db.departments || []).find(item => item.id === alert.departmentId || item.name === alert.departmentName);
+          const org = (db.organizations || []).find(item => item.id === alert.organizationId || item.id === department?.orgId);
+          return `
+            <div class="card" style="border-left:4px solid ${alert.severity === 'Critical' ? '#ef4444' : '#f59e0b'};">
+              <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <span class="status-badge status-badge--${alert.severity === 'Critical' ? 'red' : 'amber'}">${alert.severity}</span>
+                  <span class="status-badge status-badge--${statusType}">${alert.status}</span>
+                  <span class="status-badge status-badge--amber">${alert.type}</span>
+                </div>
+                <span style="font-size:12px; color:#94a3b8;">${(alert.updatedAt || alert.createdAt || '--').replace('T', ' ')}</span>
+              </div>
+
+              <div style="margin-bottom:16px;">
+                <h3 style="font-size:16px; font-weight:700; color:#0f172a; margin:0 0 4px 0;">${alert.departmentName}</h3>
+                <p style="font-size:13px; color:#64748b; margin:0;">${alert.message}</p>
+                <p style="font-size:12px; color:#94a3b8; margin:6px 0 0;">${org ? org.name : '--'} | ${alert.type}</p>
+              </div>
+
+              <div class="alert-matrix">
+                <div>
+                  <p>Current Usage</p>
+                  <strong>${department ? department.current : '--'}</strong>
+                </div>
+                <div>
+                  <p>Threshold</p>
+                  <strong>${department ? department.threshold : '--'}</strong>
+                </div>
+                <div>
+                  <p>Manager Note</p>
+                  <strong style="font-size:14px;font-weight:600;color:#334155;">${alert.managerExplanation || alert.deviationReason || 'No note provided yet.'}</strong>
+                </div>
+              </div>
+
+              <div class="alert-note">Recommended flow: notify the manager when it needs department correction, escalate to the assigned analyst when the data needs validation support, and close the item only after the corrective path is complete.</div>
+
+              ${alert.status === 'Resolved' ? '' : `
+                <div class="alert-actions">
+                  <button class="btn-outline" type="button" onclick="updateCooAlert('${alert.id}','notify_manager')">Notify Manager</button>
+                  <button class="btn-outline" type="button" onclick="updateCooAlert('${alert.id}','notify_analyst')">Escalate Analyst</button>
+                  <button class="btn-primary" type="button" onclick="updateCooAlert('${alert.id}','request_fix')">Request Department Fix</button>
+                  <button class="btn-outline" type="button" onclick="updateCooAlert('${alert.id}','resolve')">Mark Resolved</button>
+                </div>
+              `}
+            </div>
+          `;
+        }).join('');
+      }
+
+      window.updateCooAlert = function(alertId, action) {
+        const db = Utils.getDB();
+        const alert = (db.alerts || []).find(item => item.id === alertId);
+        if (!alert) return;
+        const department = (db.departments || []).find(item => item.id === alert.departmentId || item.name === alert.departmentName);
+        const manager = department ? (db.users || []).find(user => String(user.id) === String(department.managerUserId)) : null;
+        const analysts = (db.users || []).filter(user => user.role === 'Analyst' && user.organizationId === alert.organizationId && Array.isArray(user.assignedDepartmentIds) && user.assignedDepartmentIds.includes(department?.id));
+        const nextStatus = action === 'resolve' ? 'Resolved' : action === 'notify_analyst' ? 'Analyst Review' : action === 'notify_manager' ? 'Manager Notified' : 'Fix Requested';
+        alert.status = nextStatus;
+        alert.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        alert.cooAction = action;
+
+        if (!db.notifications) db.notifications = [];
+        const notifications = [];
+        if (action === 'notify_manager' || action === 'request_fix' || action === 'resolve') {
+          notifications.push({
+            id: Date.now(),
+            role: 'Manager',
+            userId: manager ? manager.id : null,
+            title: action === 'resolve' ? 'Alert Resolved' : 'COO Department Action',
+            body: action === 'resolve' ? `${alert.departmentName} alert was closed by the COO.` : `${alert.departmentName} requires manager follow-up.`,
+            timestamp: 'Just now',
+            read: false,
+            details: action === 'request_fix' ? 'Please coordinate the department correction and update the team.' : `COO updated the alert workflow for ${alert.departmentName}.`
+          });
+        }
+        if (action === 'notify_analyst' || action === 'resolve') {
+          (analysts.length ? analysts : [{ id: null }]).forEach((analyst, index) => {
+            notifications.push({
+              id: Date.now() + index + 1,
+              role: 'Analyst',
+              userId: analyst.id,
+              title: action === 'resolve' ? 'Alert Resolved' : 'COO Validation Review',
+              body: action === 'resolve' ? `${alert.departmentName} alert was closed by the COO.` : `${alert.departmentName} was escalated for analyst review.`,
+              timestamp: 'Just now',
+              read: false,
+              details: action === 'notify_analyst' ? `Please review the department alert and support the corrective workflow.` : `Executive action applied to alert ${alert.id}.`
+            });
+          });
+        }
+        notifications.forEach(item => db.notifications.unshift(item));
+
+        Utils.replaceDB(db);
+        Utils.logAction(`COO Alert Update: ${alert.departmentName} -> ${nextStatus}`, action === 'resolve' ? 'Success' : 'Warning', action === 'resolve' ? 'green' : 'amber');
+        renderAlerts();
+        Utils.showToast(`Alert updated to ${nextStatus}.`);
+      };
+
+      document.getElementById('showActiveBtn').addEventListener('click', () => {
+        currentFilter = 'active';
+        renderAlerts();
+      });
+
+      document.getElementById('showResolvedBtn').addEventListener('click', () => {
+        currentFilter = 'resolved';
+        renderAlerts();
+      });
+
+      renderAlerts();
+      window.addEventListener('rorizon-db-updated', renderAlerts);
+    });
+  </script>
+</body>
+</html>

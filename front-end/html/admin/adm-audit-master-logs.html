@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Audit Trail – Rorizon Super User</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+
+  <div id="app-layout" data-title="System-Wide Audit Logs" data-subtitle="Security &amp; Platform Events">
+    <div class="card">
+      <div class="chart-header">
+        <h2 class="card__title">Recent Activity</h2>
+        <div class="header-actions">
+          <button class="btn-download" type="button" id="exportLogsBtn">
+            <img src="../assets/icons/download0.svg" alt="" class="btn__icon" />
+            <span>Export Logs (.CSV)</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Actor</th>
+              <th>Event Type</th>
+              <th>IP Address</th>
+              <th>Outcome</th>
+            </tr>
+          </thead>
+          <tbody id="auditTableBody"></tbody>
+        </table>
+      </div>
+      
+      <div class="table-footer" style="padding-top: 16px;">
+        <p id="auditEntryCount" class="text--muted">Showing 0 entries</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAuditTable();
+      document.getElementById('exportLogsBtn')?.addEventListener('click', downloadCSV);
+      window.addEventListener('rorizon-db-updated', renderAuditTable);
+    });
+
+    function renderAuditTable() {
+      const db = Utils.getDB();
+      const logs = db.auditLogs || [];
+      const tbody = document.getElementById('auditTableBody');
+      tbody.innerHTML = '';
+
+      if (logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No audit logs found.</td></tr>`;
+        document.getElementById('auditEntryCount').textContent = "Showing 0 entries";
+        return;
+      }
+
+      tbody.innerHTML = logs.map(log => `
+        <tr>
+          <td class="td--timestamp">${log.timestamp || 'N/A'}</td>
+          <td class="${log.actor === 'Anonymous' ? 'text--danger' : 'td--muted'}">${log.actor || 'N/A'}</td>
+          <td class="${log.status === 'Blocked' ? 'text--danger' : ''}">${log.action || 'N/A'}</td>
+          <td class="td--muted">${log.ip || '192.168.1.1'}</td>
+          <td><span class="status-badge status-badge--${log.statusType || 'green'}">${log.status}</span></td>
+        </tr>
+      `).join('');
+
+      document.getElementById('auditEntryCount').textContent = `Showing ${logs.length} dynamic entries`;
+    }
+
+    function downloadCSV() {
+      const logs = Utils.getDB().auditLogs || [];
+      if (logs.length === 0) return Utils.showToast("No data to export.", "error");
+
+      let csvContent = "Timestamp,Actor,Event Type,IP Address,Outcome\n";
+      logs.forEach(log => {
+        csvContent += `"${log.timestamp}","${log.actor}","${log.action}","${log.ip || '192.168.1.1'}","${log.status}"\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "Rorizon_Audit_Logs.csv");
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link); 
+      
+      Utils.showToast("CSV Downloaded Successfully.");
+    }
+  </script>
+</body>
+</html>

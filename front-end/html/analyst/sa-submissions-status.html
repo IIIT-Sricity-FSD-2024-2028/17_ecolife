@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Submissions Status - Rorizon</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <style>
+    .hero{background:linear-gradient(145deg,#eff6ff 0%,#f8fafc 100%);border:1px solid #dbeafe;border-radius:20px;padding:24px;margin-bottom:24px}
+    .hero__head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+    .hero__title{font-size:30px;font-weight:700;color:#0f172a;margin:0 0 8px 0}
+    .hero__sub{font-size:14px;color:#64748b;margin:0;max-width:760px}
+    .summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:20px}
+    .summary-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px}
+    .summary-card__label{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+    .summary-card__value{font-size:28px;font-weight:700;color:#0f172a;margin:8px 0 4px}
+    .summary-card__meta{font-size:13px;color:#64748b}
+    .dept-list{display:grid;gap:16px}
+    .dept-card{padding:18px;border:1px solid #e2e8f0;border-radius:16px;background:#fff}
+    .dept-card__head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:12px}
+    .dept-card__title{font-size:16px;font-weight:700;color:#0f172a;margin:0}
+    .dept-card__meta{font-size:13px;color:#64748b;margin-top:4px}
+    .dept-card__stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
+    .dept-card__stats div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px}
+    .dept-card__stats strong{display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+    .dept-card__actions{display:flex;gap:10px;flex-wrap:wrap}
+    .progress-shell{margin-top:18px}
+    .toast { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 9999; transition: opacity 0.3s ease; }
+    @media(max-width:900px){.summary-grid,.dept-card__stats{grid-template-columns:1fr}.hero__head{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div id="app-layout" data-title="Submissions Status" data-subtitle="Monitor live progress across your assigned departments">
+    <div class="hero">
+      <div class="hero__head">
+        <div>
+          <h2 class="hero__title">Submission Watchlist</h2>
+          <p class="hero__sub">Track submission progress, send reminders quickly, and raise targeted alerts when analyst review finds a department issue.</p>
+        </div>
+        <span class="kpi-tag kpi-tag--muted" id="totalDeptsTag">0 Departments</span>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-card"><div class="summary-card__label">Submitted</div><div class="summary-card__value" id="submittedCard">0</div><div class="summary-card__meta">Departments already collected</div></div>
+        <div class="summary-card"><div class="summary-card__label">Pending</div><div class="summary-card__value" id="pendingCard">0</div><div class="summary-card__meta">Departments still waiting</div></div>
+        <div class="summary-card"><div class="summary-card__label">Open Alerts</div><div class="summary-card__value" id="alertCard">0</div><div class="summary-card__meta">Active issues in your scope</div></div>
+      </div>
+      <div class="progress-shell">
+        <div class="chart-header">
+          <h2 class="card__title">Current Submission Progress</h2>
+          <span class="kpi-tag kpi-tag--blue" id="submissionStatsLabel">0/0 Submitted</span>
+        </div>
+        <div class="progress-bar-wrapper" style="margin-top:16px;">
+          <div class="progress-bar" role="progressbar">
+            <div class="progress-bar__fill" id="submissionFill" style="width:0%; transition: width 0.5s ease-in-out;"></div>
+          </div>
+          <p class="progress-card__label" id="submissionPercentageText">Calculating...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chart-header" style="margin-bottom:16px;">
+        <h2 class="card__title">Departmental Submissions</h2>
+        <span class="kpi-tag kpi-tag--muted">Reminder and alert workflow</span>
+      </div>
+      <div class="dept-list" id="submissionStatusBody"></div>
+    </div>
+  </div>
+
+  <div class="toast toast--success" id="toastMessage" role="alert">
+    <div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt="" /></div>
+    <p class="toast__text" id="toastText">Success!</p>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const toastMessage = document.getElementById('toastMessage');
+      const toastText = document.getElementById('toastText');
+
+      function showToast(message) {
+        toastText.innerText = message;
+        toastMessage.style.display = 'flex';
+        setTimeout(() => { toastMessage.style.opacity = '1'; }, 10);
+        setTimeout(() => {
+          toastMessage.style.opacity = '0';
+          setTimeout(() => { toastMessage.style.display = 'none'; }, 300);
+        }, 3000);
+      }
+
+      function getLiveDepartments() {
+        const db = Utils.getDB();
+        const currentUser = Utils.getCurrentUser();
+        const scopedDepartmentIds = Utils.getUserDepartmentScope(currentUser, db);
+        const tracker = Array.isArray(db.submissionTracker) ? db.submissionTracker : [];
+        const submissions = Array.isArray(db.submissions) ? db.submissions : [];
+        const alerts = Array.isArray(db.alerts) ? db.alerts : [];
+        const departments = Array.isArray(db.departments) ? db.departments : [];
+
+        return tracker
+          .filter(item => !scopedDepartmentIds.length || scopedDepartmentIds.includes(item.id))
+          .map(item => {
+            const departmentRecord = departments.find(entry => entry.id === item.id);
+            const departmentSubmissions = submissions.filter(sub => sub.departmentId === item.id);
+            const latestSubmission = departmentSubmissions[departmentSubmissions.length - 1];
+            const openAlert = alerts.find(alert => alert.departmentId === item.id && alert.status !== 'Resolved');
+            return {
+              id: item.id,
+              name: item.name,
+              manager: item.manager || departmentRecord?.manager || '--',
+              status: item.status || 'pending',
+              submittedAt: item.submittedAt || '--',
+              consumption: item.consumption || '--',
+              validationState: latestSubmission?.validation?.state || '',
+              hasAlert: Boolean(openAlert),
+              deviationReason: latestSubmission?.validation?.deviationReason || openAlert?.deviationReason || '',
+              totalCO2: latestSubmission?.totalCO2 || 0,
+              threshold: departmentRecord?.threshold || '--'
+            };
+          });
+      }
+
+      function renderDashboard() {
+        const depts = getLiveDepartments();
+        const host = document.getElementById('submissionStatusBody');
+        const total = depts.length;
+        const submittedCount = depts.filter(d => d.status === 'submitted').length;
+        const pendingCount = total - submittedCount;
+        const alertCount = depts.filter(d => d.hasAlert).length;
+        const percentage = total === 0 ? 0 : Math.round((submittedCount / total) * 100);
+
+        document.getElementById('submissionStatsLabel').textContent = `${submittedCount}/${total} Submitted`;
+        document.getElementById('submissionFill').style.width = `${percentage}%`;
+        document.getElementById('submissionPercentageText').textContent = `${percentage}% of departmental data collected`;
+        document.getElementById('totalDeptsTag').textContent = `${total} Departments`;
+        document.getElementById('submittedCard').textContent = submittedCount;
+        document.getElementById('pendingCard').textContent = pendingCount;
+        document.getElementById('alertCard').textContent = alertCount;
+
+        host.innerHTML = depts.map(d => {
+          const isPending = d.status === 'pending';
+          const statusLabel = isPending ? 'Pending' : 'Submitted';
+          const statusClass = isPending ? 'amber' : 'green';
+          const reviewLabel = d.validationState === 'threshold_breach' ? 'Threshold Breach' : d.validationState === 'anomalous' ? 'Anomaly Review' : d.hasAlert ? 'Open Alert' : 'Within Range';
+          const reviewClass = d.validationState === 'threshold_breach' ? 'red' : d.validationState === 'anomalous' || d.hasAlert ? 'amber' : 'green';
+          const actionButton = isPending
+            ? `<button class="btn-outline" type="button" onclick="sendReminder('${d.id}')"><img src="../assets/icons/send1.svg" alt="" class="btn__icon" style="width:14px; margin-right:6px;"/><span>Send Reminder</span></button>`
+            : d.validationState === 'threshold_breach' || d.validationState === 'anomalous' || !d.hasAlert
+              ? `<button class="btn-outline" type="button" onclick="raiseAlert('${d.id}')"><img src="../assets/icons/send1.svg" alt="" class="btn__icon" style="width:14px; margin-right:6px;"/><span>${d.hasAlert ? 'Alert Active' : 'Raise Alert'}</span></button><button class="btn-primary" type="button" onclick="viewData('${d.id}')">View Submission</button>`
+              : `<button class="btn-primary" type="button" onclick="viewData('${d.id}')">View Submission</button>`;
+          return `<div class="dept-card"><div class="dept-card__head"><div><h3 class="dept-card__title">${d.name}</h3><p class="dept-card__meta">Manager: ${d.manager}</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;"><span class="status-badge status-badge--${statusClass}">${statusLabel}</span><span class="status-badge status-badge--${reviewClass}">${reviewLabel}</span></div></div><div class="dept-card__stats"><div><strong>Submitted At</strong><span>${d.submittedAt}</span></div><div><strong>Total Consumption</strong><span>${d.consumption}</span></div><div><strong>CO2 / Threshold</strong><span>${Number(d.totalCO2 || 0).toLocaleString()} kg | ${d.threshold}</span></div></div>${d.deviationReason ? `<p class="dept-card__meta" style="margin-bottom:12px;">Issue note: ${d.deviationReason}</p>` : ''}<div class="dept-card__actions">${actionButton}</div></div>`;
+        }).join('') || '<div class="dept-card"><h3 class="dept-card__title">No departments in scope</h3><p class="dept-card__meta" style="margin-top:8px;">Ask the COO to assign departments to your analyst account.</p></div>';
+      }
+
+      window.sendReminder = function(departmentId) {
+        const db = Utils.getDB();
+        const trackerRecord = (db.submissionTracker || []).find(item => item.id === departmentId);
+        if (!trackerRecord) return;
+        if (!db.notifications) db.notifications = [];
+        db.notifications.unshift({
+          id: Date.now(),
+          role: 'Manager',
+          title: 'Submission Reminder',
+          body: `Analyst requested ${trackerRecord.name}'s monthly data submission.`,
+          timestamp: 'Just now',
+          read: false,
+          details: `Please review and submit the pending dataset for ${trackerRecord.name}.`
+        });
+        Utils.replaceDB(db);
+        Utils.logAction(`Analyst Reminder Sent: ${trackerRecord.name}`, 'Success', 'green');
+        renderDashboard();
+        showToast(`Reminder sent to ${trackerRecord.manager || trackerRecord.name}.`);
+      };
+
+      window.raiseAlert = function(departmentId) {
+        const db = Utils.getDB();
+        const trackerRecord = (db.submissionTracker || []).find(item => item.id === departmentId);
+        const submission = (db.submissions || []).filter(sub => sub.departmentId === departmentId).slice(-1)[0];
+        const existingAlert = (db.alerts || []).find(alert => alert.departmentId === departmentId && alert.status !== 'Resolved');
+        if (!trackerRecord) return;
+        if (existingAlert) {
+          showToast(`An active alert already exists for ${trackerRecord.name}.`);
+          return;
+        }
+        if (!db.alerts) db.alerts = [];
+        if (!db.notifications) db.notifications = [];
+        const severity = submission?.validation?.state === 'threshold_breach' ? 'Critical' : 'Medium';
+        const details = submission?.validation?.deviationReason || `Analyst flagged ${trackerRecord.name} for manual review due to submission variance.`;
+        db.alerts.unshift({
+          id: 'alt_' + Date.now(),
+          type: 'Analyst Review Alert',
+          severity,
+          roleScope: ['Manager', 'COO'],
+          departmentId,
+          departmentName: trackerRecord.name,
+          organizationId: submission?.organizationId || '',
+          status: 'Open',
+          message: `Analyst requested follow-up for ${trackerRecord.name}'s latest submission.`,
+          deviationReason: details,
+          createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+          updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        });
+        db.notifications.unshift({ id: Date.now() + 1, role: 'Manager', title: 'Analyst Alert', body: `${trackerRecord.name} submission requires clarification.`, timestamp: 'Just now', read: false, details });
+        db.notifications.unshift({ id: Date.now() + 2, role: 'COO', title: 'Analyst Escalation', body: `${trackerRecord.name} was escalated for review by Sustainability Analyst.`, timestamp: 'Just now', read: false, details });
+        Utils.replaceDB(db);
+        Utils.logAction(`Analyst Alert Raised: ${trackerRecord.name}`, 'Warning', 'amber');
+        renderDashboard();
+        showToast(`Alert sent for ${trackerRecord.name}.`);
+      };
+
+      window.viewData = function(departmentId) {
+        const db = Utils.getDB();
+        const submission = (db.submissions || []).filter(sub => sub.departmentId === departmentId).slice(-1)[0];
+        const department = (db.departments || []).find(dept => dept.id === departmentId);
+        if (!submission) {
+          showToast(`No submitted dataset found for ${department ? department.name : 'this department'}.`);
+          return;
+        }
+        const statusNote = submission.validation?.state === 'threshold_breach' ? 'Threshold breach with deviation reason captured.' : submission.validation?.state === 'anomalous' ? 'Historical anomaly flag present.' : 'Validated submission ready for reporting.';
+        showToast(`${submission.departmentName}: ${submission.totalConsumption.toLocaleString()} units, ${submission.totalCO2.toLocaleString()} kg CO2. ${statusNote}`);
+      };
+
+      renderDashboard();
+      window.addEventListener('rorizon-db-updated', renderDashboard);
+      window.addEventListener('storage', renderDashboard);
+    });
+  </script>
+</body>
+</html>

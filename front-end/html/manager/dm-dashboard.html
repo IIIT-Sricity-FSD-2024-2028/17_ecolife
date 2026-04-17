@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – Rorizon Manager</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    /* Scoped styling for native dynamic charts */
+    .css-chart-container > div {
+        position: relative;
+    }
+    .css-chart-container > div > div:hover {
+        filter: brightness(0.9);
+        cursor: pointer;
+    }
+    #dailyUsageChart > div:hover {
+        background: #1e40af !important;
+        cursor: pointer;
+    }
+    .custom-tooltip {
+        position: fixed;
+        display: none;
+        background: #1e293b;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        pointer-events: none;
+        z-index: 1000;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.2);
+        transform: translate(-50%, -100%);
+        margin-top: -12px;
+        white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="chartTooltip" class="custom-tooltip"></div>
+  <div id="app-layout" data-title="Dashboard" data-subtitle="Operations • TechCorp Industries">
+    <div class="page-heading" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+      <div>
+        <div class="chart-header">
+          <h2 class="page-heading__title" style="margin:0;">Dashboard</h2>
+          <span class="kpi-tag kpi-tag--blue">Operations</span>
+        </div>
+        <p class="page-heading__subtitle" style="margin-top: 4px;">Track resource consumption across your department</p>
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:4px;">Resource Type</label>
+        <select class="form-input" id="resourceFilter" style="width: 200px; padding: 8px 12px;">
+          <option value="All">All Resources</option>
+          <option value="Diesel">Diesel</option>
+          <option value="LPG">LPG</option>
+          <option value="Electricity">Electricity</option>
+          <option value="Water">Water</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="kpi-grid kpi-grid--4" style="grid-template-columns: 2fr 1fr 1fr;">
+      
+      <!-- Combined Current vs Target -->
+      <div class="kpi-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="kpi-card__top" style="justify-content: space-between; display: flex; margin-bottom: 24px;">
+            <p style="margin:0; font-weight: 600; font-size: 14px; color: var(--text-hero);">Current vs Target</p>
+            <div>
+              <span class="kpi-tag kpi-tag--blue">This Month</span>
+              <span class="kpi-tag kpi-tag--green" style="margin-left: 8px;">Target Locked</span>
+            </div>
+        </div>
+        <p class="kpi-card__value" style="display:flex; align-items:baseline; gap:8px; margin:0;">
+            <span id="dmValCurrent" style="font-size: 32px;">--</span>
+            <span style="font-size: 16px; color: var(--text-muted); font-weight: 500;">/ <span id="dmValTarget">--</span></span>
+        </p>
+        <p class="kpi-card__label" style="margin-bottom: 16px;">Current Usage Limit</p>
+        
+        <div>
+            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                <div id="dmProgressBar" style="height: 100%; width: 0%; background: var(--color-blue); transition: width 1s ease;"></div>
+            </div>
+            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-align: right; margin-top: 8px;"><span id="dmProgressPct">--</span> Consumed</div>
+        </div>
+      </div>
+
+      <!-- Variance Card -->
+      <div class="kpi-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="kpi-card__top" style="justify-content: space-between; display: flex; text-align: right;">
+          <img src="../assets/icons/alert-triangle0.svg" style="width: 24px; filter: invert(41%) sepia(87%) saturate(541%) hue-rotate(320deg) brightness(97%) contrast(92%);" />
+          <span class="kpi-tag kpi-tag--amber">Saving</span>
+        </div>
+        <div>
+            <p class="kpi-card__value" style="margin: 8px 0;" id="dmValVariance">--</p>
+            <p class="kpi-card__label" style="margin-bottom: 4px;">Usage Variance</p>
+            <p style="margin:0; font-size: 13px; font-weight: 600; color: var(--color-green);" id="dmValVarianceDesc">Under Target</p>
+        </div>
+      </div>
+
+      <!-- Alert Status -->
+      <div class="kpi-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="kpi-card__top" style="justify-content: space-between;">
+          <img src="../assets/icons/check-circle0.svg" id="dmAlertIcon" style="width: 24px; filter: invert(56%) sepia(54%) saturate(464%) hue-rotate(88deg) brightness(96%) contrast(89%);" />
+          <span style="font-size: 13px; font-weight: 700; color: var(--text-hero);">Live</span>
+        </div>
+        <div>
+            <div style="margin-top: 16px; margin-bottom: 8px;">
+                <span class="kpi-tag kpi-tag--green" style="font-size: 13px;" id="dmValAlert">Loading...</span>
+            </div>
+            <p style="margin:0; font-size: 13px; font-weight: 600; color: var(--text-muted);">Alert Status</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Area Chart Replacement -->
+    <div class="card" style="margin-top: 24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+        <h2 class="card__title" style="margin:0;">Your Department vs Organization Average</h2>
+        <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Last 6 Months</span>
+      </div>
+      <div style="display: flex; height: 260px;">
+          <div id="deptOrgYAxis" style="display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; padding-right: 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; padding-bottom: 4px; border-right: 1px solid var(--border-light); width: 45px;">
+              <!-- JS injects Y axis -->
+          </div>
+          <div class="css-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; border-bottom: 1px solid var(--border-light); padding-bottom: 0px;">
+              <!-- JS injects bars -->
+          </div>
+      </div>
+      <div class="css-chart-labels" style="display: flex; justify-content: space-around; margin-top: 12px; font-size: 12px; color: var(--text-muted); font-weight: 600; padding-left: 45px;">
+          <span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span>
+      </div>
+      <div style="display:flex; gap: 24px; margin-top: 24px; justify-content: center; font-size: 13px; font-weight: 600; color: var(--text-hero);">
+          <div style="display:flex; align-items:center; gap: 8px;"><div style="width:12px;height:12px;background:var(--color-blue);border-radius:2px;"></div> Operations (You)</div>
+          <div style="display:flex; align-items:center; gap: 8px;"><div style="width:12px;height:12px;background:#e2e8f0;border-radius:2px;"></div> Org Average</div>
+      </div>
+    </div>
+
+    <!-- Daily Usage Bar Chart -->
+    <div class="card" style="margin-top: 24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+        <h2 class="card__title" style="margin:0;">Daily Usage (Current Month)</h2>
+        <span style="font-size: 12px; font-weight: 600; color: #2563eb; background:#eff6ff; padding:4px 12px; border-radius:12px;">March 2026</span>
+      </div>
+      <div style="display: flex; height: 180px;">
+          <div id="dailyYAxis" style="display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; padding-right: 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; padding-bottom: 4px; border-right: 1px solid var(--border-light); width: 45px;">
+              <!-- JS injects Y axis -->
+          </div>
+          <div style="flex: 1; display: flex; align-items: flex-end; justify-content: space-between; gap:3px; padding-bottom: 0px; border-bottom: 1px solid var(--border-light); padding-left: 8px;" id="dailyUsageChart">
+              <!-- JS injects mini bars -->
+          </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--text-muted); font-weight: 600; padding-left: 53px;">
+          <span>Mar 1</span>
+          <span>Mar 15</span>
+          <span>Mar 31</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const db = Utils.getDB();
+      const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {name: 'Sarah Miller'};
+      
+      const filterEl = document.getElementById('resourceFilter');
+      const latestSubmissions = db.managerSubmissions || [];
+      const managerDailyUsage = db.managerDailyUsage || {};
+      
+      const targetMap = {
+          "All": { target: 5000, unit: "Units" },
+          "Diesel": { target: 2600, unit: "Liters" },
+          "LPG": { target: 2000, unit: "Kg" },
+          "Electricity": { target: 3500, unit: "kWh" },
+          "Water": { target: 1000, unit: "Gallons" }
+      };
+
+      function renderDashboard(resType) {
+          const config = targetMap[resType];
+          
+          let currentNum = 0;
+          
+          // 1. Determine Current Usage from latest submission (index 0)
+          if (latestSubmissions.length > 0) {
+              const latest = latestSubmissions[0];
+              if (resType === "All") {
+                  currentNum = latest.totalConsumption;
+              } else {
+                  currentNum = latest.resources.filter(r => r.type === resType).reduce((sum, r) => sum + r.qty, 0);
+              }
+          }
+          
+          const targetNum = config.target;
+          
+          // Card 1: Combined Usage Progress
+          document.getElementById('dmValCurrent').textContent = currentNum.toLocaleString() + ' ' + config.unit;
+          document.getElementById('dmValTarget').textContent = targetNum.toLocaleString() + ' ' + config.unit;
+          
+          let pct = targetNum > 0 ? (currentNum / targetNum) * 100 : 0;
+          document.getElementById('dmProgressPct').textContent = pct.toFixed(1) + '%';
+          
+          const bar = document.getElementById('dmProgressBar');
+          setTimeout(() => {
+            bar.style.width = Math.min(pct, 100) + '%';
+            bar.style.backgroundColor = pct > 100 ? 'var(--color-red)' : 'var(--color-blue)';
+          }, 50);
+
+          // Card 2: Variance
+          const variance = targetNum > 0 ? ((currentNum - targetNum) / targetNum) * 100 : 0;
+          const varEl = document.getElementById('dmValVariance');
+          const varDesc = document.getElementById('dmValVarianceDesc');
+          if (variance > 0) {
+              varEl.textContent = '+' + variance.toFixed(1) + '%';
+              varEl.className = 'kpi-card__value text--danger';
+              varDesc.textContent = 'Over Target';
+              varDesc.style.color = 'var(--color-red)';
+          } else {
+              varEl.textContent = variance.toFixed(1) + '%';
+              varEl.className = 'kpi-card__value';
+              varDesc.textContent = 'Under Target';
+              varDesc.style.color = 'var(--color-green)';
+          }
+
+          // Card 3: Alert Status
+          const alertEl = document.getElementById('dmValAlert');
+          const alertIcon = document.getElementById('dmAlertIcon');
+          if (variance > 0) {
+              alertEl.textContent = 'Exceeded Target';
+              alertEl.className = 'kpi-tag kpi-tag--red';
+              alertIcon.src = '../assets/icons/alert-triangle0.svg';
+              alertIcon.style.filter = 'invert(41%) sepia(87%) saturate(541%) hue-rotate(320deg) brightness(97%) contrast(92%)';
+          } else {
+              alertEl.textContent = 'Within Target';
+              alertEl.className = 'kpi-tag kpi-tag--green';
+              alertIcon.src = '../assets/icons/check-circle0.svg';
+              alertIcon.style.filter = 'invert(56%) sepia(54%) saturate(464%) hue-rotate(88deg) brightness(96%) contrast(89%)';
+          }
+
+          // Tooltips helper
+          const tooltip = document.getElementById('chartTooltip');
+          function attachTooltip(el) {
+              el.addEventListener('mousemove', (e) => {
+                  tooltip.innerHTML = el.getAttribute('data-tooltip');
+                  tooltip.style.display = 'block';
+                  tooltip.style.left = e.clientX + 'px';
+                  tooltip.style.top = e.clientY + 'px';
+              });
+              el.addEventListener('mouseleave', () => {
+                  tooltip.style.display = 'none';
+              });
+          }
+
+          // 6-Month Chart Data Construction
+          let histUsage = [];
+          let histMonths = [];
+          
+          for (let i = 0; i < Math.min(latestSubmissions.length, 6); i++) {
+              const sub = latestSubmissions[i];
+              histMonths.unshift(sub.period.split(' ')[0]); // e.g. "03" -> "03"
+              if (resType === "All") {
+                  histUsage.unshift(sub.totalConsumption);
+              } else {
+                  let rqty = sub.resources.filter(r => r.type === resType).reduce((sum, r) => sum + r.qty, 0);
+                  histUsage.unshift(rqty);
+              }
+          }
+          
+          // Pad if less than 6
+          while (histUsage.length < 6) {
+              histUsage.unshift(0);
+              histMonths.unshift("--");
+          }
+
+          let orgAvgUsage = histUsage.map(u => u > 0 ? (u * 0.95 + (Math.random()*100-50)) : 0);
+          
+          const maxVal = Math.max(...histUsage, ...orgAvgUsage, 1) * 1.1;
+          const chartContainer = document.querySelector('.css-chart-container');
+          const chartLabels = document.querySelector('.css-chart-labels');
+          
+          document.getElementById('deptOrgYAxis').innerHTML = `<span>${Math.round(maxVal)}</span><span>${Math.round(maxVal/2)}</span><span>0</span>`;
+          chartLabels.innerHTML = histMonths.map(m => `<span>${m}</span>`).join('');
+          
+          let barsHtml = '';
+          for(let i=0; i<6; i++) {
+              const h1 = (histUsage[i] / maxVal) * 100;
+              const h2 = (orgAvgUsage[i] / maxVal) * 100;
+              barsHtml += `
+                <div style="display:flex; gap:6px; align-items: flex-end; height: 100%; width: 48px; border-radius: 4px;">
+                    <div class="hover-bar" style="width:20px; height: 0%; background: var(--color-blue); border-radius:4px 4px 0 0; transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${i*0.1}s;" data-tooltip="Operations: ${Math.round(histUsage[i])} ${config.unit}" data-h="${h1}%"></div>
+                    <div class="hover-bar" style="width:20px; height: 0%; background: #e2e8f0; border-radius:4px 4px 0 0; transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${i*0.1}s;" data-tooltip="Org Avg: ${Math.round(orgAvgUsage[i])} ${config.unit}" data-h="${h2}%"></div>
+                </div>
+              `;
+          }
+          chartContainer.innerHTML = barsHtml;
+
+          // Daily Usage Chart Construction
+          let dailyArr = [];
+          if (resType === "All") {
+              dailyArr = Array.from({length: 31}, () => 0);
+              for (const [k, v] of Object.entries(managerDailyUsage)) {
+                  v.forEach((val, i) => dailyArr[i] += val);
+              }
+          } else {
+              dailyArr = managerDailyUsage[resType] || Array.from({length: 31}, () => 0);
+          }
+
+          const dailyMax = Math.max(...dailyArr, 1) * 1.1;
+          document.getElementById('dailyYAxis').innerHTML = `<span>${Math.round(dailyMax)}</span><span>${Math.round(dailyMax/2)}</span><span>0</span>`;
+          
+          const dailyContainer = document.getElementById('dailyUsageChart');
+          let dailyHtml = '';
+          for(let i=0; i<31; i++) {
+              const usage = dailyArr[i];
+              const heightPct = Math.min((usage / dailyMax) * 100, 100);
+              dailyHtml += `<div class="hover-bar" style="flex:1; background: var(--color-blue); opacity: 0.85; height: 0%; border-radius: 2px 2px 0 0; min-width: 4px; transition: height 1.5s cubic-bezier(0.4, 0, 0.2, 1) ${(i/30)}s;" data-tooltip="Day ${i+1}: ${Math.round(usage)} ${config.unit}" data-h="${heightPct}%"></div>`;
+          }
+          dailyContainer.innerHTML = dailyHtml;
+
+          // Animations
+          setTimeout(() => {
+              document.querySelectorAll('.hover-bar').forEach(el => attachTooltip(el));
+              chartContainer.querySelectorAll('div[data-h]').forEach(el => el.style.height = el.getAttribute('data-h'));
+              dailyContainer.querySelectorAll('div[data-h]').forEach(el => el.style.height = el.getAttribute('data-h'));
+          }, 50);
+      }
+
+      // Initial Render
+      renderDashboard(filterEl.value);
+
+      // Bind filter change event
+      filterEl.addEventListener('change', (e) => {
+          renderDashboard(e.target.value);
+      });
+    });
+  </script>
+</body>
+</html>

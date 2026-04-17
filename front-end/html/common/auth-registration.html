@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Rorizon Platform</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #fff; }
+    .auth-split { display: flex; min-height: 100vh; }
+    .auth-left {
+      flex: 1; background: linear-gradient(160deg, #0f172a 0%, #1e40af 55%, #22c55e 100%); color: #fff; padding: 64px;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .auth-left .logo-row { display: flex; align-items: center; gap: 12px; margin-bottom: 48px; }
+    .auth-left .logo-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.16); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .auth-left .logo-icon img { filter: brightness(0) invert(1); width: 24px; }
+    .auth-left .logo-text { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+    .auth-left h1 { font-size: 36px; font-weight: 700; margin-bottom: 18px; line-height: 1.2; }
+    .auth-left p { font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.88); max-width: 500px; margin-bottom: 32px; }
+    .feature-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; }
+    .feature-item { display: flex; gap: 14px; align-items: flex-start; }
+    .feature-icon { width: 18px; height: 18px; margin-top: 3px; filter: brightness(0) invert(1); }
+    .feature-item h3 { margin: 0 0 4px 0; font-size: 16px; font-weight: 600; }
+    .feature-item p { margin: 0; font-size: 14px; opacity: 0.82; }
+    .auth-right {
+      flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 48px; background: #fff;
+    }
+    .auth-card { width: 100%; max-width: 430px; }
+    .auth-header { margin-bottom: 28px; }
+    .auth-title { font-size: 28px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .auth-subtitle { color: #64748b; font-size: 15px; margin-bottom: 16px; }
+    .reg-note { margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: #f8fafc; color: #475569; font-size: 14px; line-height: 1.5; border: 1px solid #e2e8f0; }
+    .step-bar { display: flex; gap: 8px; margin-bottom: 32px; }
+    .step-segment { flex: 1; height: 4px; background: #e2e8f0; border-radius: 2px; }
+    .step-segment.active { background: #2563eb; }
+    .form-step { display: none; }
+    .form-step.active { display: block; animation: fadeIn 0.25s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #1e293b; }
+    .form-input { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 15px; color: #334155; transition: border-color 0.2s; box-sizing: border-box; }
+    .form-input:focus { border-color: #2563eb; outline: none; }
+    .pwd-wrapper { position: relative; }
+    .pwd-wrapper img { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: 20px; opacity: 0.5; cursor: pointer; }
+    .btn-submit { width: 100%; padding: 14px; background: #2563eb; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .btn-submit:hover { background: #1d4ed8; }
+    .btn-outline { width: 100%; padding: 14px; background: transparent; color: #2563eb; border: 1px solid #2563eb; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .auth-footer { margin-top: 28px; text-align: center; color: #64748b; font-size: 14px; }
+    .auth-link { color: #2563eb; text-decoration: none; font-weight: 500; }
+    .auth-link:hover { text-decoration: underline; }
+    .back-home { display: inline-block; margin-top: 24px; color: #94a3b8; text-decoration: none; font-size: 14px; }
+    .back-home:hover { color: #64748b; }
+    @media (max-width: 768px) { .auth-left { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="auth-split">
+    <div class="auth-left">
+      <div>
+        <div class="logo-row">
+          <div class="logo-icon"><img src="../assets/icons/leaf0.svg" alt=""></div>
+          <div class="logo-text">Rorizon</div>
+        </div>
+        <h1>Register an organization into the shared sustainability ledger.</h1>
+        <p>Your registration now writes directly into the platform data store so Super User review, COO activation, audit logging, and downstream role access all stay connected.</p>
+        <ul class="feature-list">
+          <li class="feature-item">
+            <img src="../assets/icons/check-circle0.svg" class="feature-icon" alt="">
+            <div>
+              <h3>2-step onboarding</h3>
+              <p>Create the organization record and the initial COO account in one flow.</p>
+            </div>
+          </li>
+          <li class="feature-item">
+            <img src="../assets/icons/check-circle0.svg" class="feature-icon" alt="">
+            <div>
+              <h3>Super User approval</h3>
+              <p>New organizations stay pending until approved in system management.</p>
+            </div>
+          </li>
+          <li class="feature-item">
+            <img src="../assets/icons/check-circle0.svg" class="feature-icon" alt="">
+            <div>
+              <h3>Traceable audit trail</h3>
+              <p>Registration events are logged immediately for governance review.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="auth-right">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h1 class="auth-title">Create your organization</h1>
+          <p class="auth-subtitle" id="stepSubtitle">Step 1 of 2: COO account credentials</p>
+          <div class="step-bar">
+            <div class="step-segment active" id="seg1"></div>
+            <div class="step-segment" id="seg2"></div>
+          </div>
+          <div class="reg-note">The initial COO account is created in an inactive state and becomes sign-in eligible after Super User approval.</div>
+        </div>
+
+        <form id="regForm" novalidate>
+          <div class="form-step active" id="step1">
+            <div class="form-group">
+              <label class="form-label" for="regEmail">COO Email Address</label>
+              <input type="email" class="form-input" id="regEmail" required placeholder="coo@company.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regPassword">Password</label>
+              <div class="pwd-wrapper">
+                <input type="password" class="form-input" id="regPassword" required placeholder="Minimum 8 characters">
+                <img src="../assets/icons/eye0.svg" alt="Show Password" id="togglePwd1">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 24px;">
+              <label class="form-label" for="regPassword2">Confirm Password</label>
+              <div class="pwd-wrapper">
+                <input type="password" class="form-input" id="regPassword2" required placeholder="Re-enter your password">
+                <img src="../assets/icons/eye0.svg" alt="Show Password" id="togglePwd2">
+              </div>
+            </div>
+            <button type="button" class="btn-submit" id="btnNext">Next</button>
+          </div>
+
+          <div class="form-step" id="step2">
+            <div class="form-group">
+              <label class="form-label" for="regCompany">Organization Name</label>
+              <input type="text" class="form-input" id="regCompany" required placeholder="Your organization name">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regIndustry">Industry</label>
+              <input type="text" class="form-input" id="regIndustry" required placeholder="Manufacturing, Logistics, Healthcare...">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regName">COO Full Name</label>
+              <input type="text" class="form-input" id="regName" required placeholder="Full name">
+            </div>
+            <div class="form-group" style="margin-bottom: 24px;">
+              <label class="form-label" for="regTarget">Initial monthly target limit</label>
+              <input type="text" class="form-input" id="regTarget" required placeholder="e.g. 5000 L">
+            </div>
+            <div class="form-group" style="margin-bottom: 24px;">
+              <label class="form-label" for="regDepartments">Departments</label>
+              <input type="text" class="form-input" id="regDepartments" placeholder="e.g. Operations, Manufacturing, Logistics">
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button type="button" class="btn-outline" style="flex: 0 0 auto; min-width: 100px;" id="btnBack">&larr; Back</button>
+              <button type="submit" class="btn-submit" style="flex: 1;" id="btnSubmit">Create Account</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="auth-footer">
+          Already have an account? <a href="auth-login.html" class="auth-link">Sign In</a>
+          <br>
+          <a href="../../index.html" class="back-home">&larr; Back to Home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast toast--success" id="toastMessage">
+    <div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt="" /></div>
+    <p class="toast__text" id="toastText"></p>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const seg2 = document.getElementById('seg2');
+      const subtitle = document.getElementById('stepSubtitle');
+      const form = document.getElementById('regForm');
+
+      function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+
+      document.getElementById('togglePwd1').addEventListener('click', () => togglePassword('regPassword'));
+      document.getElementById('togglePwd2').addEventListener('click', () => togglePassword('regPassword2'));
+
+      document.getElementById('btnNext').addEventListener('click', () => {
+        const email = document.getElementById('regEmail').value.trim().toLowerCase();
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regPassword2').value;
+        const db = Utils.getDB();
+
+        if (!Utils.validateEmail(email)) {
+          Utils.showToast('Please enter a valid COO email address.', 'error');
+          return;
+        }
+        if (password.length < 8) {
+          Utils.showToast('Password must be at least 8 characters.', 'error');
+          return;
+        }
+        if (password !== confirmPassword) {
+          Utils.showToast('Passwords do not match.', 'error');
+          return;
+        }
+        if ((db.users || []).some(user => user.email.toLowerCase() === email)) {
+          Utils.showToast('An account with this email already exists.', 'error');
+          return;
+        }
+
+        step1.classList.remove('active');
+        step2.classList.add('active');
+        seg2.classList.add('active');
+        subtitle.textContent = 'Step 2 of 2: Organization details';
+      });
+
+      document.getElementById('btnBack').addEventListener('click', () => {
+        step2.classList.remove('active');
+        step1.classList.add('active');
+        seg2.classList.remove('active');
+        subtitle.textContent = 'Step 1 of 2: COO account credentials';
+      });
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const company = document.getElementById('regCompany').value.trim();
+        const industry = document.getElementById('regIndustry').value.trim();
+        const cooName = document.getElementById('regName').value.trim();
+        const target = document.getElementById('regTarget').value.trim();
+        const departmentsInput = document.getElementById('regDepartments').value.trim();
+        const email = document.getElementById('regEmail').value.trim().toLowerCase();
+        const password = document.getElementById('regPassword').value;
+        const btn = document.getElementById('btnSubmit');
+
+        if (!company || !industry || !cooName || !target) {
+          Utils.showToast('Please complete all organization details.', 'error');
+          return;
+        }
+        if (!Utils.parseAmount(target)) {
+          Utils.showToast('Please enter a valid numeric organization target.', 'error');
+          return;
+        }
+
+        const db = Utils.getDB();
+        if ((db.organizations || []).some(org => org.name.toLowerCase() === company.toLowerCase())) {
+          Utils.showToast('This organization is already registered.', 'error');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Registering...';
+
+        const orgId = `org-${Date.now()}`;
+        const userId = Date.now() + 1;
+        const thresholdValue = target.match(/\d+/g);
+        const numericTarget = thresholdValue ? Number(thresholdValue.join('')) : 5000;
+        const threshold = Math.round(numericTarget * 1.1);
+
+        db.organizations = db.organizations || [];
+        db.departments = db.departments || [];
+        db.users = db.users || [];
+        db.notifications = db.notifications || [];
+        const departmentNames = departmentsInput
+          ? Array.from(new Set(departmentsInput.split(',').map(item => item.trim()).filter(Boolean)))
+          : ['Operations'];
+
+        db.organizations.unshift({
+          id: orgId,
+          name: company,
+          cooName,
+          cooUserId: userId,
+          cooEmail: email,
+          industry,
+          target,
+          threshold: `${threshold} L`,
+          current: '0 L',
+          co2: '0',
+          status: 'Within Target',
+          statusType: 'green',
+          registrationStatus: 'Pending Approval',
+          registrationStatusType: 'amber',
+          departmentIds: [],
+          requestedAt: new Date().toISOString()
+        });
+
+        db.users.unshift({
+          id: userId,
+          name: cooName,
+          role: 'COO',
+          email,
+          password,
+          department: 'Executive Office',
+          departmentId: `${orgId}-exec`,
+          organizationId: orgId,
+          phone: '--',
+          status: 'Pending Approval',
+          lastLogin: 'Never'
+        });
+
+        departmentNames.forEach((name, index) => {
+          const deptId = `dept-${Date.now()}-${index}`;
+          db.departments.push({
+            id: deptId,
+            orgId,
+            orgName: company,
+            name,
+            manager: 'Unassigned',
+            managerUserId: null,
+            target: '0 L',
+            threshold: '0 L',
+            current: '0 L',
+            co2: '0',
+            status: 'Within Target',
+            statusType: 'green'
+          });
+          const org = db.organizations.find(item => item.id === orgId);
+          if (org) org.departmentIds.push(deptId);
+        });
+
+        db.notifications.unshift({
+          id: Date.now() + 2,
+          role: 'Super User',
+          title: 'New Organization Registration',
+          message: `${company} was registered and is awaiting approval for COO ${cooName}.`,
+          type: 'info',
+          read: false,
+          createdAt: new Date().toISOString()
+        });
+
+        Utils.syncOrganizationDerivedFields(db, orgId);
+        Utils.replaceDB(db);
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('loginTime');
+        Utils.logAction(`Registered organization ${company}`, 'Success', 'green');
+        Utils.showToast('Registration submitted for approval.', 'success');
+        setTimeout(() => { window.location.href = 'auth-login.html'; }, 1400);
+      });
+    });
+  </script>
+</body>
+</html>

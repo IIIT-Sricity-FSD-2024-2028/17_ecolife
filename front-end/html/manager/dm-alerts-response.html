@@ -1,0 +1,137 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alerts &amp; Response - Rorizon</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+</head>
+<body>
+  <div id="app-layout" data-title="Alerts &amp; Response" data-subtitle="Operations • TechCorp Industries">
+    <div class="page-heading">
+      <div class="chart-header">
+        <h2 class="page-heading__title">Alerts & Response</h2>
+        <span class="kpi-tag kpi-tag--red" id="activeAlertCount">0 Active Alerts</span>
+      </div>
+      <p class="page-heading__subtitle">Resolve or escalate live alerts and keep the alert state synced for the COO.</p>
+    </div>
+
+    <div id="managerAlertCards" style="display:grid; gap:24px;"></div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+
+      function getScopedAlerts(db) {
+        return (db.alerts || []).filter(alert => {
+          const scopedToManager = Array.isArray(alert.roleScope) && alert.roleScope.includes('Manager');
+          const sameDepartment = currentUser.departmentId ? alert.departmentId === currentUser.departmentId : true;
+          const sameOrganization = currentUser.organizationId ? alert.organizationId === currentUser.organizationId : true;
+          return scopedToManager && sameDepartment && sameOrganization;
+        });
+      }
+
+      function renderAlerts() {
+        const db = Utils.getDB();
+        const alerts = getScopedAlerts(db);
+        const activeCount = alerts.filter(alert => alert.status !== 'Resolved').length;
+        document.getElementById('activeAlertCount').textContent = `${activeCount} Active Alert${activeCount === 1 ? '' : 's'}`;
+
+        const host = document.getElementById('managerAlertCards');
+        if (!alerts.length) {
+          host.innerHTML = '<div class="card"><p style="margin:0; color:#64748b;">No alerts assigned to this manager.</p></div>';
+          return;
+        }
+
+        host.innerHTML = alerts.map(alert => {
+          const statusType = alert.status === 'Resolved' ? 'green' : alert.status === 'Assigned Review' ? 'amber' : 'red';
+          return `
+            <div class="card" style="border-left:4px solid ${alert.severity === 'Critical' ? '#ef4444' : '#f59e0b'};">
+              <div class="al-card__toprow" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+                <div class="al-badges" style="display:flex; gap:8px;">
+                  <span class="status-badge status-badge--${alert.severity === 'Critical' ? 'red' : 'amber'}">${alert.severity}</span>
+                  <span class="status-badge status-badge--${statusType}">${alert.status}</span>
+                </div>
+                <span class="al-timestamp" style="color:#94a3b8;">${(alert.updatedAt || alert.createdAt || '--').replace('T', ' ')}</span>
+              </div>
+              <h3 class="al-title" style="margin-top:16px;">${alert.type}</h3>
+              <p class="al-dept" style="color:#64748b;">${alert.departmentName}</p>
+              <p class="al-desc" style="color:#334155;">${alert.message}</p>
+              <p style="color:#475569; font-size:14px; margin-top:8px;"><strong>Current note:</strong> ${alert.deviationReason || 'No manager note yet.'}</p>
+              <div class="al-response" style="display:grid; gap:16px; margin-top:20px;">
+                <div class="al-response__field">
+                  <label class="form-label">Explanation</label>
+                  <textarea class="form-textarea" id="expl-${alert.id}" rows="2" ${alert.status === 'Resolved' ? 'disabled' : ''}></textarea>
+                </div>
+                <div class="al-response__field">
+                  <label class="form-label">Action Taken</label>
+                  <textarea class="form-textarea" id="act-${alert.id}" rows="2" ${alert.status === 'Resolved' ? 'disabled' : ''}></textarea>
+                </div>
+                <div class="al-response__actions" style="display:flex; gap:12px;">
+                  <button class="btn-primary" type="button" onclick="handleManagerAlert('${alert.id}','resolve')" ${alert.status === 'Resolved' ? 'disabled' : ''}>Resolve</button>
+                  <button class="btn-outline" type="button" onclick="handleManagerAlert('${alert.id}','escalate')" ${alert.status === 'Resolved' ? 'disabled' : ''}>Escalate</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      window.handleManagerAlert = function(alertId, action) {
+        const db = Utils.getDB();
+        const alert = (db.alerts || []).find(item => item.id === alertId);
+        if (!alert) return;
+
+        const explanation = document.getElementById(`expl-${alertId}`).value.trim();
+        const actionTaken = document.getElementById(`act-${alertId}`).value.trim();
+        if (!explanation) {
+          Utils.showToast('Explain the cause before updating the alert.', 'error');
+          return;
+        }
+
+        alert.managerExplanation = explanation;
+        alert.managerActionTaken = actionTaken;
+        alert.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+        if (!db.notifications) db.notifications = [];
+
+        if (action === 'resolve') {
+          alert.status = 'Resolved';
+          db.notifications.unshift({
+            id: Date.now(),
+            role: 'COO',
+            title: 'Manager Resolved Alert',
+            body: `${alert.departmentName} marked an alert as resolved.`,
+            timestamp: 'Just now',
+            read: false,
+            details: `${explanation}${actionTaken ? ' | Action Taken: ' + actionTaken : ''}`
+          });
+          Utils.logAction(`Manager Resolved Alert: ${alert.departmentName}`, 'Success', 'green');
+        } else {
+          alert.status = 'Escalated';
+          db.notifications.unshift({
+            id: Date.now(),
+            role: 'COO',
+            title: 'Manager Escalated Alert',
+            body: `${alert.departmentName} escalated an alert for executive review.`,
+            timestamp: 'Just now',
+            read: false,
+            details: `${explanation}${actionTaken ? ' | Action Taken: ' + actionTaken : ''}`
+          });
+          Utils.logAction(`Manager Escalated Alert: ${alert.departmentName}`, 'Warning', 'amber');
+        }
+
+        Utils.replaceDB(db);
+        renderAlerts();
+        Utils.showToast(action === 'resolve' ? 'Alert resolved and synced.' : 'Alert escalated to the COO.');
+      };
+
+      renderAlerts();
+      window.addEventListener('rorizon-db-updated', renderAlerts);
+    });
+  </script>
+</body>
+</html>

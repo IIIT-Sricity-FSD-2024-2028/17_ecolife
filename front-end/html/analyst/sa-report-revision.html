@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report Revision - Rorizon</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+</head>
+<body>
+
+  <div id="app-layout" data-title="Report Revision" data-subtitle="TechCorp Industries">
+
+    <div class="page-heading">
+      <div class="chart-header">
+        <h2 class="page-heading__title">Report Revision</h2>
+        <span class="kpi-tag kpi-tag--amber" id="revisionQueueCount">0 Revision Requests</span>
+      </div>
+      <p class="page-heading__subtitle">Address COO revision comments and resubmit the updated report for executive review.</p>
+    </div>
+
+    <div class="report-layout" style="display:grid; grid-template-columns: 1fr 2fr; gap:24px;">
+
+      <div class="report-left">
+
+        <div class="card" style="margin-bottom:24px;">
+          <div class="chart-header">
+            <h2 class="card__title">Revision Queue</h2>
+            <span class="kpi-tag kpi-tag--muted">Live Shared State</span>
+          </div>
+          <div class="select-wrapper" style="margin-top:16px;">
+            <select class="form-select" id="revisionReportSelect"></select>
+            <img src="../assets/icons/chevron-down-icon0.svg" alt="" class="select-chevron" />
+          </div>
+        </div>
+
+        <div class="card card--period" style="margin-bottom:24px;">
+          <div class="chart-header">
+            <h2 class="card__title">Revision Period</h2>
+            <span style="font-size:12px; font-weight:600; color:#475569;" id="revisionPeriodValue">--</span>
+          </div>
+          <p class="report-period__value" id="reportStatusText" style="color:#64748b; font-size:14px; margin-top:16px;">Status: Awaiting selection</p>
+        </div>
+
+        <div class="card card--feedback">
+          <div class="chart-header">
+            <h2 class="card__title">COO Feedback</h2>
+            <span class="kpi-tag kpi-tag--amber" style="background:transparent; color:#b45309;">Review Note</span>
+          </div>
+          <div class="feedback-comment" style="color:#92400e; font-size:14px; margin-top:16px; font-style:italic;">
+            <p class="feedback-comment__text" id="feedbackCommentText">No revision request selected.</p>
+            <p class="feedback-comment__author" id="feedbackCommentAuthor" style="margin-top:16px; font-weight:600;">--</p>
+          </div>
+        </div>
+
+      </div>
+      
+      <div class="report-right">
+
+        <div class="card card--editor">
+          <div class="chart-header">
+            <h2 class="card__title">Revised Content</h2>
+            <span class="kpi-tag kpi-tag--muted" id="editorModeTag" style="background:#64748b; color:#fff; font-size:11px;">Editable</span>
+          </div>
+
+          <div class="report-fields" style="margin-top:16px;">
+            <div class="report-field" style="margin-bottom:24px;">
+              <label class="form-label" for="revised-intro">Introduction</label>
+              <textarea class="form-input" id="revised-intro" rows="3" style="width:100%; resize:vertical;"></textarea>
+            </div>
+
+            <div class="report-field" style="margin-bottom:24px;">
+              <label class="form-label" for="revised-consumption">Consumption Summary</label>
+              <textarea class="form-input" id="revised-consumption" rows="4" style="width:100%; resize:vertical;"></textarea>
+            </div>
+
+            <div class="report-field" style="margin-bottom:24px;">
+              <label class="form-label" for="revised-emissions">Emissions Analysis</label>
+              <textarea class="form-input" id="revised-emissions" rows="4" style="width:100%; resize:vertical; border-color:#f59e0b; background:#fff;"></textarea>
+            </div>
+
+            <div class="report-field" style="margin-bottom:24px;">
+              <label class="form-label" for="revised-comparisons">Comparisons</label>
+              <textarea class="form-input" id="revised-comparisons" rows="3" style="width:100%; resize:vertical;"></textarea>
+            </div>
+
+            <div class="report-field">
+              <label class="form-label" for="revised-conclusions">Conclusions</label>
+              <textarea class="form-input" id="revised-conclusions" rows="3" style="width:100%; resize:vertical;"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-gen-actions" style="display:flex; gap:16px; margin-top:24px; align-items:stretch;">
+          <button class="btn-outline" type="button" id="btnDiscard" style="flex:1;">Reload Revision</button>
+          <button class="btn-primary" type="button" id="btnResubmit" style="flex:2; justify-content:center;">
+            <img src="../assets/icons/send0.svg" alt="" class="btn__icon" />
+            <span id="resubmitText">Resubmit to COO</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    let activeRevisionId = null;
+
+    function getRevisionReports() {
+      const db = Utils.getDB();
+      return (db.reports || []).filter(report => report.status === 'Revision Required' && report.revision && report.revision.required);
+    }
+
+    function populateRevisionQueue() {
+      const reports = getRevisionReports();
+      const select = document.getElementById('revisionReportSelect');
+      document.getElementById('revisionQueueCount').textContent = `${reports.length} Revision Request${reports.length === 1 ? '' : 's'}`;
+      select.innerHTML = reports.length
+        ? reports.map(report => `<option value="${report.id}">${report.title}</option>`).join('')
+        : '<option value="">No revision requests</option>';
+
+      if (reports.length) {
+        activeRevisionId = reports.some(report => String(report.id) === String(activeRevisionId)) ? activeRevisionId : reports[0].id;
+        select.value = String(activeRevisionId);
+      } else {
+        activeRevisionId = null;
+      }
+    }
+
+    function loadActiveRevision() {
+      const db = Utils.getDB();
+      const report = (db.reports || []).find(item => String(item.id) === String(activeRevisionId));
+      const fields = [
+        'revised-intro',
+        'revised-consumption',
+        'revised-emissions',
+        'revised-comparisons',
+        'revised-conclusions'
+      ];
+
+      if (!report) {
+        document.getElementById('revisionPeriodValue').textContent = '--';
+        document.getElementById('reportStatusText').textContent = 'Status: Awaiting selection';
+        document.getElementById('feedbackCommentText').textContent = 'No revision request selected.';
+        document.getElementById('feedbackCommentAuthor').textContent = '--';
+        fields.forEach(id => {
+          document.getElementById(id).value = '';
+          document.getElementById(id).disabled = true;
+        });
+        document.getElementById('btnDiscard').disabled = true;
+        document.getElementById('btnResubmit').disabled = true;
+        return;
+      }
+
+      document.getElementById('revisionPeriodValue').textContent = report.period;
+      document.getElementById('reportStatusText').textContent = `Status: ${report.status}`;
+      document.getElementById('feedbackCommentText').textContent = report.revision.comment || 'No feedback note provided.';
+      document.getElementById('feedbackCommentAuthor').textContent = `${report.revision.requestedBy || 'COO'} • ${report.revision.requestedAt || ''}`;
+      document.getElementById('revised-intro').value = report.content.intro || '';
+      document.getElementById('revised-consumption').value = report.content.consumption || '';
+      document.getElementById('revised-emissions').value = report.content.analysis || '';
+      document.getElementById('revised-comparisons').value = report.content.comparisons || '';
+      document.getElementById('revised-conclusions').value = report.content.conclusions || '';
+      fields.forEach(id => {
+        document.getElementById(id).disabled = false;
+      });
+      document.getElementById('btnDiscard').disabled = false;
+      document.getElementById('btnResubmit').disabled = false;
+    }
+
+    function resubmitRevision() {
+      const db = Utils.getDB();
+      const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { name: 'Analyst', id: null };
+      const report = (db.reports || []).find(item => String(item.id) === String(activeRevisionId));
+      if (!report) return;
+
+      const intro = document.getElementById('revised-intro').value.trim();
+      const consumption = document.getElementById('revised-consumption').value.trim();
+      const analysis = document.getElementById('revised-emissions').value.trim();
+      const comparisons = document.getElementById('revised-comparisons').value.trim();
+      const conclusions = document.getElementById('revised-conclusions').value.trim();
+
+      if (!intro || !consumption || !analysis) {
+        Utils.showToast('Please complete the revised introduction, consumption summary, and emissions analysis.', 'error');
+        return;
+      }
+
+      report.content = {
+        intro,
+        consumption,
+        analysis,
+        comparisons,
+        conclusions
+      };
+      report.status = 'Pending Review';
+      report.statusClass = 'amber';
+      report.signature = {
+        signedBy: currentUser.name || 'Analyst',
+        signedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+      };
+      report.revision = {
+        required: false,
+        comment: '',
+        requestedBy: '',
+        requestedAt: ''
+      };
+      report.resubmittedAt = new Date().toLocaleDateString();
+
+      if (!Array.isArray(db.notifications)) db.notifications = [];
+      db.notifications.unshift({
+        id: Date.now(),
+        role: 'COO',
+        title: 'Revised Report Submitted',
+        body: `${report.title} was resubmitted for executive review.`,
+        timestamp: 'Just now',
+        read: false,
+        details: `Updated by ${currentUser.name || 'Analyst'} at ${report.signature.signedAt}.`
+      });
+
+      Utils.replaceDB(db);
+      Utils.logAction(`Analyst Resubmitted Report: ${report.title}`, 'Success', 'green');
+      Utils.showToast('Revised report submitted back to the COO.');
+      syncPage();
+    }
+
+    function syncPage() {
+      populateRevisionQueue();
+      loadActiveRevision();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      syncPage();
+
+      document.getElementById('revisionReportSelect').addEventListener('change', (event) => {
+        activeRevisionId = event.target.value;
+        loadActiveRevision();
+      });
+
+      document.getElementById('btnDiscard').addEventListener('click', () => {
+        loadActiveRevision();
+        Utils.showToast('Revision form reloaded from the shared report record.');
+      });
+
+      document.getElementById('btnResubmit').addEventListener('click', resubmitRevision);
+    });
+  </script>
+</body>
+</html>
