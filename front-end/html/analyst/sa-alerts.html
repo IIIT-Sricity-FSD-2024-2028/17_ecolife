@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alerts &amp; Escalations - Rorizon Analyst</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .stack { display: grid; gap: 16px; }
+    .toggle-group { justify-content: space-between; align-items: center; width: 100%; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+
+    .user-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .user-toolbar .form-input { flex: 1 1 0%; max-width: none; }
+
+    /* Ultra-clean Alert Cards */
+    .alert-card-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; transition: all 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .alert-card-item:hover { border-color: #cbd5e1; }
+
+    .alert-header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; cursor: pointer; }
+
+    .alert-drawer-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid #f1f5f9; display: none; }
+    .alert-drawer-body.is-expanded { display: block; }
+
+    /* Sleek & Simple Governance Stepper Bar */
+    .stepper-bar { display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 8px; padding: 8px 12px; margin-top: 12px; overflow-x: auto; }
+    .step-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #94a3b8; white-space: nowrap; }
+    .step-item.completed { color: #16a34a; }
+    .step-item.current { color: #2563eb; font-weight: 700; }
+    .step-dot { width: 18px; height: 18px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+    .step-item.completed .step-dot { background: #dcfce7; color: #15803d; }
+    .step-item.current .step-dot { background: #dbeafe; color: #1d4ed8; }
+    .step-arrow { color: #cbd5e1; font-size: 10px; }
+
+    .alert-meta-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; background: #f8fafc; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
+    .alert-meta-grid span { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
+    .alert-meta-grid strong { font-size: 14px; color: #0f172a; font-weight: 600; }
+
+    .variance-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; }
+
+    .detail-section { margin-bottom: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; }
+    .detail-section__title { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 8px 0; display: flex; justify-content: space-between; align-items: center; }
+    .detail-section p { font-size: 13px; color: #334155; line-height: 1.5; margin: 0; white-space: pre-wrap; }
+
+    /* Executive Sustainability Table */
+    .resource-breakdown-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+    .resource-breakdown-table th { text-align: left; background: #f8fafc; padding: 10px 12px; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0; }
+    .resource-breakdown-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; color: #0f172a; vertical-align: middle; }
+
+    .alert-actions-row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
+    .metric-chip { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; font-size: 12px; font-weight: 600; }
+    
+    .action-btn { border: 1px solid #cbd5e1 !important; background: #fff !important; color: #0f172a !important; padding: 6px 12px !important; border-radius: 8px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease; text-decoration: none; }
+    .action-btn:hover { background: #f8fafc !important; border-color: #64748b !important; }
+    .action-btn.warn { color: #dc2626 !important; border-color: #fca5a5 !important; }
+    .action-btn.warn:hover { background: #fef2f2 !important; border-color: #ef4444 !important; }
+
+    @media(max-width: 900px) { .alert-meta-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <div id="app-layout" data-title="Alerts &amp; Escalations" data-subtitle="Monitor departmental threshold warnings, issue manager notices, and resolve active alerts">
+
+    <!-- Admin Toggle Group Bar -->
+    <div class="toggle-group">
+      <div class="toggle-btn-group">
+        <button class="toggle-btn active" id="tabActiveAlerts" type="button">Active Escalations (0)</button>
+        <button class="toggle-btn" id="tabResolvedAlerts" type="button">Resolved History (0)</button>
+      </div>
+
+      <span class="metric-chip" id="analystScopeBadge">0 Assigned Departments</span>
+    </div>
+
+    <!-- Search & Filter Toolbar -->
+    <div class="user-toolbar">
+      <input class="form-input" id="searchAlertsInput" placeholder="Search alerts by department name, message, or explanation..." style="color:#0f172a;" />
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <select class="form-input" id="severityFilter" style="width:150px; color:#0f172a;">
+          <option value="all">All Severities</option>
+          <option value="Critical">Critical</option>
+          <option value="Medium">Medium</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="alertsContainer">
+      <div style="text-align:center; padding:32px; color:#94a3b8;">Loading alerts...</div>
+    </div>
+
+  </div>
+
+  <!-- Clarification Request Modal -->
+  <div class="modal-overlay" id="clarificationModal">
+    <div class="modal modal--sm">
+      <div class="modal__header">
+        <h2 class="modal__title" style="color:#0f172a;">Request Manager Re-Explanation</h2>
+      </div>
+      <div class="modal__body">
+        <p style="font-size:13px; color:#64748b; margin:0 0 12px 0;">Specify why the current explanation requires additional clarification from the Department Manager.</p>
+        <textarea class="form-textarea" id="clarificationNotesInput" rows="4" placeholder="Specify required clarification details..." style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:10px 12px; font-family:inherit; font-size:13px; box-sizing:border-box;"></textarea>
+      </div>
+      <div class="modal__footer">
+        <button class="btn-outline" type="button" onclick="Utils.toggleModal('clarificationModal', false)">Cancel</button>
+        <button class="btn-primary" type="button" id="btnConfirmClarification" style="background:#b45309; border-color:#b45309;">Send Request to Manager</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast toast--success" id="toastMessage">
+    <div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt=""></div>
+    <p class="toast__text" id="toastText"></p>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    let activeTab = 'active';
+    let targetAlertForModal = null;
+    let expandedAlertIds = new Set();
+    let initializedTab = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
+      const currentUser = Utils.getCurrentUser() || {};
+      const searchInput = document.getElementById('searchAlertsInput');
+      const severityFilter = document.getElementById('severityFilter');
+
+      function getAnalystAlerts() {
+        const db = Utils.ensureCollections(Utils.getDB());
+        const currentOrg = Utils.getCurrentOrganization(currentUser, db);
+        const orgId = currentOrg?.id || currentUser.organizationId;
+        const scopedIds = Utils.getUserDepartmentScope(currentUser, db).map(id => String(id));
+        return (db.alerts || []).filter(a => {
+          if (orgId && a.organizationId && String(a.organizationId) !== String(orgId)) return false;
+          if (!scopedIds.length) return true;
+          return scopedIds.includes(String(a.departmentId));
+        });
+      }
+
+      function filterAlerts(alerts) {
+        const q = searchInput.value.trim().toLowerCase();
+        const sev = severityFilter.value;
+
+        return alerts.filter(a => {
+          if (sev !== 'all' && a.severity !== sev) return false;
+          if (q) {
+            const haystack = `${a.departmentName || ''} ${a.message || ''} ${a.deviationReason || ''} ${a.managerExplanation || ''} ${a.cooDirective || ''}`.toLowerCase();
+            if (!haystack.includes(q)) return false;
+          }
+          return true;
+        });
+      }
+
+      function renderAlerts() {
+        const db = Utils.ensureCollections(Utils.getDB());
+        const scopedIds = Utils.getUserDepartmentScope(currentUser, db);
+        const allAlerts = getAnalystAlerts();
+        const activeAlerts = allAlerts.filter(a => a.status !== 'Resolved');
+        const resolvedAlerts = allAlerts.filter(a => a.status === 'Resolved');
+
+        document.getElementById('tabActiveAlerts').textContent = `Active Escalations (${activeAlerts.length})`;
+        document.getElementById('tabResolvedAlerts').textContent = `Resolved History (${resolvedAlerts.length})`;
+        document.getElementById('analystScopeBadge').textContent = `${scopedIds.length} Assigned Department${scopedIds.length === 1 ? '' : 's'}`;
+
+        const container = document.getElementById('alertsContainer');
+        const displayedRaw = activeTab === 'active' ? activeAlerts : resolvedAlerts;
+        const displayed = filterAlerts(displayedRaw);
+
+        if (displayed.length === 0) {
+          container.innerHTML = Utils.renderEmptyState(
+            activeTab === 'active' ? 'No Active Escalations' : 'No Resolved History',
+            activeTab === 'active' ? 'All assigned department emissions are currently operating within target thresholds.' : 'No resolved alert records available in your scope.',
+            'alert'
+          );
+          return;
+        }
+
+        if (initializedTab !== activeTab) {
+          initializedTab = activeTab;
+          expandedAlertIds.clear();
+          if (displayed.length > 0) {
+            expandedAlertIds.add(String(displayed[0].id));
+          }
+        }
+
+        container.innerHTML = displayed.map(a => {
+          const alertIdStr = String(a.id);
+          const isExpanded = expandedAlertIds.has(alertIdStr);
+          const dept = (db.departments || []).find(d => String(d.id) === String(a.departmentId) || d.name === a.departmentName);
+          const sub = (db.submissions || []).find(s => (String(s.departmentId) === String(a.departmentId) || s.departmentName === a.departmentName) && s.period === a.period);
+          const status = (a.status || 'Active').trim();
+          const isResolved = status === 'Resolved';
+
+          const curVal = Utils.parseAmount(dept?.current || a.currentValue || 0);
+          const threshVal = Utils.parseAmount(dept?.threshold || a.thresholdValue || 0);
+          let variancePct = 0;
+          if (threshVal > 0 && curVal > threshVal) {
+            variancePct = Math.round(((curVal - threshVal) / threshVal) * 100);
+          }
+
+          // Enriched Resources with Emissions & Line-Item Variance Status
+          const rawResources = sub?.resources || a.resources || [];
+          const resourcesList = rawResources.map(r => {
+            const qty = Number(r.qty || r.quantity || 0);
+            const factor = Number(r.emissionFactor || (String(r.resourceTypeName || r.type).toLowerCase().includes('electricity') ? 0.5 : 2.68));
+            const co2e = r.co2e ? Number(r.co2e) : Math.round(qty * factor);
+            const targetVal = Number(r.targetQty || r.thresholdQty || Math.round(qty * 0.75));
+            let lineVarPct = 0;
+            if (targetVal > 0 && qty > targetVal) {
+              lineVarPct = Math.round(((qty - targetVal) / targetVal) * 100);
+            }
+            return {
+              ...r,
+              qty,
+              co2e,
+              lineVarPct,
+              evidence: r.evidenceFileName || r.evidenceUrl || 'Verified Entry'
+            };
+          });
+
+          const hasManagerInput = Boolean((a.managerExplanation && a.managerExplanation.trim()) || (a.deviationReason && a.deviationReason.trim()));
+
+          // Precise Stepper Calculations
+          const s1Done = true;
+          const s2Done = hasManagerInput || status === 'Analyst Review' || status === 'Manager Notified' || isResolved;
+          const s2Current = !s2Done;
+
+          const s3Done = status === 'Manager Notified' || isResolved;
+          const s3Current = s2Done && !s3Done;
+
+          const s4Done = isResolved;
+          const s4Current = s3Done && !s4Done;
+
+          return `
+            <div class="alert-card-item" id="card-${a.id}">
+              <!-- Direct Header Click Toggle (Single Badge) -->
+              <div class="alert-header-row" onclick="toggleAlertExpand('${a.id}')">
+                <div>
+                  <h3 style="font-size:15px; font-weight:700; color:#0f172a; margin:0 0 2px 0;">${a.title || (a.departmentName || 'Department') + ' Threshold Warning'}</h3>
+                  <p style="font-size:13px; color:#64748b; margin:0;">${a.message || 'Operational consumption exceeded configured target threshold.'}</p>
+                </div>
+                <div>
+                  ${variancePct > 0 ? `<span class="variance-badge">+${variancePct}% Over Limit</span>` : `<span class="variance-badge" style="background:#fef3c7; border-color:#fde68a; color:#b45309;">Threshold Breach</span>`}
+                </div>
+              </div>
+
+              <!-- Sleek Governance Stepper Bar -->
+              <div class="stepper-bar">
+                <div class="step-item ${s1Done ? 'completed' : ''}">
+                  <span class="step-dot">✓</span>
+                  <span>1. Breach Flagged</span>
+                </div>
+                <span class="step-arrow">►</span>
+                <div class="step-item ${s2Done ? 'completed' : (s2Current ? 'current' : '')}">
+                  <span class="step-dot">${s2Done ? '✓' : '2'}</span>
+                  <span>2. Manager Justification</span>
+                </div>
+                <span class="step-arrow">►</span>
+                <div class="step-item ${s3Done ? 'completed' : (s3Current ? 'current' : '')}">
+                  <span class="step-dot">${s3Done ? '✓' : '3'}</span>
+                  <span>3. Analyst Audit</span>
+                </div>
+                <span class="step-arrow">►</span>
+                <div class="step-item ${s4Done ? 'completed' : (s4Current ? 'current' : '')}">
+                  <span class="step-dot">${s4Done ? '✓' : '4'}</span>
+                  <span>4. Executive Sign-off</span>
+                </div>
+              </div>
+
+              <!-- Expanded Detailed View -->
+              <div class="alert-drawer-body ${isExpanded ? 'is-expanded' : ''}">
+                <div class="alert-meta-grid">
+                  <div><span>Department</span><strong>${a.departmentName || '--'}</strong></div>
+                  <div><span>Reporting Period</span><strong>${Utils.formatPeriodLabel(a.period || '')}</strong></div>
+                  <div><span>Severity Level</span><strong style="color:${a.severity === 'Critical' ? '#dc2626' : '#b45309'};">${a.severity || 'Medium'}</strong></div>
+                  <div><span>Date Escalated</span><strong>${a.createdAt || a.timestamp || Utils.nowLabel()}</strong></div>
+                </div>
+
+                ${resourcesList.length > 0 ? `
+                  <div class="detail-section">
+                    <div class="detail-section__title">
+                      <span>Ingested Resource Activity &amp; Emissions Breakdown</span>
+                      <span>${resourcesList.length} line item(s)</span>
+                    </div>
+                    <table class="resource-breakdown-table">
+                      <thead>
+                        <tr>
+                          <th>RESOURCE TYPE</th>
+                          <th style="text-align:right;">SUBMITTED ACTIVITY</th>
+                          <th style="text-align:right;">EMISSIONS IMPACT</th>
+                          <th style="text-align:center;">VARIANCE STATUS</th>
+                          <th>VERIFICATION EVIDENCE</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${resourcesList.map(r => `
+                          <tr>
+                            <td style="font-weight:700; color:#0f172a;">${r.resourceTypeName || r.type || 'Resource'}</td>
+                            <td style="text-align:right; font-weight:700; font-variant-numeric:tabular-nums;">${r.qty.toLocaleString()} <span style="font-size:11px; font-weight:500; color:#64748b;">${r.unitName || r.unit || 'Units'}</span></td>
+                            <td style="text-align:right; font-weight:700; color:#0f172a; font-variant-numeric:tabular-nums;">${r.co2e.toLocaleString()} <span style="font-size:11px; font-weight:500; color:#64748b;">kg CO₂e</span></td>
+                            <td style="text-align:center;">
+                              ${r.lineVarPct > 0 
+                                ? `<span class="variance-badge" style="font-size:10px; padding:2px 6px;">+${r.lineVarPct}% Over Baseline</span>`
+                                : `<span style="font-size:11px; font-weight:600; color:#16a34a; background:#f0fdf4; border:1px solid #bbf7d0; padding:2px 6px; border-radius:4px;">Within Baseline</span>`}
+                            </td>
+                            <td>
+                              ${r.evidence !== 'Verified Entry'
+                                ? `<a class="action-btn" href="#" onclick="event.preventDefault(); Utils.showToast('Opening evidence document: ${r.evidence}');" style="font-size:11px; padding:3px 8px;">📎 ${r.evidence}</a>`
+                                : `<span style="color:#64748b; font-size:11px;">Verified Record</span>`}
+                            </td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : ''}
+
+                ${a.managerExplanation ? `
+                  <div class="detail-section" style="border-color:#fcd34d; background:#fffbeb;">
+                    <div class="detail-section__title" style="color:#92400e;">
+                      <span>Manager Operational Explanation</span>
+                      <span>${a.managerName || 'Department Manager'}</span>
+                    </div>
+                    <p style="color:#78350f; font-weight:500;">"${a.managerExplanation}"</p>
+                    ${a.managerActionTaken ? `<p style="margin-top:6px; color:#92400e; font-size:12px;"><strong>Mitigation Action:</strong> ${a.managerActionTaken}</p>` : ''}
+                  </div>
+                ` : ''}
+
+                ${a.cooDirective ? `
+                  <div class="detail-section" style="border-color:#bfdbfe; background:#eff6ff;">
+                    <div class="detail-section__title" style="color:#1d4ed8;">
+                      <span>COO Executive Directive</span>
+                      <span>Executive Governance</span>
+                    </div>
+                    <p style="color:#1e3a8a; font-weight:600;">"${a.cooDirective}"</p>
+                  </div>
+                ` : ''}
+
+                <div class="alert-actions-row">
+                  ${a.status !== 'Resolved' ? `
+                    <button class="action-btn warn" type="button" onclick="requestClarification('${a.id}')">Request Re-Explanation</button>
+                    <button class="action-btn" type="button" style="color:#16a34a; border-color:#86efac;" onclick="resolveAlert('${a.id}')">Mark Alert Resolved</button>
+                  ` : `
+                    <span style="font-size:12px; color:#64748b; font-weight:600;">Resolved on ${a.resolvedAt || '--'}</span>
+                  `}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      window.toggleAlertExpand = function(alertId) {
+        const idStr = String(alertId);
+        if (expandedAlertIds.has(idStr)) {
+          expandedAlertIds.delete(idStr);
+        } else {
+          expandedAlertIds.add(idStr);
+        }
+        renderAlerts();
+      };
+
+      document.getElementById('tabActiveAlerts').addEventListener('click', () => {
+        activeTab = 'active';
+        document.getElementById('tabActiveAlerts').classList.add('active');
+        document.getElementById('tabResolvedAlerts').classList.remove('active');
+        renderAlerts();
+      });
+
+      document.getElementById('tabResolvedAlerts').addEventListener('click', () => {
+        activeTab = 'resolved';
+        document.getElementById('tabResolvedAlerts').classList.add('active');
+        document.getElementById('tabActiveAlerts').classList.remove('active');
+        renderAlerts();
+      });
+
+      searchInput.addEventListener('input', renderAlerts);
+      severityFilter.addEventListener('change', renderAlerts);
+
+      window.requestClarification = function(alertId) {
+        targetAlertForModal = alertId;
+        document.getElementById('clarificationNotesInput').value = '';
+        Utils.toggleModal('clarificationModal', true);
+      };
+
+      document.getElementById('btnConfirmClarification').addEventListener('click', async () => {
+        if (!targetAlertForModal) return;
+        const notes = document.getElementById('clarificationNotesInput').value.trim();
+        if (!notes) { Utils.showToast('Please enter clarification notes for the manager.', 'error'); return; }
+
+        const db = Utils.ensureCollections(Utils.getDB());
+        const a = (db.alerts || []).find(item => String(item.id) === String(targetAlertForModal));
+        if (!a) return;
+
+        a.status = 'Clarification Requested';
+        a.analystClarificationNotes = notes;
+
+        if (!Array.isArray(db.notifications)) db.notifications = [];
+        db.notifications.unshift({
+          id: Date.now(),
+          role: 'Manager',
+          departmentId: a.departmentId,
+          title: 'Alert Clarification Requested',
+          body: `Analyst requested clarification for ${a.departmentName} alert: "${notes}".`,
+          timestamp: Utils.nowLabel(),
+          read: false
+        });
+
+        Utils.logAction(`Requested alert clarification for ${a.departmentName}`, 'Warning', 'amber');
+        Utils.replaceDB(db);
+        await Utils.apiFetch('PATCH', `/api/alerts/${a.id}`, a);
+
+        window.dispatchEvent(new Event('rorizon-notifications-updated'));
+        Utils.toggleModal('clarificationModal', false);
+        Utils.showToast('Clarification request sent to Department Manager!');
+        renderAlerts();
+      });
+
+      window.resolveAlert = async function(alertId) {
+        const db = Utils.ensureCollections(Utils.getDB());
+        const a = (db.alerts || []).find(item => String(item.id) === String(alertId));
+        if (!a) return;
+
+        a.status = 'Resolved';
+        a.resolvedAt = Utils.nowLabel();
+        a.resolvedBy = currentUser.name || 'Analyst';
+
+        Utils.logAction(`Resolved alert for ${a.departmentName}`, 'Success', 'green');
+        Utils.replaceDB(db);
+        await Utils.apiFetch('PATCH', `/api/alerts/${a.id}`, a);
+
+        window.dispatchEvent(new Event('rorizon-notifications-updated'));
+        Utils.showToast('Alert resolved successfully!');
+        renderAlerts();
+      };
+
+      renderAlerts();
+
+      function safeSync() {
+        const isInputFocused = document.activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
+        const isModalOpen = document.querySelector('.modal-overlay.active, .modal-overlay[style*="display: flex"]');
+        if (!isInputFocused && !isModalOpen) {
+          renderAlerts();
+        }
+      }
+
+      window.addEventListener('rorizon-db-updated', safeSync);
+      window.addEventListener('storage', safeSync);
+      Utils.startPolling(15000);
+    });
+  </script>
+</body>
+</html>

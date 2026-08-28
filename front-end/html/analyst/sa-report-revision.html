@@ -3,102 +3,122 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Report Revision - Rorizon</title>
+  <title>Report Revision - Rorizon Analyst</title>
   <link rel="stylesheet" href="../../css/style.css" />
+  <style>
+    .stack { display: grid; gap: 16px; }
+    
+    .empty-revision { display: none; padding: 48px 24px; text-align: center; border: 1px solid var(--border-light); border-radius: 12px; background: #fff; margin-bottom: 24px; }
+    .empty-revision h2 { margin: 0 0 6px 0; color: #0f172a; font-size: 17px; font-weight: 700; }
+    .empty-revision p { margin: 0; color: #64748b; font-size: 13px; }
+
+    .revision-workspace { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 20px; margin-bottom: 24px; }
+
+    /* Left Sidebar */
+    .revision-sidebar { display: flex; flex-direction: column; gap: 16px; }
+    .info-block { background: #fff; border: 1px solid var(--border-light); border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .info-block__label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+
+    /* Admin-Style COO Feedback Callout (Clean, Simple, Professional) */
+    .coo-feedback-block { background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .coo-feedback-block__title { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .coo-feedback-block__text { font-size: 13px; color: #0f172a; line-height: 1.6; margin: 0; white-space: pre-wrap; }
+    .coo-feedback-block__author { font-size: 12px; color: #64748b; font-weight: 600; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+
+    /* Document Editor */
+    .revision-doc { background: #fff; border: 1px solid var(--border-light); border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .revision-doc__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+    .revision-doc__title { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; }
+    .revision-section-group { margin-bottom: 18px; }
+    .revision-section-group label { display: block; font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
+    .revision-section-group textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-family: inherit; font-size: 13px; color: #0f172a; line-height: 1.6; resize: vertical; box-sizing: border-box; }
+    .revision-section-group textarea:focus { outline: none; border-color: #2563eb; }
+    .revision-action-bar { display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+
+    .metric-chip { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; font-size: 12px; font-weight: 600; }
+
+    @media(max-width: 920px) { .revision-workspace { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
+  <div id="app-layout" data-title="Report Revision" data-subtitle="Review COO feedback, make the required changes, and resubmit for approval">
 
-  <div id="app-layout" data-title="Report Revision" data-subtitle="TechCorp Industries">
-
-    <div class="page-heading">
-      <div class="chart-header">
-        <h2 class="page-heading__title">Report Revision</h2>
-        <span class="kpi-tag kpi-tag--amber" id="revisionQueueCount">0 Revision Requests</span>
-      </div>
-      <p class="page-heading__subtitle">Address COO revision comments and resubmit the updated report for executive review.</p>
+    <!-- Empty State -->
+    <div class="empty-revision" id="emptyRevisionState">
+      <h2>No Revision Requests</h2>
+      <p>There are no COO revision requests assigned to your account. You will be notified here when feedback is provided.</p>
     </div>
 
-    <div class="report-layout" style="display:grid; grid-template-columns: 1fr 2fr; gap:24px;">
+    <!-- Revision Workspace -->
+    <div class="revision-workspace" id="revisionWorkspace">
 
-      <div class="report-left">
+      <!-- Left Sidebar: Report Info + COO Feedback -->
+      <div class="revision-sidebar">
 
-        <div class="card" style="margin-bottom:24px;">
-          <div class="chart-header">
-            <h2 class="card__title">Revision Queue</h2>
-            <span class="kpi-tag kpi-tag--muted">Live Shared State</span>
+        <!-- Report Selection Block -->
+        <div class="info-block">
+          <div class="info-block__label">Revision Queue</div>
+          <select class="form-input" id="revisionReportSelect" style="width:100%; color:#0f172a; margin-top:4px;"></select>
+          <div style="margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:12px; font-weight:600; color:#64748b;">Period:</span>
+            <strong style="font-size:13px; color:#0f172a;" id="revisionPeriodValue">--</strong>
           </div>
-          <div class="select-wrapper" style="margin-top:16px;">
-            <select class="form-select" id="revisionReportSelect"></select>
-            <img src="../assets/icons/chevron-down-icon0.svg" alt="" class="select-chevron" />
+          <div style="margin-top:12px;">
+            <span id="reportStatusBadge" class="status-badge status-badge--amber">Revision Required</span>
           </div>
         </div>
 
-        <div class="card card--period" style="margin-bottom:24px;">
-          <div class="chart-header">
-            <h2 class="card__title">Revision Period</h2>
-            <span style="font-size:12px; font-weight:600; color:#475569;" id="revisionPeriodValue">--</span>
+        <!-- Clean Admin-Style COO Feedback Block -->
+        <div class="coo-feedback-block">
+          <div class="coo-feedback-block__title">
+            <span>COO Revision Notes</span>
+            <span style="font-size:10px; font-weight:700; color:#b45309; background:#fffbeb; padding:2px 8px; border-radius:4px; border:1px solid #fde68a;">Feedback</span>
           </div>
-          <p class="report-period__value" id="reportStatusText" style="color:#64748b; font-size:14px; margin-top:16px;">Status: Awaiting selection</p>
-        </div>
-
-        <div class="card card--feedback">
-          <div class="chart-header">
-            <h2 class="card__title">COO Feedback</h2>
-            <span class="kpi-tag kpi-tag--amber" style="background:transparent; color:#b45309;">Review Note</span>
-          </div>
-          <div class="feedback-comment" style="color:#92400e; font-size:14px; margin-top:16px; font-style:italic;">
-            <p class="feedback-comment__text" id="feedbackCommentText">No revision request selected.</p>
-            <p class="feedback-comment__author" id="feedbackCommentAuthor" style="margin-top:16px; font-weight:600;">--</p>
-          </div>
+          <p class="coo-feedback-block__text" id="feedbackCommentText">Select a report to view feedback.</p>
+          <div class="coo-feedback-block__author" id="feedbackAuthorText"></div>
         </div>
 
       </div>
-      
-      <div class="report-right">
 
-        <div class="card card--editor">
-          <div class="chart-header">
-            <h2 class="card__title">Revised Content</h2>
-            <span class="kpi-tag kpi-tag--muted" id="editorModeTag" style="background:#64748b; color:#fff; font-size:11px;">Editable</span>
+      <!-- Right Document Editor -->
+      <div class="revision-doc">
+        <div class="revision-doc__head">
+          <div>
+            <h2 class="revision-doc__title">Revise Executive Report</h2>
+            <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Update sections according to COO guidance and resubmit</p>
           </div>
-
-          <div class="report-fields" style="margin-top:16px;">
-            <div class="report-field" style="margin-bottom:24px;">
-              <label class="form-label" for="revised-intro">Introduction</label>
-              <textarea class="form-input" id="revised-intro" rows="3" style="width:100%; resize:vertical;"></textarea>
-            </div>
-
-            <div class="report-field" style="margin-bottom:24px;">
-              <label class="form-label" for="revised-consumption">Consumption Summary</label>
-              <textarea class="form-input" id="revised-consumption" rows="4" style="width:100%; resize:vertical;"></textarea>
-            </div>
-
-            <div class="report-field" style="margin-bottom:24px;">
-              <label class="form-label" for="revised-emissions">Emissions Analysis</label>
-              <textarea class="form-input" id="revised-emissions" rows="4" style="width:100%; resize:vertical; border-color:#f59e0b; background:#fff;"></textarea>
-            </div>
-
-            <div class="report-field" style="margin-bottom:24px;">
-              <label class="form-label" for="revised-comparisons">Comparisons</label>
-              <textarea class="form-input" id="revised-comparisons" rows="3" style="width:100%; resize:vertical;"></textarea>
-            </div>
-
-            <div class="report-field">
-              <label class="form-label" for="revised-conclusions">Conclusions</label>
-              <textarea class="form-input" id="revised-conclusions" rows="3" style="width:100%; resize:vertical;"></textarea>
-            </div>
-          </div>
+          <span class="metric-chip">Editable Draft</span>
         </div>
 
-        <div class="report-gen-actions" style="display:flex; gap:16px; margin-top:24px; align-items:stretch;">
-          <button class="btn-outline" type="button" id="btnDiscard" style="flex:1;">Reload Revision</button>
-          <button class="btn-primary" type="button" id="btnResubmit" style="flex:2; justify-content:center;">
-            <img src="../assets/icons/send0.svg" alt="" class="btn__icon" />
-            <span id="resubmitText">Resubmit to COO</span>
+        <div class="revision-section-group">
+          <label for="revised-intro">1. Executive Summary</label>
+          <textarea id="revised-intro" rows="3" placeholder="Context, scope, and key executive summary..."></textarea>
+        </div>
+        <div class="revision-section-group">
+          <label for="revised-consumption">2. Activity &amp; Consumption</label>
+          <textarea id="revised-consumption" rows="4" placeholder="Departmental activity breakdown and main resources..."></textarea>
+        </div>
+        <div class="revision-section-group">
+          <label for="revised-emissions">3. Emissions Analysis &amp; Thresholds</label>
+          <textarea id="revised-emissions" rows="4" placeholder="Calculated CO2e emissions and threshold analysis..."></textarea>
+        </div>
+        <div class="revision-section-group">
+          <label for="revised-comparisons">4. Target Performance</label>
+          <textarea id="revised-comparisons" rows="3" placeholder="Variance against targets and period performance..."></textarea>
+        </div>
+        <div class="revision-section-group">
+          <label for="revised-conclusions">5. Conclusions &amp; Recommendations</label>
+          <textarea id="revised-conclusions" rows="3" placeholder="Corrective actions and efficiency initiatives..."></textarea>
+        </div>
+
+        <div class="revision-action-bar">
+          <button class="btn-outline" type="button" id="btnDiscard" style="height:38px;">Reload Saved Draft</button>
+          <button class="btn-primary" type="button" id="btnResubmit" style="height:38px;">
+            Resubmit Report to COO
           </button>
         </div>
-
       </div>
+
     </div>
 
   </div>
@@ -106,144 +126,144 @@
   <script src="../../js/data.js"></script>
   <script src="../../js/utils.js"></script>
   <script>
-    let activeRevisionId = null;
+    let activeRevisionId = new URLSearchParams(window.location.search).get('id') || new URLSearchParams(window.location.search).get('reportId') || null;
 
     function getRevisionReports() {
-      const db = Utils.getDB();
-      return (db.reports || []).filter(report => report.status === 'Revision Required' && report.revision && report.revision.required);
+      const db = Utils.ensureCollections(Utils.getDB());
+      const currentUser = Utils.getCurrentUser();
+      const org = Utils.getCurrentOrganization(currentUser, db);
+      return (db.reports || []).filter(r => {
+        if (activeRevisionId && String(r.id) === String(activeRevisionId)) return true;
+        if (r.status !== 'Revision Required' && r.status !== 'Revision Requested') return false;
+        if (currentUser?.id && String(r.analystUserId) === String(currentUser.id)) return true;
+        if (org && r.organizationId === org.id) return true;
+        if (currentUser?.role === 'Analyst' || currentUser?.role === 'Super User') return true;
+        return false;
+      });
     }
 
-    function populateRevisionQueue() {
+    let lastLoadedRevisionId = null;
+
+    function populateQueue() {
       const reports = getRevisionReports();
       const select = document.getElementById('revisionReportSelect');
-      document.getElementById('revisionQueueCount').textContent = `${reports.length} Revision Request${reports.length === 1 ? '' : 's'}`;
       select.innerHTML = reports.length
-        ? reports.map(report => `<option value="${report.id}">${report.title}</option>`).join('')
-        : '<option value="">No revision requests</option>';
-
+        ? reports.map(r => `<option value="${r.id}">${r.title} (${Utils.formatPeriodLabel(r.period)})</option>`).join('')
+        : '<option value="">No active revision requests</option>';
       if (reports.length) {
-        activeRevisionId = reports.some(report => String(report.id) === String(activeRevisionId)) ? activeRevisionId : reports[0].id;
+        activeRevisionId = reports.some(r => String(r.id) === String(activeRevisionId)) ? activeRevisionId : reports[0].id;
         select.value = String(activeRevisionId);
       } else {
         activeRevisionId = null;
       }
     }
 
-    function loadActiveRevision() {
-      const db = Utils.getDB();
-      const report = (db.reports || []).find(item => String(item.id) === String(activeRevisionId));
-      const fields = [
-        'revised-intro',
-        'revised-consumption',
-        'revised-emissions',
-        'revised-comparisons',
-        'revised-conclusions'
-      ];
+    function loadRevision(forceReset = false) {
+      const db = Utils.ensureCollections(Utils.getDB());
+      const report = (db.reports || []).find(r => String(r.id) === String(activeRevisionId));
 
       if (!report) {
-        document.getElementById('revisionPeriodValue').textContent = '--';
-        document.getElementById('reportStatusText').textContent = 'Status: Awaiting selection';
-        document.getElementById('feedbackCommentText').textContent = 'No revision request selected.';
-        document.getElementById('feedbackCommentAuthor').textContent = '--';
-        fields.forEach(id => {
-          document.getElementById(id).value = '';
-          document.getElementById(id).disabled = true;
-        });
-        document.getElementById('btnDiscard').disabled = true;
-        document.getElementById('btnResubmit').disabled = true;
+        document.getElementById('emptyRevisionState').style.display = 'block';
+        document.getElementById('revisionWorkspace').style.display = 'none';
+        lastLoadedRevisionId = null;
         return;
       }
 
-      document.getElementById('revisionPeriodValue').textContent = report.period;
-      document.getElementById('reportStatusText').textContent = `Status: ${report.status}`;
-      document.getElementById('feedbackCommentText').textContent = report.revision.comment || 'No feedback note provided.';
-      document.getElementById('feedbackCommentAuthor').textContent = `${report.revision.requestedBy || 'COO'} • ${report.revision.requestedAt || ''}`;
-      document.getElementById('revised-intro').value = report.content.intro || '';
-      document.getElementById('revised-consumption').value = report.content.consumption || '';
-      document.getElementById('revised-emissions').value = report.content.analysis || '';
-      document.getElementById('revised-comparisons').value = report.content.comparisons || '';
-      document.getElementById('revised-conclusions').value = report.content.conclusions || '';
-      fields.forEach(id => {
-        document.getElementById(id).disabled = false;
-      });
-      document.getElementById('btnDiscard').disabled = false;
-      document.getElementById('btnResubmit').disabled = false;
+      document.getElementById('emptyRevisionState').style.display = 'none';
+      document.getElementById('revisionWorkspace').style.display = 'grid';
+
+      document.getElementById('revisionPeriodValue').textContent = Utils.formatPeriodLabel(report.period);
+      document.getElementById('reportStatusBadge').textContent = 'Revision Required';
+      document.getElementById('feedbackCommentText').textContent = report.revision?.comment || 'No specific feedback note provided. Please review and revise the report for resubmission.';
+      document.getElementById('feedbackAuthorText').textContent = `Requested by ${report.revision?.requestedBy || 'COO'}${report.revision?.requestedAt ? ' â€¢ ' + new Date(report.revision.requestedAt).toLocaleDateString() : ''}`;
+
+      const shouldPopulateFields = forceReset || (lastLoadedRevisionId !== String(activeRevisionId));
+      if (shouldPopulateFields) {
+        const c = report.content || report.sections || report;
+        document.getElementById('revised-intro').value = c.intro || report.summary || '';
+        document.getElementById('revised-consumption').value = c.consumption || report.details || '';
+        document.getElementById('revised-emissions').value = c.emissions || c.analysis || '';
+        document.getElementById('revised-comparisons').value = c.comparisons || '';
+        document.getElementById('revised-conclusions').value = c.conclusions || '';
+        lastLoadedRevisionId = String(activeRevisionId);
+      }
     }
 
-    function resubmitRevision() {
-      const db = Utils.getDB();
-      const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { name: 'Analyst', id: null };
-      const report = (db.reports || []).find(item => String(item.id) === String(activeRevisionId));
+    async function resubmit() {
+      const db = Utils.ensureCollections(Utils.getDB());
+      const currentUser = Utils.getCurrentUser() || { name: 'Sustainability Analyst', id: null };
+      const report = (db.reports || []).find(r => String(r.id) === String(activeRevisionId));
       if (!report) return;
 
       const intro = document.getElementById('revised-intro').value.trim();
       const consumption = document.getElementById('revised-consumption').value.trim();
-      const analysis = document.getElementById('revised-emissions').value.trim();
+      const emissions = document.getElementById('revised-emissions').value.trim();
       const comparisons = document.getElementById('revised-comparisons').value.trim();
       const conclusions = document.getElementById('revised-conclusions').value.trim();
 
-      if (!intro || !consumption || !analysis) {
-        Utils.showToast('Please complete the revised introduction, consumption summary, and emissions analysis.', 'error');
-        return;
-      }
+      if (!intro || !consumption) { Utils.showToast('Please complete the executive summary and consumption sections.', 'error'); return; }
 
-      report.content = {
-        intro,
-        consumption,
-        analysis,
-        comparisons,
-        conclusions
-      };
+      const currentOrg = Utils.getCurrentOrganization(currentUser, db);
+      const targetOrgId = report.organizationId || currentUser.organizationId || currentOrg?.id || (db.organizations && db.organizations[0] ? db.organizations[0].id : '');
+
+      const contentObj = { intro, consumption, emissions, comparisons, conclusions };
+      report.content = contentObj;
+      report.sections = contentObj;
       report.status = 'Pending Review';
-      report.statusClass = 'amber';
-      report.signature = {
-        signedBy: currentUser.name || 'Analyst',
-        signedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      };
+      report.organizationId = targetOrgId;
+      report.submittedBy = currentUser.name || 'Sustainability Analyst';
+      report.submittedAt = Utils.nowLabel();
+      report.date = new Date().toLocaleDateString();
+
+      const prevComment = report.revision?.comment || '';
       report.revision = {
         required: false,
-        comment: '',
-        requestedBy: '',
-        requestedAt: ''
+        comment: prevComment,
+        requestedBy: report.revision?.requestedBy || 'COO',
+        requestedAt: report.revision?.requestedAt || '',
+        resubmittedAt: Utils.nowLabel()
       };
-      report.resubmittedAt = new Date().toLocaleDateString();
 
       if (!Array.isArray(db.notifications)) db.notifications = [];
       db.notifications.unshift({
         id: Date.now(),
         role: 'COO',
-        title: 'Revised Report Submitted',
-        body: `${report.title} was resubmitted for executive review.`,
-        timestamp: 'Just now',
+        organizationId: targetOrgId,
+        title: 'Revised Report Resubmitted',
+        body: `${report.title} was revised and resubmitted by ${currentUser.name || 'Sustainability Analyst'}.`,
+        timestamp: Utils.nowLabel(),
         read: false,
-        details: `Updated by ${currentUser.name || 'Analyst'} at ${report.signature.signedAt}.`
+        details: `Updated on ${Utils.nowLabel()}.`
       });
 
+      Utils.logAction(`Analyst resubmitted: ${report.title}`, 'Success', 'green');
       Utils.replaceDB(db);
-      Utils.logAction(`Analyst Resubmitted Report: ${report.title}`, 'Success', 'green');
-      Utils.showToast('Revised report submitted back to the COO.');
-      syncPage();
+      await Utils.apiFetch('PATCH', `/api/reports/${report.id}`, report);
+      Utils.showToast('Revised report successfully submitted to the COO!');
+      syncPage(true);
     }
 
-    function syncPage() {
-      populateRevisionQueue();
-      loadActiveRevision();
+    function syncPage(forceReset = false) { 
+      populateQueue(); 
+      loadRevision(forceReset); 
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      syncPage();
-
-      document.getElementById('revisionReportSelect').addEventListener('change', (event) => {
-        activeRevisionId = event.target.value;
-        loadActiveRevision();
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
+      syncPage(true);
+      document.getElementById('revisionReportSelect').addEventListener('change', e => {
+        activeRevisionId = e.target.value;
+        loadRevision(true);
       });
-
       document.getElementById('btnDiscard').addEventListener('click', () => {
-        loadActiveRevision();
-        Utils.showToast('Revision form reloaded from the shared report record.');
+        loadRevision(true);
+        Utils.showToast('Draft reloaded from saved revision.');
       });
+      document.getElementById('btnResubmit').addEventListener('click', resubmit);
 
-      document.getElementById('btnResubmit').addEventListener('click', resubmitRevision);
+      window.addEventListener('rorizon-db-updated', () => syncPage(false));
+      window.addEventListener('storage', () => syncPage(false));
+      Utils.startPolling(15000);
     });
   </script>
 </body>
