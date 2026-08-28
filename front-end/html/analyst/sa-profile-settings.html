@@ -8,12 +8,13 @@
   <style>
     .profile-grid{display:grid;grid-template-columns:minmax(280px,340px) 1fr;gap:24px}
     .profile-card{padding:32px}
+    .profile-card--full{grid-column:1/-1}
     .summary-card{padding:28px;background:linear-gradient(160deg,#eff6ff 0%,#f8fafc 100%)}
     .summary-avatar{width:72px;height:72px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin-bottom:18px}
     .summary-meta{font-size:14px;color:var(--text-muted);margin-top:6px}
     .security-box{margin-top:20px;padding:16px;border:1px solid var(--border-light);border-radius:12px;background:#f8fafc}
     .security-box p{margin:0 0 8px 0;color:var(--text-muted);font-size:14px}
-    @media(max-width:900px){.profile-grid{grid-template-columns:1fr}}
+    @media(max-width:900px){.profile-grid{grid-template-columns:1fr}.profile-card--full{grid-column:auto}}
   </style>
 </head>
 <body>
@@ -30,18 +31,22 @@
         </div>
       </div>
       <div class="card profile-card">
-        <h2 style="font-size:20px;font-weight:600;margin-bottom:24px;border-bottom:1px solid var(--border-light);padding-bottom:12px;">Personal Details</h2>
-        <form id="profileForm" novalidate>
-          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Full Name</label><input type="text" class="form-input" id="profName" required></div>
-          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Email Address</label><input type="email" class="form-input" id="profEmail" disabled style="background:var(--bg-surface);"></div>
-          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Phone</label><input type="text" class="form-input" id="profPhone" required></div>
-          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Role</label><input type="text" class="form-input" id="profRole" disabled style="background:var(--bg-surface);"></div>
-          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Organization</label><input type="text" class="form-input" id="profOrg" disabled style="background:var(--bg-surface);"></div>
-          <div class="form-group" style="margin-bottom:24px;"><label class="form-label">Assigned Departments</label><input type="text" class="form-input" id="profScope" disabled style="background:var(--bg-surface);"></div>
-          <button class="btn-primary" type="submit" id="btnUpdateInfo"><img src="../assets/icons/save0.svg" alt="" class="btn__icon" style="width:14px; margin-right:6px;" /><span>Update Information</span></button>
-        </form>
-        <div class="security-box">
-          <p>Security</p>
+        <section class="profile-section">
+          <h2 class="profile-section__title">Personal Details</h2>
+          <form id="profileForm" novalidate>
+            <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Full Name</label><input type="text" class="form-input" id="profName" required></div>
+            <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Email Address</label><input type="email" class="form-input readonly-field" id="profEmail" disabled></div>
+            <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Phone</label><input type="text" class="form-input" id="profPhone" required></div>
+            <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Role</label><input type="text" class="form-input readonly-field" id="profRole" disabled></div>
+            <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Organization</label><input type="text" class="form-input readonly-field" id="profOrg" disabled></div>
+            <div class="form-group" style="margin-bottom:24px;"><label class="form-label">Assigned Departments</label><input type="text" class="form-input readonly-field" id="profScope" disabled></div>
+            <button class="btn-primary" type="submit" id="btnUpdateInfo"><img src="../assets/icons/save0.svg" alt="" class="btn__icon" style="width:14px; margin-right:6px;" /><span>Update Information</span></button>
+          </form>
+        </section>
+      </div>
+      <div class="card profile-card profile-card--full">
+        <section class="profile-section profile-section--muted">
+          <p style="margin:0 0 8px 0;color:var(--text-muted);font-size:14px">Security</p>
           <strong style="display:block;margin-bottom:14px;">Change account password</strong>
           <form id="passwordForm" novalidate>
             <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Current Password</label><input type="password" class="form-input" id="currentPassword" placeholder="Enter current password" required></div>
@@ -49,7 +54,7 @@
             <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Confirm New Password</label><input type="password" class="form-input" id="confirmPassword" placeholder="Re-enter new password" required></div>
             <button class="btn-primary" type="submit" id="btnChangePassword"><span>Change Password</span></button>
           </form>
-        </div>
+        </section>
       </div>
     </div>
   </div>
@@ -58,7 +63,8 @@
   <script src="../../js/data.js"></script>
   <script src="../../js/utils.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
       const sessionUser = JSON.parse(localStorage.getItem('currentUser'));
       const db = Utils.getDB();
       const user = sessionUser ? (db.users || []).find(entry => String(entry.id) === String(sessionUser.id)) || sessionUser : null;
@@ -69,7 +75,7 @@
         document.getElementById('profName').value = user.name || '';
         document.getElementById('profEmail').value = user.email || '';
         document.getElementById('profPhone').value = user.phone || '';
-        document.getElementById('profRole').value = user.role || '';
+        document.getElementById('profRole').value = user.role || 'Analyst';
         document.getElementById('profOrg').value = organization ? organization.name : '--';
         document.getElementById('profScope').value = assignedDepartments.length ? assignedDepartments.join(', ') : 'Organization review pool';
         document.getElementById('summaryName').textContent = user.name || '';
@@ -83,7 +89,6 @@
         e.preventDefault();
         const newName = document.getElementById('profName').value.trim();
         const newPhone = document.getElementById('profPhone').value.trim();
-
         if(!newName || !Utils.validatePhone(newPhone)) {
           return Utils.showToast('Provide valid name and phone details', 'error');
         }
@@ -93,19 +98,23 @@
         if(userDbIndex !== -1) {
             liveDb.users[userDbIndex].name = newName;
             liveDb.users[userDbIndex].phone = newPhone;
+            Utils.prepareUserForRole(liveDb, liveDb.users[userDbIndex], 'Analyst');
             Utils.syncUserDerivedFields(liveDb, user.id);
             Utils.replaceDB(liveDb);
             const updatedUser = liveDb.users[userDbIndex];
             localStorage.setItem('currentUser', JSON.stringify(updatedUser));
             Utils.syncSessionUser();
             document.getElementById('summaryName').textContent = newName;
+            document.getElementById('summaryRole').textContent = 'Analyst';
+            document.getElementById('summaryEmail').textContent = updatedUser.email;
             document.getElementById('profileAvatar').textContent = newName.split(' ').map(word => word[0]).join('').slice(0,2).toUpperCase();
             Utils.logAction('Updated profile details', 'Success', 'green');
             Utils.showToast('Profile updated successfully!');
+            setTimeout(() => { window.location.href = '../analyst/sa-dashboard.html'; }, 500);
         }
       });
 
-      document.getElementById('passwordForm').addEventListener('submit', (e) => {
+      document.getElementById('passwordForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const currentPassword = document.getElementById('currentPassword').value;
         const newPassword = document.getElementById('newPassword').value;
@@ -115,7 +124,7 @@
           return Utils.showToast('New password confirmation does not match', 'error');
         }
 
-        const result = Utils.updateUserPassword(user.id, currentPassword, newPassword);
+        const result = await Utils.updateUserPassword(user.id, currentPassword, newPassword);
         if(!result.ok) {
           return Utils.showToast(result.message, 'error');
         }

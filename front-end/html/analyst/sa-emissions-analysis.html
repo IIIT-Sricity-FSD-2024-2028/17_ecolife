@@ -3,92 +3,176 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Emissions Analysis - Rorizon</title>
+  <title>Emissions Analysis - Rorizon Analyst</title>
   <link rel="stylesheet" href="../../css/style.css" />
   <style>
-    .hero{background:linear-gradient(145deg,#eef4ff 0%,#f8fafc 100%);border:1px solid #dbeafe;border-radius:20px;padding:24px;margin-bottom:24px}
-    .hero__head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
-    .hero__title{font-size:30px;font-weight:700;color:#0f172a;margin:0 0 8px 0}
-    .hero__sub{font-size:14px;color:#64748b;margin:0;max-width:760px}
-    .summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:20px}
-    .summary-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px}
-    .summary-card__label{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
-    .summary-card__value{font-size:28px;font-weight:700;color:#0f172a;margin:8px 0 4px}
-    .summary-card__meta{font-size:13px;color:#64748b}
-    .filter-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:16px}
-    .trend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
-    .trend-card{padding:16px;border:1px solid #e2e8f0;border-radius:14px;background:#fff}
-    .trend-card__period{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
-    .trend-card__value{font-size:22px;font-weight:700;color:#0f172a;margin:8px 0 4px}
-    .trend-card__meta{font-size:13px;color:#64748b}
-    .trend-bar{height:8px;border-radius:999px;background:#e2e8f0;overflow:hidden;margin-top:12px}
-    .trend-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#2563eb 0%,#38bdf8 100%)}
-    @media(max-width:900px){.summary-grid,.filter-grid{grid-template-columns:1fr}.hero__head{flex-direction:column}}
+    .stack { display: grid; gap: 16px; }
+    .user-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .metric-chip { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; font-size: 12px; font-weight: 600; }
+    .data-table td, .data-table th { white-space: normal !important; word-break: break-word !important; overflow-wrap: break-word !important; line-height: 1.45 !important; }
+
+    .kpi-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 0; }
+    .kpi-card { background: #f8fafc; border: 1px solid var(--border-light); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 110px; }
+    .kpi-card__title { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .kpi-card__val { font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 4px; }
+    .kpi-card__sub { font-size: 13px; color: #64748b; margin: 0; }
+
+    /* Clean Graph Section Styling */
+    .trend-graph-card { padding: 24px; position: relative; }
+    .graph-point circle { transition: all 0.2s ease; cursor: pointer; }
+    .graph-point:hover circle { r: 7; fill: #1d4ed8; stroke-width: 3; }
+    
+    .graph-tooltip { position: absolute; display: none; background: #0f172a; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; pointer-events: none; transform: translate(-50%, -120%); z-index: 10; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .graph-tooltip::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); border-width: 4px 4px 0; border-style: solid; border-color: #0f172a transparent; display: block; width: 0; }
+
+    .action-btn { border: 1px solid #cbd5e1 !important; background: #fff !important; color: #0f172a !important; padding: 5px 9px !important; border-radius: 8px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease; text-decoration: none; }
+    .action-btn:hover { background: #f8fafc !important; border-color: #64748b !important; }
+
+    /* Lineage Modal */
+    .lineage-modal { width: min(800px, 95vw); max-height: 85vh; overflow-y: auto; position: relative; scrollbar-width: none; }
+    .lineage-modal::-webkit-scrollbar { display: none; }
+    .modal-close-btn { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .lineage-row { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; background: #fff; margin-bottom: 8px; }
+
+    @media(max-width: 900px) {
+      .kpi-strip { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <div id="app-layout" data-title="Emissions Analysis" data-subtitle="Strategic data insights for your assigned departments">
-    <div class="hero">
-      <div class="hero__head">
+  <div id="app-layout" data-title="Emissions Analysis" data-subtitle="Analyze calculated emissions and target performance across assigned departments">
+
+    <!-- 1. Unified Scope Container Card with Admin Toolbar & 3 KPI Cards -->
+    <div class="card stack" style="margin-bottom: 24px;">
+      <div class="chart-header" style="align-items: flex-start;">
         <div>
-          <h2 class="hero__title">Detailed Variance Analysis</h2>
-          <p class="hero__sub">Review department consumption, compare actual usage against configured targets, and track CO2 movement across the departments assigned to your analyst account.</p>
+          <h2 class="card__title">Emissions Analysis Scope</h2>
+          <p style="color:#64748b; font-size:13px; margin:4px 0 0;">Filter reporting periods and department scopes to analyze activity consumption and calculated emissions.</p>
         </div>
-        <span class="kpi-tag kpi-tag--muted" id="scopeBadge">Analyst Scope</span>
+        <span class="metric-chip" id="filterScopeNote">0 departments in scope</span>
       </div>
-      <div class="summary-grid">
-        <div class="summary-card"><div class="summary-card__label">Tracked Emissions</div><div class="summary-card__value" id="totalEmissionCard">0 kg</div><div class="summary-card__meta">Latest scoped submission total</div></div>
-        <div class="summary-card"><div class="summary-card__label">Variance Watch</div><div class="summary-card__value" id="varianceCard">0</div><div class="summary-card__meta">Departments outside target</div></div>
-        <div class="summary-card"><div class="summary-card__label">Active Review Flags</div><div class="summary-card__value" id="flagCard">0</div><div class="summary-card__meta">Anomaly or threshold checks</div></div>
+
+      <!-- Admin Toolbar Controls -->
+      <div class="user-toolbar" style="margin-bottom: 0;">
+        <div class="filter-group">
+          <label style="font-size:13px; font-weight:600; color:#475569;">Period:</label>
+          <select class="form-input" id="saMonthFilter" style="width:130px; color:#0f172a;">
+            <option value="01">January</option>
+            <option value="02">February</option>
+            <option value="03" selected>March</option>
+            <option value="04">April</option>
+            <option value="05">May</option>
+            <option value="06">June</option>
+            <option value="07">July</option>
+            <option value="08">August</option>
+            <option value="09">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+          <input type="number" class="form-input" id="saYearFilter" value="2026" min="2000" max="2100" style="width: 85px; color:#0f172a;">
+        </div>
+
+        <div class="filter-group">
+          <label style="font-size:13px; font-weight:600; color:#475569;">Active Department:</label>
+          <select class="form-input" id="saDeptFilter" style="min-width:200px; color:#0f172a;"></select>
+        </div>
+      </div>
+
+      <!-- 3 Analytical KPI Cards -->
+      <div class="kpi-strip" style="margin-top: 8px;">
+        <div class="kpi-card">
+          <div>
+            <div class="kpi-card__title">Calculated CO2e</div>
+            <div class="kpi-card__val" style="color:#16a34a;" id="metricCO2">0 kgCO2e</div>
+          </div>
+          <div style="margin-top:12px;">
+            <p class="kpi-card__sub" id="metricCO2Meta">Selected period calculation</p>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div>
+            <div class="kpi-card__title">Activity Consumption</div>
+            <div class="kpi-card__val" id="metricQty">0 Units</div>
+          </div>
+          <div style="margin-top:12px;">
+            <p class="kpi-card__sub" id="metricQtyMeta">Validated activity consumption</p>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div>
+            <div class="kpi-card__title">Departments Above Target</div>
+            <div class="kpi-card__val" style="color:#dc2626;" id="metricAbove">0</div>
+          </div>
+          <div style="margin-top:12px;">
+            <p class="kpi-card__sub" id="metricAboveMeta">Exceeding baseline limit</p>
+          </div>
+        </div>
       </div>
     </div>
 
+    <!-- 2. Clean & Uncluttered Interactive SVG Graph Card -->
+    <div class="card trend-graph-card" style="margin-bottom: 24px;">
+      <div class="chart-header" style="margin-bottom: 16px;">
+        <div>
+          <h2 class="card__title">Emissions Progression Trend</h2>
+          <p style="color:#64748b; font-size:13px; margin:4px 0 0;">Monthly CO2e progression curve across verified calculation cycles (in kgCO2e)</p>
+        </div>
+        <span class="metric-chip" id="trendDeptNote">All departments</span>
+      </div>
+
+      <!-- Graph Container & Clean Tooltip -->
+      <div style="position:relative;">
+        <div id="trendGraphTooltip" class="graph-tooltip"></div>
+        <div id="trendGraphContainer" style="width: 100%; min-height: 200px;"></div>
+      </div>
+    </div>
+
+    <!-- 3. Department Performance Table -->
     <div class="card">
-      <div class="filter-grid">
+      <div class="chart-header" style="margin-bottom: 16px;">
         <div>
-          <label class="form-label">Reporting Period</label>
-          <div class="select-wrapper">
-            <select class="form-select" id="saPeriodFilter"></select>
-            <img src="../assets/icons/chevron-down-icon0.svg" class="select-chevron" alt="" />
-          </div>
+          <h2 class="card__title">Department Performance Analysis</h2>
+          <p style="color:#64748b; font-size:13px; margin:4px 0 0;">Actual consumption vs. configured threshold limits for selected reporting period</p>
         </div>
-        <div>
-          <label class="form-label">Department View</label>
-          <div class="select-wrapper">
-            <select class="form-select" id="saDeptFilter"></select>
-            <img src="../assets/icons/chevron-down-icon0.svg" class="select-chevron" alt="" />
-          </div>
-        </div>
+        <span class="metric-chip" id="periodChip">Selected Period</span>
       </div>
-    </div>
 
-    <div class="card chart-card" style="margin-top:24px;">
-      <div class="chart-header">
-        <h2 class="card__title">Emissions Trend</h2>
-        <span class="kpi-tag kpi-tag--blue" id="trendTag">Latest submissions</span>
-      </div>
-      <div class="trend-grid" id="trendGrid"></div>
-    </div>
-
-    <div class="card" style="margin-top:24px;">
-      <div class="chart-header">
-        <h2 class="card__title">Department Performance Analysis</h2>
-        <span class="kpi-tag kpi-tag--muted">Actual vs target</span>
-      </div>
       <div class="table-wrapper">
         <table class="data-table">
           <thead>
             <tr>
               <th>DEPARTMENT</th>
               <th>CONSUMPTION</th>
-              <th>TARGET</th>
+              <th>COO TARGET</th>
               <th>VARIANCE</th>
-              <th>CO2 EMISSIONS</th>
+              <th>CALCULATED CO2</th>
               <th>STATUS</th>
+              <th>LINEAGE</th>
             </tr>
           </thead>
-          <tbody id="analysisTableBody"></tbody>
+          <tbody id="perfTableBody">
+            <tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:24px;">Loading analysis data...</td></tr>
+          </tbody>
         </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Factor Calculation Lineage Drill-Down Modal -->
+  <div class="modal-overlay" id="lineageModal">
+    <div class="modal lineage-modal">
+      <button class="modal-close-btn" type="button" onclick="Utils.toggleModal('lineageModal', false)" aria-label="Close">
+        <img src="../assets/icons/x0.svg" alt="Close" />
+      </button>
+      <div class="modal__header"><h2 class="modal__title" id="lineageTitle">Factor Calculation Lineage</h2></div>
+      <div class="modal__body" id="lineageBody"></div>
+      <div class="modal__footer">
+        <button class="btn-outline" type="button" onclick="Utils.toggleModal('lineageModal', false)">Close</button>
       </div>
     </div>
   </div>
@@ -96,70 +180,279 @@
   <script src="../../js/data.js"></script>
   <script src="../../js/utils.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
+      const currentUser = Utils.getCurrentUser() || {};
+      const monthFilter = document.getElementById('saMonthFilter');
+      const yearFilter = document.getElementById('saYearFilter');
       const deptFilter = document.getElementById('saDeptFilter');
-      const periodFilter = document.getElementById('saPeriodFilter');
+      const tooltip = document.getElementById('trendGraphTooltip');
+
+      function getSelectedPeriod() { return `${monthFilter.value} ${yearFilter.value}`; }
 
       function getScopedData() {
-        const db = Utils.getDB();
-        const currentUser = Utils.getCurrentUser();
-        const scopedDepartmentIds = Utils.getUserDepartmentScope(currentUser, db);
-        const departments = (db.departments || []).filter(dept => !scopedDepartmentIds.length || scopedDepartmentIds.includes(dept.id));
-        const submissions = (db.submissions || []).filter(submission => !scopedDepartmentIds.length || scopedDepartmentIds.includes(submission.departmentId));
-        return { departments, submissions };
+        const db = Utils.ensureCollections(Utils.getDB());
+        const ids = Utils.getUserDepartmentScope(currentUser, db);
+        return {
+          departments: (db.departments || []).filter(d => ids.includes(d.id)),
+          submissions: (db.submissions || []).filter(s => ids.includes(s.departmentId) && s.status === 'Approved')
+        };
       }
 
-      function populateFilters() {
+      function populateDeptFilter() {
+        const { departments } = getScopedData();
+        const cur = deptFilter.value;
+        deptFilter.innerHTML = `<option value="all">All Departments (${departments.length})</option>` +
+          departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        if (cur && departments.some(d => d.id === cur)) deptFilter.value = cur;
+        document.getElementById('filterScopeNote').textContent = `${departments.length} department${departments.length === 1 ? '' : 's'} in scope`;
+      }
+
+      function renderEmissionsGraph(submissions, selectedDeptId) {
+        const container = document.getElementById('trendGraphContainer');
+        if (!container) return;
+
+        const uniquePeriods = Array.from(new Set(submissions.map(s => s.period)))
+          .sort((a, b) => Utils.periodKey(a) - Utils.periodKey(b));
+
+        const graphData = uniquePeriods.map(p => {
+          const matchingSubs = submissions.filter(s => s.period === p && (selectedDeptId === 'all' || s.departmentId === selectedDeptId));
+          const totalCO2 = matchingSubs.reduce((sum, s) => sum + Number(s.totalCO2 || 0), 0);
+          return {
+            periodKey: p,
+            label: Utils.formatPeriodLabel(p),
+            co2: totalCO2
+          };
+        });
+
+        if (graphData.length === 0) {
+          container.innerHTML = `
+            <div style="text-align:center; padding:36px; color:#94a3b8; font-size:13px;">
+              No historical approved emissions data available to plot for this scope.
+            </div>
+          `;
+          return;
+        }
+
+        const width = 760;
+        const height = 200;
+        const padding = { top: 25, right: 35, bottom: 35, left: 65 };
+        const graphW = width - padding.left - padding.right;
+        const graphH = height - padding.top - padding.bottom;
+
+        const maxVal = Math.max(...graphData.map(d => d.co2), 10);
+        const points = graphData.map((d, idx) => {
+          const x = padding.left + (graphData.length === 1 ? graphW / 2 : (idx / (graphData.length - 1)) * graphW);
+          const y = padding.top + graphH - (d.co2 / maxVal) * graphH;
+          return { x, y, ...d };
+        });
+
+        // Smooth Bezier Curve Path Generator
+        function getBezierPath(pts) {
+          if (pts.length < 2) return `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+          let path = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+          for (let i = 0; i < pts.length - 1; i++) {
+            const p0 = pts[i];
+            const p1 = pts[i + 1];
+            const cpX = (p0.x + p1.x) / 2;
+            path += ` C ${cpX.toFixed(1)} ${p0.y.toFixed(1)}, ${cpX.toFixed(1)} ${p1.y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+          }
+          return path;
+        }
+
+        const linePath = getBezierPath(points);
+        const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} ${(padding.top + graphH).toFixed(1)} L ${points[0].x.toFixed(1)} ${(padding.top + graphH).toFixed(1)} Z`;
+
+        // Y Gridlines & Axis labels
+        const yTicks = 4;
+        let gridLinesHtml = '';
+        for (let i = 0; i <= yTicks; i++) {
+          const val = Math.round((maxVal / yTicks) * i);
+          const yPos = padding.top + graphH - (i / yTicks) * graphH;
+          gridLinesHtml += `
+            <line x1="${padding.left}" y1="${yPos}" x2="${width - padding.right}" y2="${yPos}" stroke="#f1f5f9" stroke-dasharray="4,4" />
+            <text x="${padding.left - 10}" y="${yPos + 4}" fill="#64748b" font-size="11" font-weight="600" text-anchor="end">${val.toLocaleString()}</text>
+          `;
+        }
+
+        // Clean Data Points (No overlapping text)
+        let nodesHtml = '';
+        points.forEach((p, idx) => {
+          nodesHtml += `
+            <g class="graph-point" data-label="${p.label}" data-val="${p.co2.toLocaleString(undefined, {maximumFractionDigits:1})} kgCO2e" data-x="${p.x.toFixed(1)}" data-y="${p.y.toFixed(1)}">
+              <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="#2563eb" stroke="#fff" stroke-width="2" />
+              <text x="${p.x.toFixed(1)}" y="${(padding.top + graphH + 20).toFixed(1)}" fill="#475569" font-size="11" font-weight="600" text-anchor="middle">${p.label}</text>
+            </g>
+          `;
+        });
+
+        container.innerHTML = `
+          <svg viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; display:block; overflow:visible;">
+            <defs>
+              <linearGradient id="emissionsGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#2563eb" stop-opacity="0.18" />
+                <stop offset="100%" stop-color="#2563eb" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+            ${gridLinesHtml}
+            <path d="${areaPath}" fill="url(#emissionsGrad)" />
+            <path d="${linePath}" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            ${nodesHtml}
+          </svg>
+        `;
+
+        // Interactive Tooltip Hover Handler
+        const pointElems = container.querySelectorAll('.graph-point');
+        pointElems.forEach(pt => {
+          pt.addEventListener('mouseenter', (e) => {
+            const label = pt.getAttribute('data-label');
+            const val = pt.getAttribute('data-val');
+            const rect = pt.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            
+            tooltip.textContent = `${label}: ${val}`;
+            tooltip.style.left = `${rect.left - containerRect.left + rect.width / 2}px`;
+            tooltip.style.top = `${rect.top - containerRect.top}px`;
+            tooltip.style.display = 'block';
+          });
+
+          pt.addEventListener('mouseleave', () => {
+            tooltip.style.display = 'none';
+          });
+        });
+      }
+
+      function renderAnalysis() {
         const { departments, submissions } = getScopedData();
-        const currentDept = deptFilter.value;
-        const currentPeriod = periodFilter.value;
-        deptFilter.innerHTML = `<option value="all">All Departments</option>${departments.map(dept => `<option value="${dept.id}">${dept.name}</option>`).join('')}`;
-        const periods = Array.from(new Set(submissions.map(submission => submission.period))).reverse();
-        periodFilter.innerHTML = `<option value="all">All Periods</option>${periods.map(period => `<option value="${period}">${period}</option>`).join('')}`;
-        if (currentDept && Array.from(deptFilter.options).some(option => option.value === currentDept)) deptFilter.value = currentDept;
-        if (currentPeriod && Array.from(periodFilter.options).some(option => option.value === currentPeriod)) periodFilter.value = currentPeriod;
+        const period = getSelectedPeriod();
+        const deptId = deptFilter.value;
+        const targetDepts = deptId === 'all' ? departments : departments.filter(d => d.id === deptId);
+        const periodSubs = submissions.filter(s => s.period === period && (deptId === 'all' || s.departmentId === deptId));
+
+        document.getElementById('periodChip').textContent = Utils.formatPeriodLabel(period);
+        document.getElementById('trendDeptNote').textContent = deptId === 'all' ? 'All departments' : (targetDepts[0]?.name || '');
+
+        // Metrics
+        const totalCO2 = periodSubs.reduce((sum, s) => sum + Number(s.totalCO2 || 0), 0);
+        const totalQty = periodSubs.reduce((sum, s) => sum + Number(s.totalConsumption || 0), 0);
+        let aboveTarget = 0;
+        targetDepts.forEach(d => {
+          const sub = periodSubs.find(s => s.departmentId === d.id);
+          const tgt = parseFloat(String(d.target || d.threshold || '0').replace(/[^\d.]/g, ''));
+          if (tgt > 0 && sub && Number(sub.totalConsumption || 0) > tgt) aboveTarget++;
+        });
+
+        document.getElementById('metricCO2').textContent = `${totalCO2.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:2})} kgCO2e`;
+        document.getElementById('metricCO2Meta').textContent = `${periodSubs.length} submission batch${periodSubs.length === 1 ? '' : 'es'} for ${Utils.formatPeriodLabel(period)}`;
+        document.getElementById('metricQty').textContent = `${totalQty.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:2})} Units`;
+        document.getElementById('metricQtyMeta').textContent = `Total validated activity consumption`;
+        document.getElementById('metricAbove').textContent = aboveTarget;
+        document.getElementById('metricAboveMeta').textContent = `${aboveTarget} of ${targetDepts.length} exceeding baseline threshold`;
+
+        // Render Clean Smooth SVG Graph
+        renderEmissionsGraph(submissions, deptId);
+
+        // Performance Table
+        const tbody = document.getElementById('perfTableBody');
+        tbody.innerHTML = targetDepts.map(d => {
+          const sub = periodSubs.find(s => s.departmentId === d.id);
+          const tgtStr = d.target || d.threshold ? (d.target || d.threshold) : '<span style="color:#94a3b8; font-style:italic; font-size:12px;">No Target</span>';
+          const tgtNum = parseFloat(String(d.target || d.threshold || '0').replace(/[^\d.]/g, ''));
+          const qty = sub ? Number(sub.totalConsumption || 0) : 0;
+          const co2 = sub ? Number(sub.totalCO2 || 0) : 0;
+
+          let varText = '--', varColor = '#64748b', badge = '';
+          if (sub && tgtNum > 0) {
+            const diff = qty - tgtNum;
+            const pct = Math.round((diff / tgtNum) * 100);
+            if (diff > 0) { 
+              varText = `+${diff.toLocaleString()} (+${pct}%)`; 
+              varColor = '#dc2626'; 
+              badge = '<span class="status-badge status-badge--red">Above Target</span>'; 
+            } else { 
+              varText = `${diff.toLocaleString()} (${pct}%)`; 
+              varColor = '#16a34a'; 
+              badge = '<span class="status-badge status-badge--green">Within Target</span>'; 
+            }
+          } else if (sub) {
+            badge = `<span class="status-badge status-badge--${sub.status === 'Approved' ? 'green' : 'blue'}">${sub.status || 'Submitted'}</span>`;
+          } else {
+            badge = '<span class="status-badge status-badge--amber">No Submission</span>';
+          }
+
+          return `
+            <tr>
+              <td>
+                <div class="td--bold">${d.name}</div>
+                <div class="td--muted" style="font-size:12px; margin-top:2px;">Manager: ${d.manager || 'Unassigned'}</div>
+              </td>
+              <td class="td--bold">${sub ? `${qty.toLocaleString()} Units` : '<span style="color:#94a3b8;">--</span>'}</td>
+              <td>${tgtStr}</td>
+              <td style="color:${varColor}; font-weight:600;">${varText}</td>
+              <td class="td--bold" style="color:#16a34a;">${sub ? `${co2.toLocaleString(undefined, {maximumFractionDigits:2})} kgCO2e` : '--'}</td>
+              <td>${badge}</td>
+              <td>${sub ? `<button class="action-btn" type="button" onclick="viewLineage('${sub.id}')">Lineage</button>` : '<span style="color:#94a3b8; font-size:12px;">--</span>'}</td>
+            </tr>
+          `;
+        }).join('') || Utils.renderEmptyTableRow(7, 'No Scope Data', 'No departments found in your active scope.', 'inbox');
       }
 
-      function renderAnalysisTable() {
-        const { departments, submissions } = getScopedData();
-        const selectedDept = deptFilter.value || 'all';
-        const selectedPeriod = periodFilter.value || 'all';
-        const filteredDepartments = departments.filter(dept => selectedDept === 'all' || dept.id === selectedDept);
-        const filteredSubmissions = submissions.filter(submission => (selectedDept === 'all' || submission.departmentId === selectedDept) && (selectedPeriod === 'all' || submission.period === selectedPeriod));
-        const totalEmission = filteredSubmissions.reduce((sum, submission) => sum + Number(submission.totalCO2 || 0), 0);
-        const flagged = filteredSubmissions.filter(submission => ['threshold_breach', 'anomalous'].includes(submission.validation?.state)).length;
-        const outsideTarget = filteredDepartments.filter(dept => Utils.parseAmount(dept.current) > Utils.parseAmount(dept.target)).length;
-        document.getElementById('scopeBadge').textContent = `${filteredDepartments.length} Department${filteredDepartments.length === 1 ? '' : 's'}`;
-        document.getElementById('totalEmissionCard').textContent = `${totalEmission.toLocaleString(undefined, { maximumFractionDigits: 2 })} kg`;
-        document.getElementById('varianceCard').textContent = outsideTarget;
-        document.getElementById('flagCard').textContent = flagged;
-        document.getElementById('trendTag').textContent = selectedPeriod === 'all' ? 'Latest submissions' : selectedPeriod;
+      window.viewLineage = function(submissionId) {
+        const db = Utils.ensureCollections(Utils.getDB());
+        const sub = (db.submissions || []).find(s => s.id === submissionId);
+        if (!sub) return;
+        document.getElementById('lineageTitle').textContent = `${sub.departmentName} — ${Utils.formatPeriodLabel(sub.period)} Lineage`;
 
-        const maxEmission = Math.max(...filteredSubmissions.map(item => Number(item.totalCO2 || 0)), 1);
-        document.getElementById('trendGrid').innerHTML = filteredSubmissions.length ? filteredSubmissions.slice(-6).map(submission => {
-          const width = Math.max(10, Math.round((Number(submission.totalCO2 || 0) / maxEmission) * 100));
-          const note = submission.validation?.state === 'threshold_breach' ? 'Threshold Breach' : submission.validation?.state === 'anomalous' ? 'Anomaly Review' : 'Within Range';
-          return `<div class="trend-card"><div class="trend-card__period">${submission.period}</div><div class="trend-card__value">${Number(submission.totalCO2 || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} kg</div><div class="trend-card__meta">${submission.departmentName} | ${Number(submission.totalConsumption || 0).toLocaleString()} units</div><div class="trend-card__meta" style="margin-top:4px;">${note}</div><div class="trend-bar" title="${submission.departmentName}: ${Number(submission.totalCO2 || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} kg"><span style="width:${width}%"></span></div></div>`;
-        }).join('') : '<div class="trend-card"><div class="trend-card__period">No data</div><div class="trend-card__value">0 kg</div><div class="trend-card__meta">No submission data is available for the selected filters.</div><div class="trend-bar"><span style="width:0%"></span></div></div>';
+        const impactResults = (db.impactResults || []).filter(r => r.submissionId === sub.id);
+        let html = '';
+        if (impactResults.length) {
+          html = impactResults.map(r => {
+            const rt = (db.resourceTypes || []).find(i => i.id === r.resourceTypeId);
+            const unit = (db.units || []).find(i => i.id === r.unitId);
+            const factor = (db.emissionFactors || []).find(i => i.id === r.factorId);
+            const version = (db.factorVersions || []).find(i => i.id === r.factorVersionId);
+            const source = (db.factorSources || []).find(i => i.id === r.factorSourceId);
+            return `
+              <div class="lineage-row">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <div>
+                    <strong style="color:#0f172a;">${rt?.name || r.resourceTypeId}</strong>
+                    <span style="color:#64748b; font-size:12px; margin-left:8px;">${Number(r.quantity || 0).toLocaleString()} ${unit?.code || unit?.name || 'Units'}</span>
+                  </div>
+                  <strong style="color:#16a34a;">${Number(r.co2e || 0).toLocaleString(undefined, {maximumFractionDigits:2})} kgCO2e</strong>
+                </div>
+                <div style="font-size:12px; color:#64748b; background:#f8fafc; padding:6px 10px; border-radius:6px; border:1px solid #e2e8f0;">
+                  Factor: ${factor?.factor ?? r.factor ?? '--'} ${factor?.factorUnit || ''} &bull; Source: ${source?.name || r.factorSourceId || 'Governed'} &bull; Version: ${version?.name || r.factorVersionId || 'Active'}
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else if (sub.resources?.length) {
+          html = sub.resources.map(r => `
+            <div class="lineage-row" style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong style="color:#0f172a;">${r.type}</strong>
+                <span style="color:#64748b; font-size:12px; margin-left:8px;">${Number(r.qty || 0).toLocaleString()} ${r.unit}</span>
+              </div>
+              <span class="status-badge status-badge--amber">Pending Factor Verification</span>
+            </div>
+          `).join('');
+        } else {
+          html = '<p style="color:#94a3b8; font-size:13px; margin:0;">No resource records found for this submission.</p>';
+        }
+        document.getElementById('lineageBody').innerHTML = html;
+        Utils.toggleModal('lineageModal', true);
+      };
 
-        document.getElementById('analysisTableBody').innerHTML = filteredDepartments.map(department => {
-          const departmentSubmissions = filteredSubmissions.filter(submission => submission.departmentId === department.id);
-          const latest = departmentSubmissions[departmentSubmissions.length - 1];
-          const current = latest ? latest.totalConsumption : Utils.parseAmount(department.current);
-          const target = Utils.parseAmount(department.target);
-          const variance = target > 0 ? (((current - target) / target) * 100) : 0;
-          const status = latest?.validation?.state === 'threshold_breach' ? 'Threshold Breach' : latest?.validation?.state === 'anomalous' ? 'Anomaly Review' : (department.status || 'Within Target');
-          const statusClass = latest?.validation?.state === 'threshold_breach' ? 'red' : latest?.validation?.state === 'anomalous' ? 'amber' : (department.statusType || 'green');
-          return `<tr><td class="td--bold">${department.name}</td><td>${Number(current || 0).toLocaleString()} units</td><td class="td--muted">${department.target || '--'}</td><td class="td--variance ${variance > 0 ? 'td--variance-positive' : 'td--variance-negative'}">${variance > 0 ? '+' : ''}${variance.toFixed(1)}%</td><td class="td--bold">${latest ? Number(latest.totalCO2 || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }) : Number(department.co2 || 0).toLocaleString()} kg</td><td><span class="status-badge status-badge--${statusClass}">${status}</span></td></tr>`;
-        }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">No departments available for this analysis scope.</td></tr>';
-      }
-
-      populateFilters();
-      renderAnalysisTable();
-      deptFilter.addEventListener('change', renderAnalysisTable);
-      periodFilter.addEventListener('change', renderAnalysisTable);
-      window.addEventListener('rorizon-db-updated', () => { populateFilters(); renderAnalysisTable(); });
-      window.addEventListener('storage', () => { populateFilters(); renderAnalysisTable(); });
+      populateDeptFilter();
+      renderAnalysis();
+      deptFilter.addEventListener('change', renderAnalysis);
+      monthFilter.addEventListener('change', renderAnalysis);
+      yearFilter.addEventListener('change', renderAnalysis);
+      yearFilter.addEventListener('input', renderAnalysis);
+      window.addEventListener('rorizon-db-updated', () => { populateDeptFilter(); renderAnalysis(); });
+      window.addEventListener('storage', () => { populateDeptFilter(); renderAnalysis(); });
+      Utils.startPolling(15000);
     });
   </script>
 </body>
