@@ -1,174 +1,475 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COO Alerts - Rorizon COO</title>
+  <title>Alerts &amp; Escalations - Rorizon COO</title>
   <link rel="stylesheet" href="../../css/style.css">
   <style>
-    .alert-actions{display:flex;gap:10px;flex-wrap:wrap}
-    .alert-actions .btn-outline,.alert-actions .btn-primary{min-width:150px}
-    .alert-matrix{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px}
-    .alert-matrix p{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 4px}
-    .alert-matrix strong{font-size:16px;color:#0f172a}
-    .alert-note{padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;font-size:13px;line-height:1.5;margin-bottom:16px}
-    @media(max-width:860px){.alert-matrix{grid-template-columns:1fr}}
+    .stack { display: grid; gap: 16px; }
+    
+    .toggle-group { justify-content: space-between; align-items: center; width: 100%; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+    .toggle-btn-group { display: flex; gap: 8px; }
+
+    .user-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .user-toolbar .form-input { flex: 1 1 0%; max-width: none; }
+    .metric-chip { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; font-size: 12px; font-weight: 600; }
+
+    /* Ultra-clean Alert Cards */
+    .alert-card-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; transition: all 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .alert-card-item:hover { border-color: #cbd5e1; }
+
+    .alert-header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; cursor: pointer; }
+    
+    .alert-drawer-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid #f1f5f9; display: none; }
+    .alert-drawer-body.is-expanded { display: block; }
+
+    /* Sleek & Simple Governance Stepper Bar */
+    .stepper-bar { display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 8px; padding: 8px 12px; margin-top: 12px; overflow-x: auto; }
+    .step-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #94a3b8; white-space: nowrap; }
+    .step-item.completed { color: #16a34a; }
+    .step-item.current { color: #2563eb; font-weight: 700; }
+    .step-dot { width: 18px; height: 18px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+    .step-item.completed .step-dot { background: #dcfce7; color: #15803d; }
+    .step-item.current .step-dot { background: #dbeafe; color: #1d4ed8; }
+    .step-arrow { color: #cbd5e1; font-size: 10px; }
+
+    .alert-meta-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; background: #f8fafc; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
+    .alert-meta-grid span { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+    .alert-meta-grid strong { font-size: 14px; color: #0f172a; font-weight: 600; }
+
+    .variance-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; }
+
+    .detail-section { margin-bottom: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; }
+    .detail-section__title { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 8px 0; display: flex; justify-content: space-between; align-items: center; }
+    .detail-section p { font-size: 13px; color: #334155; line-height: 1.5; margin: 0; white-space: pre-wrap; }
+
+    /* Executive Sustainability Table */
+    .resource-breakdown-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+    .resource-breakdown-table th { text-align: left; background: #f8fafc; padding: 10px 12px; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0; }
+    .resource-breakdown-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; color: #0f172a; vertical-align: middle; }
+
+    .alert-actions-row { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
+
+    .action-btn { border: 1px solid #cbd5e1 !important; background: #fff !important; color: #0f172a !important; padding: 6px 12px !important; border-radius: 8px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease; text-decoration: none; }
+    .action-btn:hover { background: #f8fafc !important; border-color: #64748b !important; }
+    .action-btn.warn { color: #dc2626 !important; border-color: #fca5a5 !important; }
+    .action-btn.warn:hover { background: #fef2f2 !important; border-color: #ef4444 !important; }
+
+    @media(max-width: 900px) { .alert-meta-grid { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
 <body>
+  <div id="app-layout" data-title="Alerts &amp; Escalations" data-subtitle="Monitor and respond to departmental threshold breaches and analyst review flags">
 
-  <div id="app-layout" data-title="COO Alerts" data-subtitle="TechCorp Industries">
-    <div class="page-heading" style="display:flex; justify-content:space-between; align-items:flex-start;">
-      <div>
-        <div class="chart-header">
-          <h2 class="page-heading__title" style="font-size:20px; font-weight:700;">Platform Escalations</h2>
-        </div>
-        <p class="page-heading__subtitle" style="font-size:13px; color:#64748b; margin-top:4px;">Monitor and respond to live threshold and analyst review alerts.</p>
+    <!-- Admin Segmented Control Toggle Group -->
+    <div class="toggle-group">
+      <div class="toggle-btn-group">
+        <button class="toggle-btn active" id="tabActiveAlerts" type="button">Active Escalations (0)</button>
+        <button class="toggle-btn" id="tabResolvedAlerts" type="button">Resolved History (0)</button>
       </div>
-      <span id="cooAlertCounter" style="font-size:12px; font-weight:600; color:#1e293b;">0 Active Alerts</span>
+
+      <span class="metric-chip" id="orgScopeBadge">Organization Scope</span>
     </div>
 
-    <div style="display:flex; gap:8px; margin-bottom:24px; border-bottom:2px solid #e2e8f0; padding-bottom:2px;">
-      <button id="showActiveBtn" class="btn-outline" type="button" style="border-radius:9999px;">Active</button>
-      <button id="showResolvedBtn" class="btn-outline" type="button" style="border-radius:9999px;">Resolved History</button>
+    <!-- Search & Filter Toolbar -->
+    <div class="user-toolbar">
+      <input class="form-input" id="searchAlertsInput" placeholder="Search escalations by department, message, or explanation..." style="color:#0f172a;" />
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <select class="form-input" id="severityFilter" style="width:150px; color:#0f172a;">
+          <option value="all">All Severities</option>
+          <option value="Critical">Critical</option>
+          <option value="Medium">Medium</option>
+        </select>
+      </div>
     </div>
 
-    <div id="cooAlertHost" style="display:grid; gap:24px;"></div>
+    <div id="alertsContainer">
+      <div style="text-align:center; padding:32px; color:#94a3b8;">Loading organization alerts...</div>
+    </div>
+
+  </div>
+
+  <!-- Executive Directive Modal -->
+  <div class="modal-overlay" id="cooNoticeModal">
+    <div class="modal modal--sm">
+      <div class="modal__header">
+        <h2 class="modal__title" style="color:#0f172a;" id="cooModalTitle">COO Operational Directive</h2>
+      </div>
+      <div class="modal__body">
+        <p style="font-size:13px; color:#64748b; margin:0 0 12px 0;" id="cooModalSubtitle">Specify instructions or guidelines for the assigned department team.</p>
+        <textarea class="form-textarea" id="cooDirectiveInput" rows="4" placeholder="Enter executive directive or clarification request..." style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:10px 12px; font-family:inherit; font-size:13px; box-sizing:border-box;"></textarea>
+      </div>
+      <div class="modal__footer">
+        <button class="btn-outline" type="button" onclick="Utils.toggleModal('cooNoticeModal', false)">Cancel</button>
+        <button class="btn-primary" type="button" id="btnConfirmCooDirective" style="background:#2563eb; border-color:#2563eb;">Send Directive</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast toast--success" id="toastMessage">
+    <div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt=""></div>
+    <p class="toast__text" id="toastText"></p>
   </div>
 
   <script src="../../js/data.js"></script>
   <script src="../../js/utils.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      let currentFilter = 'active';
-      const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    let activeTab = 'active';
+    let pendingCooAction = null;
+    let expandedAlertIds = new Set();
+    let initializedTab = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
+      const currentUser = Utils.getCurrentUser() || {};
+      const searchInput = document.getElementById('searchAlertsInput');
+      const severityFilter = document.getElementById('severityFilter');
+
+      function getOrgAlerts() {
+        const db = Utils.ensureCollections(Utils.getDB());
+        const currentOrg = Utils.getCurrentOrganization(currentUser, db);
+        const orgId = currentOrg?.id || currentUser.organizationId;
+        return (db.alerts || []).filter(a => !orgId || !a.organizationId || String(a.organizationId) === String(orgId));
+      }
+
+      function filterAlerts(alerts) {
+        const q = searchInput.value.trim().toLowerCase();
+        const sev = severityFilter.value;
+
+        return alerts.filter(a => {
+          if (sev !== 'all' && a.severity !== sev) return false;
+          if (q) {
+            const haystack = `${a.departmentName || ''} ${a.message || ''} ${a.deviationReason || ''} ${a.managerExplanation || ''} ${a.cooDirective || ''}`.toLowerCase();
+            if (!haystack.includes(q)) return false;
+          }
+          return true;
+        });
+      }
 
       function renderAlerts() {
-        const db = Utils.getDB();
-        const alerts = (db.alerts || []).filter(alert => Array.isArray(alert.roleScope) && alert.roleScope.includes('COO') && (!currentUser?.organizationId || alert.organizationId === currentUser.organizationId));
-        const filtered = alerts.filter(alert => currentFilter === 'active' ? alert.status !== 'Resolved' : alert.status === 'Resolved');
-        const activeCount = alerts.filter(alert => alert.status !== 'Resolved').length;
-        document.getElementById('cooAlertCounter').textContent = `${activeCount} Active Alert${activeCount === 1 ? '' : 's'}`;
-        document.getElementById('showActiveBtn').style.background = currentFilter === 'active' ? '#dbeafe' : 'transparent';
-        document.getElementById('showResolvedBtn').style.background = currentFilter === 'resolved' ? '#dbeafe' : 'transparent';
+        const allAlerts = getOrgAlerts();
+        const activeAlerts = allAlerts.filter(a => a.status !== 'Resolved');
+        const resolvedAlerts = allAlerts.filter(a => a.status === 'Resolved');
 
-        const host = document.getElementById('cooAlertHost');
-        if (!filtered.length) {
-          host.innerHTML = `<div class="card"><p style="margin:0; color:#64748b;">No ${currentFilter} alerts found.</p></div>`;
+        document.getElementById('tabActiveAlerts').textContent = `Active Escalations (${activeAlerts.length})`;
+        document.getElementById('tabResolvedAlerts').textContent = `Resolved History (${resolvedAlerts.length})`;
+        document.getElementById('orgScopeBadge').textContent = Utils.getCurrentOrganization()?.name || 'Organization Scope';
+
+        const displayedRaw = activeTab === 'active' ? activeAlerts : resolvedAlerts;
+        const displayed = filterAlerts(displayedRaw);
+        const container = document.getElementById('alertsContainer');
+
+        if (displayed.length === 0) {
+          container.innerHTML = Utils.renderEmptyState(
+            activeTab === 'active' ? 'No Active Escalations' : 'No Resolved History',
+            activeTab === 'active' ? 'No active threshold breaches match your search criteria.' : 'No alerts have been resolved yet in this organization.',
+            activeTab === 'active' ? 'check' : 'inbox'
+          );
           return;
         }
 
-        host.innerHTML = filtered.map(alert => {
-          const statusType = alert.status === 'Resolved' ? 'green' : alert.status === 'Analyst Review' ? 'amber' : alert.status === 'Manager Notified' ? 'amber' : alert.status === 'Fix Requested' ? 'red' : 'red';
-          const department = (db.departments || []).find(item => item.id === alert.departmentId || item.name === alert.departmentName);
-          const org = (db.organizations || []).find(item => item.id === alert.organizationId || item.id === department?.orgId);
+        if (initializedTab !== activeTab) {
+          initializedTab = activeTab;
+          expandedAlertIds.clear();
+          if (displayed.length > 0) {
+            expandedAlertIds.add(String(displayed[0].id));
+          }
+        }
+
+        const db = Utils.ensureCollections(Utils.getDB());
+        container.innerHTML = displayed.map(alert => {
+          const alertIdStr = String(alert.id);
+          const isExpanded = expandedAlertIds.has(alertIdStr);
+          const dept = (db.departments || []).find(d => String(d.id) === String(alert.departmentId) || d.name === alert.departmentName);
+          const sub = (db.submissions || []).find(s => (String(s.departmentId) === String(alert.departmentId) || s.departmentName === alert.departmentName) && s.period === alert.period);
+          const isResolved = alert.status === 'Resolved';
+          const status = (alert.status || 'Active').trim();
+
+          const curVal = Utils.parseAmount(dept?.current || alert.currentValue || 0);
+          const threshVal = Utils.parseAmount(dept?.threshold || alert.thresholdValue || 0);
+          let variancePct = 0;
+          if (threshVal > 0 && curVal > threshVal) {
+            variancePct = Math.round(((curVal - threshVal) / threshVal) * 100);
+          }
+
+          // Enriched Resources with Emissions & Line-Item Variance Status
+          const rawResources = sub?.resources || alert.resources || [];
+          const resourcesList = rawResources.map(r => {
+            const qty = Number(r.qty || r.quantity || 0);
+            const factor = Number(r.emissionFactor || (String(r.resourceTypeName || r.type).toLowerCase().includes('electricity') ? 0.5 : 2.68));
+            const co2e = r.co2e ? Number(r.co2e) : Math.round(qty * factor);
+            const targetVal = Number(r.targetQty || r.thresholdQty || Math.round(qty * 0.75));
+            let lineVarPct = 0;
+            if (targetVal > 0 && qty > targetVal) {
+              lineVarPct = Math.round(((qty - targetVal) / targetVal) * 100);
+            }
+            return {
+              ...r,
+              qty,
+              co2e,
+              lineVarPct,
+              evidence: r.evidenceFileName || r.evidenceUrl || 'Verified Entry'
+            };
+          });
+
+          const hasManagerInput = Boolean((alert.managerExplanation && alert.managerExplanation.trim()) || (alert.deviationReason && alert.deviationReason.trim()));
+
+          // Precise Stepper Calculations
+          const s1Done = true;
+          const s2Done = hasManagerInput || status === 'Analyst Review' || status === 'Manager Notified' || isResolved;
+          const s2Current = !s2Done;
+
+          const s3Done = status === 'Manager Notified' || isResolved;
+          const s3Current = s2Done && !s3Done;
+
+          const s4Done = isResolved;
+          const s4Current = s3Done && !s4Done;
+
           return `
-            <div class="card" style="border-left:4px solid ${alert.severity === 'Critical' ? '#ef4444' : '#f59e0b'};">
-              <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                  <span class="status-badge status-badge--${alert.severity === 'Critical' ? 'red' : 'amber'}">${alert.severity}</span>
-                  <span class="status-badge status-badge--${statusType}">${alert.status}</span>
-                  <span class="status-badge status-badge--amber">${alert.type}</span>
-                </div>
-                <span style="font-size:12px; color:#94a3b8;">${(alert.updatedAt || alert.createdAt || '--').replace('T', ' ')}</span>
-              </div>
-
-              <div style="margin-bottom:16px;">
-                <h3 style="font-size:16px; font-weight:700; color:#0f172a; margin:0 0 4px 0;">${alert.departmentName}</h3>
-                <p style="font-size:13px; color:#64748b; margin:0;">${alert.message}</p>
-                <p style="font-size:12px; color:#94a3b8; margin:6px 0 0;">${org ? org.name : '--'} | ${alert.type}</p>
-              </div>
-
-              <div class="alert-matrix">
+            <div class="alert-card-item" id="card-${alert.id}">
+              <!-- Direct Click Header Toggle -->
+              <div class="alert-header-row" onclick="toggleAlertExpand('${alert.id}')">
                 <div>
-                  <p>Current Usage</p>
-                  <strong>${department ? department.current : '--'}</strong>
+                  <h3 style="font-size:15px; font-weight:700; color:#0f172a; margin:0 0 2px 0;">${alert.departmentName || 'Department Alert'}</h3>
+                  <p style="font-size:13px; color:#64748b; margin:0;">${alert.message || 'Threshold escalation notice'}</p>
                 </div>
                 <div>
-                  <p>Threshold</p>
-                  <strong>${department ? department.threshold : '--'}</strong>
-                </div>
-                <div>
-                  <p>Manager Note</p>
-                  <strong style="font-size:14px;font-weight:600;color:#334155;">${alert.managerExplanation || alert.deviationReason || 'No note provided yet.'}</strong>
+                  ${variancePct > 0 ? `<span class="variance-badge">+${variancePct}% Over Limit</span>` : `<span class="variance-badge" style="background:#fef3c7; border-color:#fde68a; color:#b45309;">Threshold Breach</span>`}
                 </div>
               </div>
 
-              <div class="alert-note">Recommended flow: notify the manager when it needs department correction, escalate to the assigned analyst when the data needs validation support, and close the item only after the corrective path is complete.</div>
-
-              ${alert.status === 'Resolved' ? '' : `
-                <div class="alert-actions">
-                  <button class="btn-outline" type="button" onclick="updateCooAlert('${alert.id}','notify_manager')">Notify Manager</button>
-                  <button class="btn-outline" type="button" onclick="updateCooAlert('${alert.id}','notify_analyst')">Escalate Analyst</button>
-                  <button class="btn-primary" type="button" onclick="updateCooAlert('${alert.id}','request_fix')">Request Department Fix</button>
-                  <button class="btn-outline" type="button" onclick="updateCooAlert('${alert.id}','resolve')">Mark Resolved</button>
+              <!-- Accurate Governance Stepper Bar -->
+              <div class="stepper-bar">
+                <div class="step-item ${s1Done ? 'completed' : ''}">
+                  <span class="step-dot">✓</span>
+                  <span>1. Breach Flagged</span>
                 </div>
-              `}
+                <span class="step-arrow">►</span>
+                <div class="step-item ${s2Done ? 'completed' : (s2Current ? 'current' : '')}">
+                  <span class="step-dot">${s2Done ? '✓' : '2'}</span>
+                  <span>2. Manager Justification</span>
+                </div>
+                <span class="step-arrow">►</span>
+                <div class="step-item ${s3Done ? 'completed' : (s3Current ? 'current' : '')}">
+                  <span class="step-dot">${s3Done ? '✓' : '3'}</span>
+                  <span>3. Analyst Audit</span>
+                </div>
+                <span class="step-arrow">►</span>
+                <div class="step-item ${s4Done ? 'completed' : (s4Current ? 'current' : '')}">
+                  <span class="step-dot">${s4Done ? '✓' : '4'}</span>
+                  <span>4. Executive Sign-off</span>
+                </div>
+              </div>
+
+              <!-- Expanded Detailed View -->
+              <div class="alert-drawer-body ${isExpanded ? 'is-expanded' : ''}">
+                <div class="alert-meta-grid">
+                  <div>
+                    <span>Reporting Period</span>
+                    <strong>${Utils.formatPeriodLabel(alert.period || '')}</strong>
+                  </div>
+                  <div>
+                    <span>Department Manager</span>
+                    <strong>${dept?.manager || alert.managerName || 'Assigned Manager'}</strong>
+                  </div>
+                  <div>
+                    <span>Current Consumption</span>
+                    <strong>${dept ? (dept.current || '--') : '--'}</strong>
+                  </div>
+                  <div>
+                    <span>Threshold Limit</span>
+                    <strong style="color:#b45309;">${dept ? (dept.threshold || '--') : '--'}</strong>
+                  </div>
+                </div>
+
+                ${resourcesList.length > 0 ? `
+                  <div class="detail-section">
+                    <div class="detail-section__title">
+                      <span>Ingested Resource Activity &amp; Emissions Breakdown</span>
+                      <span>${resourcesList.length} line item(s)</span>
+                    </div>
+                    <table class="resource-breakdown-table">
+                      <thead>
+                        <tr>
+                          <th>RESOURCE TYPE</th>
+                          <th style="text-align:right;">SUBMITTED ACTIVITY</th>
+                          <th style="text-align:right;">EMISSIONS IMPACT</th>
+                          <th style="text-align:center;">VARIANCE STATUS</th>
+                          <th>VERIFICATION EVIDENCE</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${resourcesList.map(r => `
+                          <tr>
+                            <td style="font-weight:700; color:#0f172a;">${r.resourceTypeName || r.type || 'Resource'}</td>
+                            <td style="text-align:right; font-weight:700; font-variant-numeric:tabular-nums;">${r.qty.toLocaleString()} <span style="font-size:11px; font-weight:500; color:#64748b;">${r.unitName || r.unit || 'Units'}</span></td>
+                            <td style="text-align:right; font-weight:700; color:#0f172a; font-variant-numeric:tabular-nums;">${r.co2e.toLocaleString()} <span style="font-size:11px; font-weight:500; color:#64748b;">kg CO₂e</span></td>
+                            <td style="text-align:center;">
+                              ${r.lineVarPct > 0 
+                                ? `<span class="variance-badge" style="font-size:10px; padding:2px 6px;">+${r.lineVarPct}% Over Baseline</span>`
+                                : `<span style="font-size:11px; font-weight:600; color:#16a34a; background:#f0fdf4; border:1px solid #bbf7d0; padding:2px 6px; border-radius:4px;">Within Baseline</span>`}
+                            </td>
+                            <td>
+                              ${r.evidence !== 'Verified Entry'
+                                ? `<a class="action-btn" href="#" onclick="event.preventDefault(); Utils.showToast('Opening evidence document: ${r.evidence}');" style="font-size:11px; padding:3px 8px;">📎 ${r.evidence}</a>`
+                                : `<span style="color:#64748b; font-size:11px;">Verified Record</span>`}
+                            </td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : ''}
+
+                ${alert.deviationReason || alert.managerExplanation ? `
+                  <div class="detail-section" style="border-color:#fcd34d; background:#fffbeb;">
+                    <div class="detail-section__title" style="color:#92400e;">
+                      <span>Manager Operational Explanation</span>
+                      <span>${alert.managerName || 'Department Manager'}</span>
+                    </div>
+                    <p style="color:#78350f; font-weight:500;">"${alert.deviationReason || alert.managerExplanation}"</p>
+                    ${alert.managerActionTaken ? `<p style="margin-top:6px; color:#92400e; font-size:12px;"><strong>Mitigation Action:</strong> ${alert.managerActionTaken}</p>` : ''}
+                  </div>
+                ` : ''}
+
+                ${alert.cooDirective ? `
+                  <div class="detail-section" style="border-color:#bfdbfe; background:#eff6ff;">
+                    <div class="detail-section__title" style="color:#1d4ed8;">
+                      <span>COO Executive Directive Issued</span>
+                      <span>Executive Governance</span>
+                    </div>
+                    <p style="color:#1e3a8a; font-weight:600;">"${alert.cooDirective}"</p>
+                  </div>
+                ` : ''}
+
+                ${alert.response ? `
+                  <div class="detail-section" style="border-color:#bbf7d0; background:#f0fdf4;">
+                    <div class="detail-section__title" style="color:#15803d;">
+                      <span>Executive Resolution Record</span>
+                      <span>Resolved ${alert.resolvedAt || '--'}</span>
+                    </div>
+                    <p style="color:#14532d; font-weight:600;">"${alert.response}"</p>
+                  </div>
+                ` : ''}
+
+                ${!isResolved ? `
+                  <div class="alert-actions-row">
+                    <button class="action-btn warn" type="button" onclick="handleAlertAction('${alert.id}', 'notify_manager')">Issue Executive Directive</button>
+                    <button class="action-btn" type="button" style="color:#16a34a; border-color:#86efac;" onclick="handleAlertAction('${alert.id}', 'resolve')">Approve Variance &amp; Resolve</button>
+                  </div>
+                ` : ''}
+              </div>
             </div>
           `;
         }).join('');
       }
 
-      window.updateCooAlert = function(alertId, action) {
-        const db = Utils.getDB();
-        const alert = (db.alerts || []).find(item => item.id === alertId);
-        if (!alert) return;
-        const department = (db.departments || []).find(item => item.id === alert.departmentId || item.name === alert.departmentName);
-        const manager = department ? (db.users || []).find(user => String(user.id) === String(department.managerUserId)) : null;
-        const analysts = (db.users || []).filter(user => user.role === 'Analyst' && user.organizationId === alert.organizationId && Array.isArray(user.assignedDepartmentIds) && user.assignedDepartmentIds.includes(department?.id));
-        const nextStatus = action === 'resolve' ? 'Resolved' : action === 'notify_analyst' ? 'Analyst Review' : action === 'notify_manager' ? 'Manager Notified' : 'Fix Requested';
-        alert.status = nextStatus;
-        alert.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        alert.cooAction = action;
-
-        if (!db.notifications) db.notifications = [];
-        const notifications = [];
-        if (action === 'notify_manager' || action === 'request_fix' || action === 'resolve') {
-          notifications.push({
-            id: Date.now(),
-            role: 'Manager',
-            userId: manager ? manager.id : null,
-            title: action === 'resolve' ? 'Alert Resolved' : 'COO Department Action',
-            body: action === 'resolve' ? `${alert.departmentName} alert was closed by the COO.` : `${alert.departmentName} requires manager follow-up.`,
-            timestamp: 'Just now',
-            read: false,
-            details: action === 'request_fix' ? 'Please coordinate the department correction and update the team.' : `COO updated the alert workflow for ${alert.departmentName}.`
-          });
+      window.toggleAlertExpand = function(alertId) {
+        const idStr = String(alertId);
+        if (expandedAlertIds.has(idStr)) {
+          expandedAlertIds.delete(idStr);
+        } else {
+          expandedAlertIds.add(idStr);
         }
-        if (action === 'notify_analyst' || action === 'resolve') {
-          (analysts.length ? analysts : [{ id: null }]).forEach((analyst, index) => {
-            notifications.push({
-              id: Date.now() + index + 1,
-              role: 'Analyst',
-              userId: analyst.id,
-              title: action === 'resolve' ? 'Alert Resolved' : 'COO Validation Review',
-              body: action === 'resolve' ? `${alert.departmentName} alert was closed by the COO.` : `${alert.departmentName} was escalated for analyst review.`,
-              timestamp: 'Just now',
-              read: false,
-              details: action === 'notify_analyst' ? `Please review the department alert and support the corrective workflow.` : `Executive action applied to alert ${alert.id}.`
-            });
-          });
-        }
-        notifications.forEach(item => db.notifications.unshift(item));
-
-        Utils.replaceDB(db);
-        Utils.logAction(`COO Alert Update: ${alert.departmentName} -> ${nextStatus}`, action === 'resolve' ? 'Success' : 'Warning', action === 'resolve' ? 'green' : 'amber');
         renderAlerts();
-        Utils.showToast(`Alert updated to ${nextStatus}.`);
       };
 
-      document.getElementById('showActiveBtn').addEventListener('click', () => {
-        currentFilter = 'active';
+      document.getElementById('tabActiveAlerts').addEventListener('click', () => {
+        activeTab = 'active';
+        document.getElementById('tabActiveAlerts').classList.add('active');
+        document.getElementById('tabResolvedAlerts').classList.remove('active');
         renderAlerts();
       });
 
-      document.getElementById('showResolvedBtn').addEventListener('click', () => {
-        currentFilter = 'resolved';
+      document.getElementById('tabResolvedAlerts').addEventListener('click', () => {
+        activeTab = 'resolved';
+        document.getElementById('tabResolvedAlerts').classList.add('active');
+        document.getElementById('tabActiveAlerts').classList.remove('active');
+        renderAlerts();
+      });
+
+      searchInput.addEventListener('input', renderAlerts);
+      severityFilter.addEventListener('change', renderAlerts);
+
+      window.handleAlertAction = function(alertId, actionType) {
+        pendingCooAction = { alertId, actionType };
+        const modal = document.getElementById('cooNoticeModal');
+        const titleElem = document.getElementById('cooModalTitle');
+        const subElem = document.getElementById('cooModalSubtitle');
+        const inputElem = document.getElementById('cooDirectiveInput');
+        inputElem.value = '';
+
+        if (actionType === 'notify_manager') {
+          titleElem.textContent = 'Issue Executive Directive to Manager';
+          subElem.textContent = 'Specify binding operational instructions to be dispatched to the Department Manager.';
+          inputElem.placeholder = 'e.g. Limit diesel generator backup operations to essential production lines during peak hours...';
+        } else if (actionType === 'resolve') {
+          titleElem.textContent = 'Approve Variance & Resolve Escalation';
+          subElem.textContent = 'Document official executive approval rationale for closing this threshold breach.';
+          inputElem.placeholder = 'e.g. Operational variance for April 2026 acknowledged due to grid outage. Mitigation plan accepted.';
+        }
+
+        Utils.toggleModal('cooNoticeModal', true);
+      };
+
+      document.getElementById('btnConfirmCooDirective').addEventListener('click', async () => {
+        if (!pendingCooAction) return;
+        const directive = document.getElementById('cooDirectiveInput').value.trim();
+        if (!directive) { Utils.showToast('Please enter directive notes before confirming.', 'error'); return; }
+
+        const db = Utils.ensureCollections(Utils.getDB());
+        const alert = (db.alerts || []).find(a => String(a.id) === String(pendingCooAction.alertId));
+        if (!alert) return;
+
+        if (pendingCooAction.actionType === 'notify_manager') {
+          alert.status = 'Manager Notified';
+          alert.cooDirective = directive;
+
+          if (!Array.isArray(db.notifications)) db.notifications = [];
+          db.notifications.unshift({
+            id: Date.now(),
+            role: 'Manager',
+            departmentId: alert.departmentId,
+            title: 'COO Executive Directive Issued',
+            body: `COO issued directive for ${alert.departmentName}: "${directive}"`,
+            timestamp: Utils.nowLabel(),
+            read: false
+          });
+
+          Utils.logAction(`COO issued manager directive for ${alert.departmentName}`, 'Info', 'blue');
+          Utils.showToast('Executive directive dispatched to Department Manager!');
+        } else if (pendingCooAction.actionType === 'resolve') {
+          alert.status = 'Resolved';
+          alert.response = directive;
+          alert.resolvedAt = Utils.nowLabel();
+          alert.resolvedBy = currentUser.name || 'COO';
+
+          Utils.logAction(`COO resolved escalation for ${alert.departmentName}`, 'Success', 'green');
+          Utils.showToast('Escalation successfully resolved & archived!');
+        }
+
+        Utils.replaceDB(db);
+        await Utils.apiFetch('PATCH', `/api/alerts/${alert.id}`, alert);
+
+        window.dispatchEvent(new Event('rorizon-notifications-updated'));
+        Utils.toggleModal('cooNoticeModal', false);
         renderAlerts();
       });
 
       renderAlerts();
-      window.addEventListener('rorizon-db-updated', renderAlerts);
+
+      function safeSync() {
+        const isInputFocused = document.activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
+        const isModalOpen = document.querySelector('.modal-overlay.active, .modal-overlay[style*="display: flex"]');
+        if (!isInputFocused && !isModalOpen) {
+          renderAlerts();
+        }
+      }
+
+      window.addEventListener('rorizon-db-updated', safeSync);
+      window.addEventListener('storage', safeSync);
+      Utils.startPolling(15000);
     });
   </script>
 </body>
