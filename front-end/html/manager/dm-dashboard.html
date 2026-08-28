@@ -3,157 +3,153 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard – Rorizon Manager</title>
+  <title>Dashboard - Rorizon Manager</title>
   <link rel="stylesheet" href="../../css/style.css">
   <style>
-    /* Scoped styling for native dynamic charts */
-    .css-chart-container > div {
-        position: relative;
+    .stack { display: grid; gap: 16px; }
+    .kpi-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .kpi-card { background: #f8fafc; border: 1px solid var(--border-light); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 110px; }
+    .kpi-card__title { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .kpi-card__val { font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 4px; }
+    .kpi-card__sub { font-size: 13px; color: #64748b; margin: 0; }
+
+    .correction-alert-card { padding: 18px 24px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .correction-alert-card strong { color: #991b1b; font-size: 15px; }
+    .correction-alert-card p { margin: 4px 0 0; color: #7f1d1d; font-size: 13px; }
+
+    .dashboard-layout { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; }
+    @media (max-width: 900px) {
+      .kpi-strip { grid-template-columns: 1fr; }
+      .dashboard-layout { grid-template-columns: 1fr; }
     }
-    .css-chart-container > div > div:hover {
-        filter: brightness(0.9);
-        cursor: pointer;
-    }
-    #dailyUsageChart > div:hover {
-        background: #1e40af !important;
-        cursor: pointer;
-    }
-    .custom-tooltip {
-        position: fixed;
-        display: none;
-        background: #1e293b;
-        color: white;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 600;
-        pointer-events: none;
-        z-index: 1000;
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.2);
-        transform: translate(-50%, -100%);
-        margin-top: -12px;
-        white-space: nowrap;
-    }
+
+    .link-subtle { font-size: 13px; color: var(--color-primary); text-decoration: none; font-weight: 600; }
+    .link-subtle:hover { text-decoration: underline; }
+
+    .data-table td, .data-table th { white-space: normal !important; word-break: break-word !important; overflow-wrap: break-word !important; line-height: 1.45 !important; }
+
+    .alerts-list { display: grid; gap: 12px; }
+    .alert-card-item { padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; display: flex; justify-content: space-between; align-items: center; gap: 12px; transition: border-color 0.2s, background 0.2s; }
+    .alert-card-item:hover { border-color: #cbd5e1; background: #f8fafc; }
+    .alert-card-item__title { font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 2px; }
+    .alert-card-item__sub { font-size: 12px; color: #64748b; margin: 0; }
+    
+    .action-btn { border: 1px solid #cbd5e1 !important; background: #fff !important; color: #0f172a !important; padding: 5px 9px !important; border-radius: 8px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease; }
+    .action-btn:hover { background: #f8fafc !important; border-color: #64748b !important; }
   </style>
 </head>
 <body>
-  <div id="chartTooltip" class="custom-tooltip"></div>
-  <div id="app-layout" data-title="Dashboard" data-subtitle="Operations • TechCorp Industries">
-    <div class="page-heading" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+  <div id="app-layout" data-title="Dashboard" data-subtitle="Department data contribution dashboard">
+    
+    <!-- Correction Required Action Banner (shown when analyst flags a correction) -->
+    <div class="correction-alert-card" id="correctionBanner" style="display:none;">
       <div>
-        <div class="chart-header">
-          <h2 class="page-heading__title" style="margin:0;">Dashboard</h2>
-          <span class="kpi-tag kpi-tag--blue">Operations</span>
-        </div>
-        <p class="page-heading__subtitle" style="margin-top: 4px;">Track resource consumption across your department</p>
+        <strong>⚠️ Immediate Attention Required: Analyst Correction Request</strong>
+        <p id="correctionDesc">One or more data submissions require correction before emissions calculation can proceed.</p>
       </div>
-      <div>
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:4px;">Resource Type</label>
-        <select class="form-input" id="resourceFilter" style="width: 200px; padding: 8px 12px;">
-          <option value="All">All Resources</option>
-          <option value="Diesel">Diesel</option>
-          <option value="LPG">LPG</option>
-          <option value="Electricity">Electricity</option>
-          <option value="Water">Water</option>
-        </select>
-      </div>
+      <a href="dm-submission-history.html" class="btn-danger" style="text-decoration:none; padding:8px 16px; font-size:13px;">
+        Review &amp; Fix Submission &rarr;
+      </a>
     </div>
 
-    <div class="kpi-grid kpi-grid--4" style="grid-template-columns: 2fr 1fr 1fr;">
-      
-      <!-- Combined Current vs Target -->
-      <div class="kpi-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div class="kpi-card__top" style="justify-content: space-between; display: flex; margin-bottom: 24px;">
-            <p style="margin:0; font-weight: 600; font-size: 14px; color: var(--text-hero);">Current vs Target</p>
-            <div>
-              <span class="kpi-tag kpi-tag--blue">This Month</span>
-              <span class="kpi-tag kpi-tag--green" style="margin-left: 8px;">Target Locked</span>
-            </div>
-        </div>
-        <p class="kpi-card__value" style="display:flex; align-items:baseline; gap:8px; margin:0;">
-            <span id="dmValCurrent" style="font-size: 32px;">--</span>
-            <span style="font-size: 16px; color: var(--text-muted); font-weight: 500;">/ <span id="dmValTarget">--</span></span>
-        </p>
-        <p class="kpi-card__label" style="margin-bottom: 16px;">Current Usage Limit</p>
-        
+    <!-- MERGED CARD: DEPARTMENT SCOPE SELECTOR & KPI STRIP -->
+    <div class="card stack" style="margin-bottom: 24px;">
+      <div class="chart-header" style="align-items: flex-start;">
         <div>
-            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-                <div id="dmProgressBar" style="height: 100%; width: 0%; background: var(--color-blue); transition: width 1s ease;"></div>
-            </div>
-            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-align: right; margin-top: 8px;"><span id="dmProgressPct">--</span> Consumed</div>
+          <h2 class="card__title" id="deptHeaderTitle">Department Scope Overview</h2>
+          <p style="color:#64748b; font-size:13px; margin:4px 0 0;" id="deptHeaderSubtitle">Operational performance and data contribution metrics.</p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <label style="font-size:13px; font-weight:600; color:#475569;">Active Department:</label>
+          <select class="form-input" id="dashDeptSelect" style="min-width: 170px; color: #0f172a;"></select>
         </div>
       </div>
 
-      <!-- Variance Card -->
-      <div class="kpi-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div class="kpi-card__top" style="justify-content: space-between; display: flex; text-align: right;">
-          <img src="../assets/icons/alert-triangle0.svg" style="width: 24px; filter: invert(41%) sepia(87%) saturate(541%) hue-rotate(320deg) brightness(97%) contrast(92%);" />
-          <span class="kpi-tag kpi-tag--amber">Saving</span>
+      <!-- 3 Genuinely Required Top KPI Cards -->
+      <div class="kpi-strip" style="margin-top: 16px; margin-bottom: 0;">
+        <!-- 1. Current Reporting Cycle -->
+        <div class="kpi-card">
+          <div>
+            <div class="kpi-card__title">Current Reporting Cycle</div>
+            <div class="kpi-card__val" id="valCurrentPeriod">--</div>
+          </div>
+          <div style="margin-top:12px;">
+            <span class="status-badge status-badge--blue" id="badgeCurrentSubStatus">Draft Due</span>
+            <p class="kpi-card__sub" id="subStatusNotes" style="margin-top:6px;">Next submission deadline approaching</p>
+          </div>
         </div>
-        <div>
-            <p class="kpi-card__value" style="margin: 8px 0;" id="dmValVariance">--</p>
-            <p class="kpi-card__label" style="margin-bottom: 4px;">Usage Variance</p>
-            <p style="margin:0; font-size: 13px; font-weight: 600; color: var(--color-green);" id="dmValVarianceDesc">Under Target</p>
-        </div>
-      </div>
 
-      <!-- Alert Status -->
-      <div class="kpi-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div class="kpi-card__top" style="justify-content: space-between;">
-          <img src="../assets/icons/check-circle0.svg" id="dmAlertIcon" style="width: 24px; filter: invert(56%) sepia(54%) saturate(464%) hue-rotate(88deg) brightness(96%) contrast(89%);" />
-          <span style="font-size: 13px; font-weight: 700; color: var(--text-hero);">Live</span>
-        </div>
-        <div>
-            <div style="margin-top: 16px; margin-bottom: 8px;">
-                <span class="kpi-tag kpi-tag--green" style="font-size: 13px;" id="dmValAlert">Loading...</span>
+        <!-- 2. Monthly Limit Progress -->
+        <div class="kpi-card">
+          <div>
+            <div class="kpi-card__title">Monthly Limit Progress</div>
+            <div class="kpi-card__val" id="valConsumptionVsLimit">-- / --</div>
+          </div>
+          <div style="margin-top:12px;">
+            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom:6px;">
+              <div id="progressBar" style="height: 100%; width: 0%; background: #2563eb; border-radius: 4px; transition: width 0.8s ease;"></div>
             </div>
-            <p style="margin:0; font-size: 13px; font-weight: 600; color: var(--text-muted);">Alert Status</p>
+            <p class="kpi-card__sub" id="pctConsumedLabel">0% of limit consumed</p>
+          </div>
+        </div>
+
+        <!-- 3. Calculated CO2 Impact -->
+        <div class="kpi-card">
+          <div>
+            <div class="kpi-card__title">Calculated CO2 Impact</div>
+            <div class="kpi-card__val" style="color:#16a34a;" id="valTotalCO2">0 kgCO2e</div>
+          </div>
+          <div style="margin-top:12px;">
+            <span class="status-badge status-badge--green">Verified</span>
+            <p class="kpi-card__sub" id="co2MetaNotes" style="margin-top:6px;">Calculated from verified emission factors</p>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Area Chart Replacement -->
-    <div class="card" style="margin-top: 24px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
-        <h2 class="card__title" style="margin:0;">Your Department vs Organization Average</h2>
-        <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Last 6 Months</span>
-      </div>
-      <div style="display: flex; height: 260px;">
-          <div id="deptOrgYAxis" style="display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; padding-right: 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; padding-bottom: 4px; border-right: 1px solid var(--border-light); width: 45px;">
-              <!-- JS injects Y axis -->
-          </div>
-          <div class="css-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; border-bottom: 1px solid var(--border-light); padding-bottom: 0px;">
-              <!-- JS injects bars -->
-          </div>
-      </div>
-      <div class="css-chart-labels" style="display: flex; justify-content: space-around; margin-top: 12px; font-size: 12px; color: var(--text-muted); font-weight: 600; padding-left: 45px;">
-          <span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span>
-      </div>
-      <div style="display:flex; gap: 24px; margin-top: 24px; justify-content: center; font-size: 13px; font-weight: 600; color: var(--text-hero);">
-          <div style="display:flex; align-items:center; gap: 8px;"><div style="width:12px;height:12px;background:var(--color-blue);border-radius:2px;"></div> Operations (You)</div>
-          <div style="display:flex; align-items:center; gap: 8px;"><div style="width:12px;height:12px;background:#e2e8f0;border-radius:2px;"></div> Org Average</div>
-      </div>
-    </div>
+    <!-- 2-Column Dashboard Layout -->
+    <div class="dashboard-layout">
 
-    <!-- Daily Usage Bar Chart -->
-    <div class="card" style="margin-top: 24px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
-        <h2 class="card__title" style="margin:0;">Daily Usage (Current Month)</h2>
-        <span style="font-size: 12px; font-weight: 600; color: #2563eb; background:#eff6ff; padding:4px 12px; border-radius:12px;">March 2026</span>
-      </div>
-      <div style="display: flex; height: 180px;">
-          <div id="dailyYAxis" style="display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; padding-right: 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; padding-bottom: 4px; border-right: 1px solid var(--border-light); width: 45px;">
-              <!-- JS injects Y axis -->
+      <!-- Left Column: Recent Submissions History -->
+      <div class="card">
+        <div class="chart-header" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="card__title">Recent Submissions</h2>
+            <p style="color:#64748b; font-size:13px; margin:4px 0 0;">Latest reporting cycles &amp; approval statuses</p>
           </div>
-          <div style="flex: 1; display: flex; align-items: flex-end; justify-content: space-between; gap:3px; padding-bottom: 0px; border-bottom: 1px solid var(--border-light); padding-left: 8px;" id="dailyUsageChart">
-              <!-- JS injects mini bars -->
+          <a href="dm-submission-history.html" class="link-subtle">Full History &rarr;</a>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>REPORTING PERIOD</th>
+                <th>STATUS</th>
+                <th>CONSUMPTION</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyRecentSubmissions"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right Column: Active Department Alerts Feed -->
+      <div class="card">
+        <div class="chart-header" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="card__title">Active Alerts</h2>
+            <p style="color:#64748b; font-size:13px; margin:4px 0 0;">Operational anomalies &amp; threshold warnings</p>
           </div>
+          <a href="dm-alerts-response.html" class="link-subtle">Manage Alerts &rarr;</a>
+        </div>
+
+        <div class="alerts-list" id="alertsListContainer">
+          <div style="text-align:center; padding:24px; color:#94a3b8; font-size:13px;">No active operational alerts for your department.</div>
+        </div>
       </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--text-muted); font-weight: 600; padding-left: 53px;">
-          <span>Mar 1</span>
-          <span>Mar 15</span>
-          <span>Mar 31</span>
-      </div>
+
     </div>
 
   </div>
@@ -161,178 +157,198 @@
   <script src="../../js/data.js"></script>
   <script src="../../js/utils.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const db = Utils.getDB();
-      const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {name: 'Sarah Miller'};
-      
-      const filterEl = document.getElementById('resourceFilter');
-      const latestSubmissions = db.managerSubmissions || [];
-      const managerDailyUsage = db.managerDailyUsage || {};
-      
-      const targetMap = {
-          "All": { target: 5000, unit: "Units" },
-          "Diesel": { target: 2600, unit: "Liters" },
-          "LPG": { target: 2000, unit: "Kg" },
-          "Electricity": { target: 3500, unit: "kWh" },
-          "Water": { target: 1000, unit: "Gallons" }
-      };
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
 
-      function renderDashboard(resType) {
-          const config = targetMap[resType];
-          
-          let currentNum = 0;
-          
-          // 1. Determine Current Usage from latest submission (index 0)
-          if (latestSubmissions.length > 0) {
-              const latest = latestSubmissions[0];
-              if (resType === "All") {
-                  currentNum = latest.totalConsumption;
-              } else {
-                  currentNum = latest.resources.filter(r => r.type === resType).reduce((sum, r) => sum + r.qty, 0);
-              }
-          }
-          
-          const targetNum = config.target;
-          
-          // Card 1: Combined Usage Progress
-          document.getElementById('dmValCurrent').textContent = currentNum.toLocaleString() + ' ' + config.unit;
-          document.getElementById('dmValTarget').textContent = targetNum.toLocaleString() + ' ' + config.unit;
-          
-          let pct = targetNum > 0 ? (currentNum / targetNum) * 100 : 0;
-          document.getElementById('dmProgressPct').textContent = pct.toFixed(1) + '%';
-          
-          const bar = document.getElementById('dmProgressBar');
-          setTimeout(() => {
-            bar.style.width = Math.min(pct, 100) + '%';
-            bar.style.backgroundColor = pct > 100 ? 'var(--color-red)' : 'var(--color-blue)';
-          }, 50);
+      const currentUser = Utils.getCurrentUser() || {};
+      const state = Utils.ensureCollections(Utils.getDB());
 
-          // Card 2: Variance
-          const variance = targetNum > 0 ? ((currentNum - targetNum) / targetNum) * 100 : 0;
-          const varEl = document.getElementById('dmValVariance');
-          const varDesc = document.getElementById('dmValVarianceDesc');
-          if (variance > 0) {
-              varEl.textContent = '+' + variance.toFixed(1) + '%';
-              varEl.className = 'kpi-card__value text--danger';
-              varDesc.textContent = 'Over Target';
-              varDesc.style.color = 'var(--color-red)';
-          } else {
-              varEl.textContent = variance.toFixed(1) + '%';
-              varEl.className = 'kpi-card__value';
-              varDesc.textContent = 'Under Target';
-              varDesc.style.color = 'var(--color-green)';
-          }
+      // Resolve ONLY departments assigned to or managed by current user
+      const assignedDeptIds = Utils.getUserDepartmentScope(currentUser, state);
+      const managerDepartments = (state.departments || []).filter(d => {
+        if (!currentUser) return false;
+        if (assignedDeptIds.includes(d.id)) return true;
+        if (currentUser.departmentId === d.id) return true;
+        if (Array.isArray(currentUser.assignedDepartmentIds) && currentUser.assignedDepartmentIds.includes(d.id)) return true;
+        if (d.managerUserId && String(d.managerUserId) === String(currentUser.id)) return true;
+        if (d.manager && currentUser.name && d.manager.trim().toLowerCase() === currentUser.name.trim().toLowerCase()) return true;
+        return false;
+      });
 
-          // Card 3: Alert Status
-          const alertEl = document.getElementById('dmValAlert');
-          const alertIcon = document.getElementById('dmAlertIcon');
-          if (variance > 0) {
-              alertEl.textContent = 'Exceeded Target';
-              alertEl.className = 'kpi-tag kpi-tag--red';
-              alertIcon.src = '../assets/icons/alert-triangle0.svg';
-              alertIcon.style.filter = 'invert(41%) sepia(87%) saturate(541%) hue-rotate(320deg) brightness(97%) contrast(92%)';
-          } else {
-              alertEl.textContent = 'Within Target';
-              alertEl.className = 'kpi-tag kpi-tag--green';
-              alertIcon.src = '../assets/icons/check-circle0.svg';
-              alertIcon.style.filter = 'invert(56%) sepia(54%) saturate(464%) hue-rotate(88deg) brightness(96%) contrast(89%)';
-          }
+      const dashDeptSelect = document.getElementById('dashDeptSelect');
+      if (dashDeptSelect) {
+        if (managerDepartments.length > 0) {
+          dashDeptSelect.innerHTML = managerDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+          const initialId = currentUser.departmentId && managerDepartments.some(d => d.id === currentUser.departmentId)
+            ? currentUser.departmentId
+            : managerDepartments[0].id;
+          dashDeptSelect.value = initialId;
+        } else {
+          dashDeptSelect.innerHTML = `<option value="">No Department Assigned</option>`;
+        }
 
-          // Tooltips helper
-          const tooltip = document.getElementById('chartTooltip');
-          function attachTooltip(el) {
-              el.addEventListener('mousemove', (e) => {
-                  tooltip.innerHTML = el.getAttribute('data-tooltip');
-                  tooltip.style.display = 'block';
-                  tooltip.style.left = e.clientX + 'px';
-                  tooltip.style.top = e.clientY + 'px';
-              });
-              el.addEventListener('mouseleave', () => {
-                  tooltip.style.display = 'none';
-              });
+        dashDeptSelect.addEventListener('change', () => {
+          renderDashboard();
+          const activeDept = getSelectedDept();
+          if (activeDept) {
+            Utils.showToast(`Dashboard updated for ${activeDept.name}`);
           }
-
-          // 6-Month Chart Data Construction
-          let histUsage = [];
-          let histMonths = [];
-          
-          for (let i = 0; i < Math.min(latestSubmissions.length, 6); i++) {
-              const sub = latestSubmissions[i];
-              histMonths.unshift(sub.period.split(' ')[0]); // e.g. "03" -> "03"
-              if (resType === "All") {
-                  histUsage.unshift(sub.totalConsumption);
-              } else {
-                  let rqty = sub.resources.filter(r => r.type === resType).reduce((sum, r) => sum + r.qty, 0);
-                  histUsage.unshift(rqty);
-              }
-          }
-          
-          // Pad if less than 6
-          while (histUsage.length < 6) {
-              histUsage.unshift(0);
-              histMonths.unshift("--");
-          }
-
-          let orgAvgUsage = histUsage.map(u => u > 0 ? (u * 0.95 + (Math.random()*100-50)) : 0);
-          
-          const maxVal = Math.max(...histUsage, ...orgAvgUsage, 1) * 1.1;
-          const chartContainer = document.querySelector('.css-chart-container');
-          const chartLabels = document.querySelector('.css-chart-labels');
-          
-          document.getElementById('deptOrgYAxis').innerHTML = `<span>${Math.round(maxVal)}</span><span>${Math.round(maxVal/2)}</span><span>0</span>`;
-          chartLabels.innerHTML = histMonths.map(m => `<span>${m}</span>`).join('');
-          
-          let barsHtml = '';
-          for(let i=0; i<6; i++) {
-              const h1 = (histUsage[i] / maxVal) * 100;
-              const h2 = (orgAvgUsage[i] / maxVal) * 100;
-              barsHtml += `
-                <div style="display:flex; gap:6px; align-items: flex-end; height: 100%; width: 48px; border-radius: 4px;">
-                    <div class="hover-bar" style="width:20px; height: 0%; background: var(--color-blue); border-radius:4px 4px 0 0; transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${i*0.1}s;" data-tooltip="Operations: ${Math.round(histUsage[i])} ${config.unit}" data-h="${h1}%"></div>
-                    <div class="hover-bar" style="width:20px; height: 0%; background: #e2e8f0; border-radius:4px 4px 0 0; transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${i*0.1}s;" data-tooltip="Org Avg: ${Math.round(orgAvgUsage[i])} ${config.unit}" data-h="${h2}%"></div>
-                </div>
-              `;
-          }
-          chartContainer.innerHTML = barsHtml;
-
-          // Daily Usage Chart Construction
-          let dailyArr = [];
-          if (resType === "All") {
-              dailyArr = Array.from({length: 31}, () => 0);
-              for (const [k, v] of Object.entries(managerDailyUsage)) {
-                  v.forEach((val, i) => dailyArr[i] += val);
-              }
-          } else {
-              dailyArr = managerDailyUsage[resType] || Array.from({length: 31}, () => 0);
-          }
-
-          const dailyMax = Math.max(...dailyArr, 1) * 1.1;
-          document.getElementById('dailyYAxis').innerHTML = `<span>${Math.round(dailyMax)}</span><span>${Math.round(dailyMax/2)}</span><span>0</span>`;
-          
-          const dailyContainer = document.getElementById('dailyUsageChart');
-          let dailyHtml = '';
-          for(let i=0; i<31; i++) {
-              const usage = dailyArr[i];
-              const heightPct = Math.min((usage / dailyMax) * 100, 100);
-              dailyHtml += `<div class="hover-bar" style="flex:1; background: var(--color-blue); opacity: 0.85; height: 0%; border-radius: 2px 2px 0 0; min-width: 4px; transition: height 1.5s cubic-bezier(0.4, 0, 0.2, 1) ${(i/30)}s;" data-tooltip="Day ${i+1}: ${Math.round(usage)} ${config.unit}" data-h="${heightPct}%"></div>`;
-          }
-          dailyContainer.innerHTML = dailyHtml;
-
-          // Animations
-          setTimeout(() => {
-              document.querySelectorAll('.hover-bar').forEach(el => attachTooltip(el));
-              chartContainer.querySelectorAll('div[data-h]').forEach(el => el.style.height = el.getAttribute('data-h'));
-              dailyContainer.querySelectorAll('div[data-h]').forEach(el => el.style.height = el.getAttribute('data-h'));
-          }, 50);
+        });
       }
 
-      // Initial Render
-      renderDashboard(filterEl.value);
+      function getSelectedDept() {
+        const selectedId = dashDeptSelect ? dashDeptSelect.value : currentUser.departmentId;
+        return (state.departments || []).find(d => d.id === selectedId) || managerDepartments[0] || null;
+      }
 
-      // Bind filter change event
-      filterEl.addEventListener('change', (e) => {
-          renderDashboard(e.target.value);
-      });
+      function renderDashboard() {
+        const db = Utils.ensureCollections(Utils.getDB());
+        const activeDept = getSelectedDept();
+
+        if (activeDept) {
+          document.getElementById('deptHeaderTitle').textContent = `${activeDept.name} Overview`;
+        }
+
+        // Department Submissions
+        const deptSubs = (db.submissions || []).filter(s => {
+          const sameDept = activeDept ? (s.departmentId === activeDept.id || s.departmentName === activeDept.name) : true;
+          const sameOrg = currentUser.organizationId ? s.organizationId === currentUser.organizationId : true;
+          return sameDept && sameOrg;
+        }).sort((a, b) => Utils.periodKey(b.period) - Utils.periodKey(a.period));
+
+        const latestSub = deptSubs[0] || null;
+
+        // Correction Required Check
+        const correctionSub = deptSubs.find(s => s.status === 'Correction Required' || s.status === 'Rejected');
+        if (correctionSub) {
+          document.getElementById('correctionBanner').style.display = 'flex';
+          document.getElementById('correctionDesc').textContent = `Period ${Utils.formatPeriodLabel(correctionSub.period)} requires correction: ${correctionSub.analystNotes || correctionSub.correctionNotes || 'Incompatible units or quantities flagged.'}`;
+        } else {
+          document.getElementById('correctionBanner').style.display = 'none';
+        }
+
+        // 1. Current Reporting Period & Status (Dynamic Date)
+        const now = new Date();
+        const currentMonthName = now.toLocaleString('en-US', { month: 'long' });
+        const currentYear = now.getFullYear();
+        const currentPeriodKey = `${String(now.getMonth() + 1).padStart(2, '0')} ${currentYear}`;
+        const defaultPeriodLabel = `${currentMonthName} ${currentYear}`;
+
+        const currentCycleSub = deptSubs.find(s => s.period === currentPeriodKey) || latestSub;
+        if (currentCycleSub) {
+          document.getElementById('valCurrentPeriod').textContent = Utils.formatPeriodLabel(currentCycleSub.period);
+          const st = currentCycleSub.status || 'Submitted';
+          document.getElementById('badgeCurrentSubStatus').textContent = st;
+          const badgeCls = st === 'Approved' ? 'green' : (st === 'Correction Required' || st === 'Rejected' ? 'red' : 'blue');
+          document.getElementById('badgeCurrentSubStatus').className = `status-badge status-badge--${badgeCls}`;
+          document.getElementById('subStatusNotes').textContent = currentCycleSub.submittedAt ? `Submitted on ${currentCycleSub.submittedAt}` : 'Submission logged for cycle';
+        } else {
+          document.getElementById('valCurrentPeriod').textContent = defaultPeriodLabel;
+          document.getElementById('badgeCurrentSubStatus').textContent = 'Draft Due';
+          document.getElementById('badgeCurrentSubStatus').className = 'status-badge status-badge--amber';
+          document.getElementById('subStatusNotes').textContent = 'No submission locked yet for this cycle.';
+        }
+
+        // 2. Consumption vs Threshold (Dynamic Math)
+        const thresholdVal = activeDept ? parseFloat(String(activeDept.threshold || activeDept.target || '0').replace(/[^\d.]/g, '')) : 0;
+        const currentVal = latestSub ? Number(latestSub.totalConsumption || 0) : (activeDept ? parseFloat(String(activeDept.current || '0').replace(/[^\d.]/g, '')) : 0);
+
+        document.getElementById('valConsumptionVsLimit').textContent = `${currentVal.toLocaleString()} / ${thresholdVal ? thresholdVal.toLocaleString() : '--'} Units`;
+        const pct = thresholdVal > 0 ? Math.min(Math.round((currentVal / thresholdVal) * 100), 100) : 0;
+        const pBar = document.getElementById('progressBar');
+        const pLabel = document.getElementById('pctConsumedLabel');
+        
+        if (pBar) {
+          pBar.style.width = `${pct}%`;
+          if (currentVal > thresholdVal && thresholdVal > 0) {
+            pBar.style.background = '#dc2626';
+          } else {
+            pBar.style.background = '#2563eb';
+          }
+        }
+        
+        if (pLabel) {
+          if (currentVal > thresholdVal && thresholdVal > 0) {
+            pLabel.textContent = `${Math.round((currentVal / thresholdVal) * 100)}% of limit (Threshold Exceeded)`;
+            pLabel.style.color = '#dc2626';
+          } else {
+            pLabel.textContent = `${pct}% of limit consumed`;
+            pLabel.style.color = '#64748b';
+          }
+        }
+
+        // 3. Calculated CO2 Impact (Only Approved Submissions)
+        const approvedDeptSubs = deptSubs.filter(s => s.status === 'Approved');
+        const totalDeptCO2 = approvedDeptSubs.reduce((sum, s) => sum + Number(s.totalCO2 || 0), 0);
+        const approvedCount = approvedDeptSubs.length;
+
+        document.getElementById('valTotalCO2').textContent = `${totalDeptCO2.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} kgCO2e`;
+        document.getElementById('co2MetaNotes').textContent = approvedCount > 0 
+          ? `${approvedCount} approved cycle${approvedCount === 1 ? '' : 's'} verified` 
+          : 'Awaiting Analyst Verification';
+
+        // Left Column: Recent Submissions List
+        document.getElementById('tbodyRecentSubmissions').innerHTML = deptSubs.slice(0, 4).map(s => {
+          const statusClass = s.status === 'Approved' ? 'green' : (s.status === 'Correction Required' || s.status === 'Rejected' ? 'red' : 'blue');
+          const itemsSummary = Array.isArray(s.items) && s.items.length > 0 
+            ? s.items.map(i => i.resourceTypeName || i.resourceType).filter(Boolean).slice(0, 2).join(', ')
+            : 'Activity Data Record';
+
+          return `
+            <tr>
+              <td>
+                <div class="td--bold">${Utils.formatPeriodLabel(s.period)}</div>
+                <div class="td--muted" style="font-size:12px; margin-top:2px;">${itemsSummary}</div>
+              </td>
+              <td><span class="status-badge status-badge--${statusClass}">${s.status || 'Submitted'}</span></td>
+              <td class="td--bold" style="color:#0f172a;">${Number(s.totalConsumption || 0).toLocaleString()} Units</td>
+              <td>
+                <a href="dm-submission-history.html" class="action-btn" style="text-decoration:none;">View &rarr;</a>
+              </td>
+            </tr>
+          `;
+        }).join('') || Utils.renderEmptyTableRow(4, 'No Recent Submissions', 'Your department has not submitted consumption data recently.', 'inbox');
+
+        // Right Column: Active Department Alerts Queue (Dynamic Filter)
+        const deptAlerts = (db.alerts || []).filter(a => {
+          const sameDept = activeDept ? (a.departmentId === activeDept.id || a.departmentName === activeDept.name) : true;
+          const sameOrg = currentUser.organizationId ? a.organizationId === currentUser.organizationId : true;
+          return sameDept && sameOrg && a.status !== 'Resolved';
+        });
+
+        const alertsContainer = document.getElementById('alertsListContainer');
+        if (alertsContainer) {
+          if (deptAlerts.length > 0) {
+            alertsContainer.innerHTML = deptAlerts.map(a => {
+              const statusClass = a.status === 'Escalated' ? 'red' : 'amber';
+              return `
+                <div class="alert-card-item">
+                  <div style="flex:1; min-width:0;">
+                    <div class="alert-card-item__title">${a.title || a.resourceType || 'Threshold Breach'}</div>
+                    <p class="alert-card-item__sub">Period: ${Utils.formatPeriodLabel(a.period)} • ${a.description || 'Consumption spike detected'}</p>
+                  </div>
+                  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                    <span class="status-badge status-badge--${statusClass}">${a.status || 'Active'}</span>
+                    <a href="dm-alerts-response.html" class="action-btn" style="text-decoration:none;">Respond &rarr;</a>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          } else {
+            alertsContainer.innerHTML = `
+              <div style="text-align:center; padding:28px 16px; color:#64748b; font-size:13px;">
+                <img src="../assets/icons/check-circle0.svg" alt="" width="24" style="opacity:0.5; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto;" />
+                No active operational alerts for your department.
+              </div>
+            `;
+          }
+        }
+      }
+
+      renderDashboard();
+      window.addEventListener('rorizon-db-updated', renderDashboard);
+      window.addEventListener('storage', renderDashboard);
+      Utils.startPolling(15000);
     });
   </script>
 </body>

@@ -1,497 +1,1108 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Data Submission â€“ Rorizon</title>
+  <title>Data Submission – Rorizon</title>
   <link rel="stylesheet" href="../../css/style.css" />
   <style>
-    .ds-checklist__item--valid { color: #22c55e; font-weight: 500; }
-    .ds-checklist__item--valid img { filter: invert(56%) sepia(54%) saturate(464%) hue-rotate(88deg) brightness(96%) contrast(89%); }
-    .ds-resource-row { display: flex; gap: 16px; align-items: flex-end; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; background: #fff; }
-    .ds-resource-row > div { flex: 1; }
-    .ds-resource-row label { display: block; margin-bottom: 8px; font-size: 13px; color: #64748b; font-weight: 500; }
-    .ds-resource-row input { width: 100%; }
-    .ds-co2-calc { font-weight: 600; color: #475569; padding-bottom: 8px; display: block; }
+    .stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .method-pane {
+      display: none;
+    }
+
+    .method-pane.active {
+      display: block;
+    }
+
+    .manual-entry-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1.2fr auto;
+      gap: 14px;
+      align-items: flex-end;
+    }
+
+    @media (max-width: 860px) {
+      .manual-entry-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .upload-box {
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 20px 24px;
+      text-align: center;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-box:hover {
+      border-color: #3b82f6;
+      background: #f0f7ff;
+    }
+
+    .import-summary-bar {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .import-stat {
+      font-size: 13px;
+      color: #475569;
+    }
+
+    .import-stat strong {
+      font-size: 15px;
+      color: #0f172a;
+      margin-left: 4px;
+    }
+
+    .preview-table-wrapper {
+      max-height: 240px;
+      overflow-y: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+
+    .preview-row-err {
+      background: #fff7f7 !important;
+    }
+
+    .correction-banner {
+      display: none;
+      padding: 16px;
+      border-radius: 8px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      margin-bottom: 20px;
+      color: #991b1b;
+    }
+
+    .correction-banner strong {
+      font-size: 15px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .metric-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #0f172a;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .data-table td,
+    .data-table th {
+      white-space: normal !important;
+      word-break: break-word !important;
+      overflow-wrap: break-word !important;
+      line-height: 1.45 !important;
+    }
+
+    .action-btn {
+      border: 1px solid #cbd5e1 !important;
+      background: #fff !important;
+      color: #0f172a !important;
+      padding: 5px 9px !important;
+      border-radius: 8px !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .action-btn:hover {
+      background: #f8fafc !important;
+      border-color: #64748b !important;
+    }
+
+    .action-btn.warn {
+      color: #dc2626 !important;
+      border-color: #fca5a5 !important;
+    }
+
+    .action-btn.warn:hover {
+      background: #fef2f2 !important;
+      border-color: #ef4444 !important;
+      color: #b91c1c !important;
+    }
   </style>
 </head>
+
 <body>
   <div class="modal-overlay" id="confirmModal">
     <div class="modal modal--sm">
-      <div class="modal__alert-header"><h2 class="modal__alert-title">Remove Resource?</h2></div>
-      <p style="padding: 0 24px; color: #475569; font-size: 14px;">Are you sure you want to remove this resource line item? This action cannot be undone.</p>
+      <div class="modal__alert-header">
+        <h2 class="modal__alert-title">Remove Record?</h2>
+      </div>
+      <p style="padding: 0 24px; color: #475569; font-size: 14px;">Are you sure you want to remove this resource record
+        from the current submission batch?</p>
       <div class="modal__alert-footer">
         <button class="btn-outline" type="button" onclick="Utils.toggleModal('confirmModal', false)">Cancel</button>
-        <button class="btn-danger" type="button" id="confirmRemoveBtn">Remove</button>
+        <button class="btn-danger" type="button" id="confirmRemoveBtn"
+          style="border: 1px solid #dc2626; border-radius: 6px; font-weight: 600; padding: 7px 16px;">Remove</button>
       </div>
     </div>
   </div>
 
-  <div id="app-layout" data-title="Data Submission" data-subtitle="Operations â€¢ TechCorp Industries">
-    <div class="card">
-      <h2 class="card__title">Submission Period</h2>
-      <div class="ds-period-row" style="display: flex; gap: 16px; margin-top: 16px; align-items: center;">
-        <select class="form-input" id="monthSelect" style="width: 200px;">
-          <option value="01">January</option>
-          <option value="02">February</option>
-          <option value="03" selected>March</option>
-          <option value="04">April</option>
-          <option value="05">May</option>
-          <option value="06">June</option>
-          <option value="07">July</option>
-          <option value="08">August</option>
-          <option value="09">September</option>
-          <option value="10">October</option>
-          <option value="11">November</option>
-          <option value="12">December</option>
-        </select>
-        <input type="number" class="form-input" id="yearSelect" value="2026" min="2000" max="2100" style="width: 150px;">
-      </div>
+  <div id="app-layout" data-title="Data Submission" data-subtitle="Department monthly submission workspace">
+
+    <!-- Correction Notice Banner (if resubmitting) -->
+    <div class="correction-banner" id="correctionBanner">
+      <strong>⚠️ Correction Required by Sustainability Analyst</strong>
+      <p id="correctionNotesText" style="margin:0; font-size:13px;"></p>
     </div>
 
-    <div class="card">
-      <div class="ds-section-header" style="margin-bottom: 20px;">
-        <h2 class="card__title">Resource Consumption</h2>
-        <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Update expected resources or type a custom resource.</p>
-      </div>
-
-      <div id="resourceContainer"></div>
-
-      <datalist id="resourceSuggestions">
-        <option value="Diesel"></option>
-        <option value="LPG"></option>
-        <option value="Electricity"></option>
-        <option value="Water"></option>
-      </datalist>
-      <datalist id="unitSuggestions">
-        <option value="Liters"></option>
-        <option value="Kg"></option>
-        <option value="kWh"></option>
-        <option value="Gallons"></option>
-      </datalist>
-
-      <div class="ds-resource-row" style="background: #f8fafc; border-style: dashed; margin-top: 24px;">
-        <div><label>Add Resource Type</label><input class="form-input" type="text" id="inlineType" list="resourceSuggestions" placeholder="e.g. Water" /></div>
-        <div><label>Quantity</label><input class="form-input" type="number" id="inlineQty" placeholder="0.00" step="0.01" min="0.01" /></div>
-        <div><label>Unit</label><input class="form-input" type="text" id="inlineUnit" list="unitSuggestions" placeholder="e.g. Liters" /></div>
-        <div style="flex: 0 0 auto;"><button class="btn-primary" type="button" id="inlineAddBtn" style="height: 42px;"><img src="../assets/icons/plus0.svg" alt="" class="btn__icon" /> Add</button></div>
-      </div>
-      <div id="resourceEmptyState" class="ds-empty-state" style="display: none;"><p>No resources listed.</p></div>
-    </div>
-
-    <div class="card">
-      <h2 class="card__title">Invoice Upload (Optional)</h2>
-      <div class="ds-upload-zone" id="uploadZone" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 32px; text-align: center; background: #f8fafc; cursor: pointer; margin-top: 16px;">
-        <input type="file" id="invoiceInput" style="display: none;" accept=".pdf,.jpg,.png" />
-        <img src="../assets/icons/upload0.svg" alt="" class="ds-upload-icon" style="margin-bottom: 12px;"/>
-        <p class="ds-upload-text" id="uploadStatus" style="color: #475569; margin-bottom: 16px;">Drag and drop invoice or click to browse</p>
-        <button class="btn-outline ds-upload-btn" type="button" id="browseBtn">Select File</button>
-      </div>
-    </div>
-
-    <div class="card">
+    <!-- 1. MERGED: PROVIDE ACTIVITY DATA & SCOPE CARD -->
+    <div class="card stack" style="margin-bottom: 24px;">
       <div class="chart-header" style="align-items: flex-start;">
         <div>
-          <h2 class="card__title">Validation Engine</h2>
-          <p style="color: #64748b; font-size: 14px; margin: 6px 0 0;">Live threshold and historical checks before submission lock.</p>
+          <h2 class="card__title">Provide Activity Data</h2>
+          <p style="color:#64748b; font-size:13px; margin:4px 0 0;" id="deptContextText">Select reporting cycle, target
+            department, and activity ingestion method.</p>
         </div>
-        <span class="status-badge status-badge--amber" id="validationStateBadge">Needs Review</span>
+
+        <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+          <div style="display:flex; gap:6px; align-items:center;">
+            <label style="font-size:13px; font-weight:600; color:#475569;">Department:</label>
+            <select class="form-input" id="deptSelect" style="min-width: 170px; color:#0f172a;"></select>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <label style="font-size:13px; font-weight:600; color:#475569;">Period:</label>
+            <select class="form-input" id="monthSelect" style="width: 125px;">
+              <option value="01">January</option>
+              <option value="02">February</option>
+              <option value="03" selected>March</option>
+              <option value="04">April</option>
+              <option value="05">May</option>
+              <option value="06">June</option>
+              <option value="07">July</option>
+              <option value="08">August</option>
+              <option value="09">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+            <input type="number" class="form-input" id="yearSelect" value="2026" min="2000" max="2100"
+              style="width: 85px;">
+          </div>
+        </div>
       </div>
-      <div style="display: grid; gap: 12px; margin-top: 20px;">
-        <div style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
-          <span style="color: #64748b; font-size: 14px;">Historical average</span>
-          <strong id="historicalAverageValue">--</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
-          <span style="color: #64748b; font-size: 14px;">Current total consumption</span>
-          <strong id="currentTotalValue">--</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
-          <span style="color: #64748b; font-size: 14px;">Department threshold</span>
-          <strong id="thresholdValue">--</strong>
+
+      <!-- Ingestion Method Tabs matching Admin Toggle Group -->
+      <div class="toggle-group" style="margin-bottom: 18px;">
+        <button type="button" class="toggle-btn method-tab-btn active" id="tabManual" data-target="paneManual">Manual
+          Entry</button>
+        <button type="button" class="toggle-btn method-tab-btn" id="tabCsv" data-target="paneCsv">CSV / Excel
+          Upload</button>
+        <button type="button" class="toggle-btn method-tab-btn" id="tabDoc" data-target="paneDoc">Document / Invoice
+          Extraction</button>
+      </div>
+
+      <!-- PANE 1: MANUAL ENTRY -->
+      <div class="method-pane active" id="paneManual">
+        <div style="padding:10px 0 0 0;">
+          <h3 style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 12px 0;">+ Add Consumption Record</h3>
+          <div class="manual-entry-grid">
+            <div>
+              <label class="form-label">Resource Type</label>
+              <select class="form-input" id="manualType" required></select>
+            </div>
+            <div>
+              <label class="form-label">Monthly Quantity</label>
+              <input class="form-input" type="number" id="manualQty" placeholder="0.00" step="0.01" min="0.01"
+                required />
+            </div>
+            <div>
+              <label class="form-label">Unit (Compatible)</label>
+              <select class="form-input" id="manualUnit" required></select>
+            </div>
+            <div>
+              <button class="btn-primary" type="button" id="btnAddManualRecord"
+                style="height:42px; width:100%; justify-content:center;">
+                + Add Record
+              </button>
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            <label class="form-label">Notes / Source Evidence Reference (Optional)</label>
+            <input class="form-input" id="manualNotes" placeholder="e.g. Monthly utility meter log, DG logbook #4" />
+          </div>
         </div>
       </div>
-      <p id="validationSummary" style="margin: 16px 0 0; color: #475569; font-size: 14px;">Add or update resources to run validation.</p>
+
+      <!-- PANE 2: CSV / EXCEL UPLOAD -->
+      <div class="method-pane" id="paneCsv">
+        <div style="padding:10px 0 0 0;">
+          <h3 style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 4px 0;">Upload Spreadsheet / CSV Data
+          </h3>
+          <p style="font-size:12px; color:#64748b; margin:0 0 14px 0;">Rows will be validated against active resource
+            types and compatible units before staging.</p>
+
+          <input class="form-input" type="file" id="csvFileInput" accept=".csv,.txt,.tsv,.xlsx"
+            style="margin-bottom:14px;" />
+
+          <div id="csvProcessingArea" style="display:none;">
+            <div class="import-summary-bar">
+              <div class="import-stat">Total Rows: <strong id="statTotalRows">0</strong></div>
+              <div class="import-stat" style="color:#16a34a;">Valid Rows: <strong id="statValidRows"
+                  style="color:#16a34a;">0</strong></div>
+              <div class="import-stat" style="color:#dc2626;">Invalid Rows: <strong id="statInvalidRows"
+                  style="color:#dc2626;">0</strong></div>
+            </div>
+
+            <div class="preview-table-wrapper">
+              <table class="data-table" style="font-size:12px;">
+                <thead>
+                  <tr>
+                    <th>RESOURCE</th>
+                    <th>QUANTITY</th>
+                    <th>UNIT</th>
+                    <th>STATUS / VALIDATION</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyCsvPreview"></tbody>
+              </table>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+              <button class="btn-outline" type="button" onclick="resetCsvUpload()">Cancel</button>
+              <button class="btn-primary" type="button" id="btnImportValidCsvRows" disabled>Create Resource Records From
+                Valid Rows</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANE 3: DOCUMENT / INVOICE EXTRACTION -->
+      <div class="method-pane" id="paneDoc">
+        <div style="padding:10px 0 0 0;">
+          <h3 style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 4px 0;">Invoice &amp; Utility Document
+            Ingestion</h3>
+          <p style="font-size:12px; color:#64748b; margin:0 0 14px 0;">Upload a utility bill or fuel invoice. Candidate
+            activity data will be extracted for review.</p>
+
+          <div class="upload-box" id="docUploadBox">
+            <input type="file" id="docFileInput" style="display:none;" accept=".pdf,.jpg,.jpeg,.png,.xlsx" />
+            <img src="../assets/icons/upload0.svg" alt="" style="width:28px; margin-bottom:8px; opacity:0.6;" />
+            <p style="margin:0 0 6px 0; font-weight:600; color:#334155;" id="docUploadLabel">Drag and drop invoice or
+              click to browse (PDF / Images)</p>
+            <button class="btn-outline" type="button" onclick="document.getElementById('docFileInput').click()">Browse
+              Document</button>
+          </div>
+
+          <!-- Candidate Confirmation Area -->
+          <div id="docExtractionArea"
+            style="display:none; margin-top:16px; border:1px solid #cbd5e1; border-radius:8px; padding:16px; background:#fff;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div>
+                <span class="status-badge status-badge--blue">Candidate Extraction</span>
+                <h4 style="margin:4px 0 0 0; font-size:14px; color:#0f172a;">Review Extracted Candidate Activity</h4>
+              </div>
+              <span id="docFileNameBadge" style="font-size:12px; color:#64748b; font-weight:600;">--</span>
+            </div>
+            <p style="font-size:12px; color:#64748b; margin:0 0 14px 0;">Please inspect and correct candidate values
+              before adding to your submission batch. The document remains linked as audit evidence.</p>
+
+            <div class="manual-entry-grid">
+              <div>
+                <label class="form-label">Resource Type</label>
+                <select class="form-input" id="docCandidateType"></select>
+              </div>
+              <div>
+                <label class="form-label">Extracted Quantity</label>
+                <input class="form-input" type="number" id="docCandidateQty" step="0.01" min="0.01" />
+              </div>
+              <div>
+                <label class="form-label">Unit (Compatible)</label>
+                <select class="form-input" id="docCandidateUnit"></select>
+              </div>
+              <div>
+                <button class="btn-primary" type="button" id="btnConfirmDocRecord"
+                  style="height:42px; width:100%; justify-content:center;">Confirm &amp; Add</button>
+              </div>
+            </div>
+            <div style="margin-top:12px;">
+              <label class="form-label">Vendor / Invoice Reference #</label>
+              <input class="form-input" id="docCandidateRef" placeholder="e.g. IOCL Bill #INV-88219" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
 
-    <div class="card" id="deviationReasonCard" style="display: none;">
+    <!-- 2. STAGED RESOURCE RECORDS & VALIDATION (Admin UI Alignment) -->
+    <div class="card stack" style="margin-bottom: 24px;">
       <div class="chart-header">
-        <h2 class="card__title">Deviation Reason Required</h2>
-        <span class="status-badge status-badge--red">Threshold Breach</span>
+        <div>
+          <h2 class="card__title">Staged Resource Records</h2>
+          <p style="color:#64748b; font-size:13px; margin:4px 0 0;">Validated activity data records staged for this
+            reporting period.</p>
+        </div>
+        <span class="metric-chip" id="stagedCountBadge">0 Records Staged</span>
       </div>
-      <p style="color: #64748b; font-size: 14px; margin-top: 12px;">Submission is blocked until a reason is provided for the threshold breach.</p>
-      <textarea class="form-textarea" id="deviationReason" rows="4" placeholder="Explain the cause of this deviation and any corrective actions already taken..." style="margin-top: 16px;"></textarea>
+
+      <!-- Staged Records Table -->
+      <div id="stagedRecordsList"></div>
+      <div id="emptyStagedState"
+        style="text-align:center; padding:32px; color:#94a3b8; font-size:14px; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">
+        No resource records staged yet. Use Manual Entry, CSV Upload, or Invoice Extraction above to add activity
+        records.
+      </div>
+
+      <!-- Validation Engine Summary Bar -->
+      <div style="padding-top: 18px; border-top: 1px solid #e2e8f0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">Pre-Submission Validation &amp;
+            Threshold Check</h3>
+          <span class="status-badge status-badge--amber" id="validationStateBadge">Needs Review</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+          <div style="padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+            <span
+              style="color: #64748b; font-size: 12px; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">Total
+              Activity Consumption</span>
+            <strong id="valTotalConsumption" style="font-size:18px; color:#0f172a;">0 Units</strong>
+          </div>
+          <div style="padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+            <span
+              style="color: #64748b; font-size: 12px; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">Department
+              Threshold</span>
+            <strong id="valDeptThreshold" style="font-size:18px; color:#0f172a;">--</strong>
+          </div>
+          <div style="padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+            <span
+              style="color: #64748b; font-size: 12px; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">Historical
+              Average</span>
+            <strong id="valHistoricalAverage" style="font-size:18px; color:#0f172a;">--</strong>
+          </div>
+        </div>
+
+        <p id="validationMessage" style="margin: 14px 0 0; color: #475569; font-size: 13px;">Add resource records to run
+          pre-submission validation.</p>
+      </div>
+
+      <!-- Threshold Breach Deviation Explanation (Expanded Inline) -->
+      <div id="deviationCard"
+        style="display: none; padding: 16px; border: 1px solid #fecaca; border-radius: 8px; background: #fef2f2;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <strong style="color:#991b1b; font-size:14px;">⚠️ Threshold Breach – Operational Explanation Required</strong>
+          <span class="status-badge status-badge--red">Breach Detected</span>
+        </div>
+        <p style="color:#7f1d1d; font-size:13px; margin:0 0 10px 0;">Total consumption exceeds the department monthly
+          threshold. You must explain the operational cause before locking and submitting.</p>
+        <textarea class="form-textarea" id="deviationReasonInput" rows="3"
+          placeholder="Provide operational justification for threshold exceedance (e.g. extended generator runtime during grid outage)..."></textarea>
+      </div>
     </div>
 
-    <div class="ds-submit-row" style="margin-top: 24px;">
-      <button class="btn-primary btn-primary--wide" type="button" id="btnSubmitData" style="width: 100%; justify-content: center;">
+    <!-- 3. Lock & Submit Button -->
+    <div style="margin-top: 24px;">
+      <button class="btn-primary" type="button" id="btnSubmitSubmission"
+        style="width: 100%; height: 42px; justify-content: center; font-size: 14px; font-weight: 600;">
         <img src="../assets/icons/lock0.svg" alt="" class="btn__icon" />
-        <span>Lock &amp; Submit</span>
+        <span id="btnSubmitLabel">Lock &amp; Submit Activity Data</span>
       </button>
     </div>
+
+  </div>
+
+  <div class="toast toast--success" id="toastMessage">
+    <div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt="" /></div>
+    <p class="toast__text" id="toastText"></p>
   </div>
 
   <script src="../../js/data.js"></script>
   <script src="../../js/utils.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-        const db = Utils.getDB();
-        const orgs = db.organizations || [];
-        const departments = db.departments || [];
-        const activeDepartment = departments.find(dept => dept.id === currentUser.departmentId) || departments[0] || null;
-        const activeOrg = orgs.find(org => org.id === (currentUser.organizationId || activeDepartment?.orgId)) || orgs[0] || null;
-        const departmentName = activeDepartment ? activeDepartment.name : 'Operations';
-        const historicalSubs = (db.submissions || []).filter(sub => sub.departmentId === (activeDepartment ? activeDepartment.id : null));
-        const thresholdNumeric = activeDepartment ? parseFloat(String(activeDepartment.threshold || activeDepartment.target || '0').replace(/[^\d.]/g, '')) : 0;
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
+      const currentUser = Utils.getCurrentUser() || {};
+      const db = () => Utils.ensureCollections(Utils.getDB());
 
-        const subtitleHost = document.getElementById('app-layout');
-        if (subtitleHost && activeDepartment && activeOrg) {
-            subtitleHost.dataset.subtitle = `${activeDepartment.name} • ${activeOrg.name}`;
+      // Multi-Department Support logic for Manager
+      const state = db();
+      const assignedDeptIds = Utils.getUserDepartmentScope(currentUser, state);
+
+      // Gather ONLY departments explicitly assigned to, managed by, or scoped to this user
+      let managerDepartments = (state.departments || []).filter(d => {
+        if (!currentUser) return false;
+        if (assignedDeptIds.includes(d.id)) return true;
+        if (currentUser.departmentId === d.id) return true;
+        if (Array.isArray(currentUser.assignedDepartmentIds) && currentUser.assignedDepartmentIds.includes(d.id)) return true;
+        if (d.managerUserId && String(d.managerUserId) === String(currentUser.id)) return true;
+        if (d.manager && currentUser.name && d.manager.trim().toLowerCase() === currentUser.name.trim().toLowerCase()) return true;
+        return false;
+      });
+
+      const deptSelect = document.getElementById('deptSelect');
+      if (deptSelect) {
+        if (managerDepartments.length > 0) {
+          deptSelect.innerHTML = managerDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+          const initialId = currentUser.departmentId && managerDepartments.some(d => d.id === currentUser.departmentId)
+            ? currentUser.departmentId
+            : managerDepartments[0].id;
+          deptSelect.value = initialId;
+        } else {
+          deptSelect.innerHTML = `<option value="">No Department Assigned</option>`;
+        }
+      }
+
+      function getSelectedDepartment() {
+        const selectedId = deptSelect ? deptSelect.value : currentUser.departmentId;
+        return (state.departments || []).find(d => d.id === selectedId) || managerDepartments[0] || null;
+      }
+
+      function getSelectedOrg() {
+        const activeDepartment = getSelectedDepartment();
+        return (state.organizations || []).find(o => o.id === (currentUser.organizationId || activeDepartment?.orgId)) || null;
+      }
+
+      function getThresholdNumeric() {
+        const activeDepartment = getSelectedDepartment();
+        return activeDepartment ? parseFloat(String(activeDepartment.threshold || activeDepartment.target || '0').replace(/[^\d.]/g, '')) : 0;
+      }
+
+      const contextTextElem = document.getElementById('deptContextText');
+      if (contextTextElem) {
+        contextTextElem.textContent = 'Select reporting period, target department, and activity ingestion method.';
+      }
+
+      if (deptSelect) {
+        deptSelect.addEventListener('change', () => {
+          runValidationEngine();
+          const selectedDept = getSelectedDepartment();
+          if (selectedDept) {
+            Utils.showToast(`Switched active department to ${selectedDept.name}`);
+          }
+        });
+      }
+
+      // Check if we are resubmitting a Correction Required submission
+      const urlParams = new URLSearchParams(window.location.search);
+      const resubmitSubId = urlParams.get('resubmitId');
+
+      // Ingestion Method Switching matching Admin tabs
+      document.querySelectorAll('.method-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.method-tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.method-pane').forEach(p => p.classList.remove('active'));
+          btn.classList.add('active');
+          const target = btn.dataset.target;
+          if (document.getElementById(target)) document.getElementById(target).classList.add('active');
+        });
+      });
+
+      // Master Helpers
+      function findResourceType(idOrName) {
+        const raw = String(idOrName || '').trim().toLowerCase();
+        return (db().resourceTypes || []).find(t => t.id === idOrName || t.name.toLowerCase() === raw) || null;
+      }
+
+      function findUnit(idOrName) {
+        const raw = String(idOrName || '').trim().toLowerCase();
+        return (db().units || []).find(u => u.id === idOrName || u.name.toLowerCase() === raw || u.code.toLowerCase() === raw) || null;
+      }
+
+      function isCompatible(rtId, uId) {
+        return (db().resourceUnitCompatibilities || []).some(c => c.resourceTypeId === rtId && c.unitId === uId && c.active !== false);
+      }
+
+      function getCompatibleUnitsForRt(rtIdOrName) {
+        const rt = findResourceType(rtIdOrName);
+        if (!rt) return [];
+        const compatIds = (db().resourceUnitCompatibilities || [])
+          .filter(c => c.resourceTypeId === rt.id && c.active !== false)
+          .map(c => c.unitId);
+        return (db().units || []).filter(u => u.active !== false && compatIds.includes(u.id));
+      }
+
+      // Central Staged Resource Records Array
+      let stagedRecords = [];
+      let rowToRemoveIndex = null;
+
+      // Populate Manual Entry Selects
+      function populateManualSelects() {
+        const rts = (db().resourceTypes || []).filter(t => t.active !== false);
+        document.getElementById('manualType').innerHTML = rts.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        document.getElementById('docCandidateType').innerHTML = rts.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+        function syncManualUnits() {
+          const rtId = document.getElementById('manualType').value;
+          const compatUnits = getCompatibleUnitsForRt(rtId);
+          const unitSelect = document.getElementById('manualUnit');
+          if (compatUnits.length > 0) {
+            unitSelect.innerHTML = compatUnits.map(u => `<option value="${u.id}">${u.name} (${u.code})</option>`).join('');
+            unitSelect.disabled = false;
+            document.getElementById('btnAddManualRecord').disabled = false;
+          } else {
+            unitSelect.innerHTML = `<option value="">No compatible unit</option>`;
+            unitSelect.disabled = true;
+            document.getElementById('btnAddManualRecord').disabled = true;
+          }
         }
 
-        const uploadZone = document.getElementById('uploadZone');
-        const invoiceInput = document.getElementById('invoiceInput');
-        document.getElementById('browseBtn').addEventListener('click', () => invoiceInput.click());
-        uploadZone.addEventListener('click', (e) => { if(e.target !== document.getElementById('browseBtn')) invoiceInput.click(); });
-        invoiceInput.addEventListener('change', (e) => {
-            if(e.target.files.length > 0) {
-                document.getElementById('uploadStatus').textContent = `Selected: ${e.target.files[0].name}`;
-                uploadZone.style.borderColor = '#22c55e';
-            }
+        function syncDocUnits() {
+          const rtId = document.getElementById('docCandidateType').value;
+          const compatUnits = getCompatibleUnitsForRt(rtId);
+          const unitSelect = document.getElementById('docCandidateUnit');
+          if (compatUnits.length > 0) {
+            unitSelect.innerHTML = compatUnits.map(u => `<option value="${u.id}">${u.name} (${u.code})</option>`).join('');
+            unitSelect.disabled = false;
+          } else {
+            unitSelect.innerHTML = `<option value="">No compatible unit</option>`;
+            unitSelect.disabled = true;
+          }
+        }
+
+        document.getElementById('manualType').onchange = syncManualUnits;
+        document.getElementById('docCandidateType').onchange = syncDocUnits;
+
+        syncManualUnits();
+        syncDocUnits();
+      }
+
+      populateManualSelects();
+
+      // =========================================================================
+      // 1. MANUAL ENTRY HANDLER
+      // =========================================================================
+      document.getElementById('btnAddManualRecord').addEventListener('click', () => {
+        const rtId = document.getElementById('manualType').value;
+        const qty = parseFloat(document.getElementById('manualQty').value);
+        const unitId = document.getElementById('manualUnit').value;
+        const notes = document.getElementById('manualNotes').value.trim();
+
+        if (!rtId || isNaN(qty) || qty <= 0 || !unitId) {
+          Utils.showToast('Please specify a valid resource type, positive quantity, and compatible unit.', 'error');
+          return;
+        }
+
+        if (!isCompatible(rtId, unitId)) {
+          Utils.showToast('Selected unit is incompatible with resource type.', 'error');
+          return;
+        }
+
+        const rt = findResourceType(rtId);
+        const unit = findUnit(unitId);
+
+        stagedRecords.push({
+          id: Utils.generateId('rec'),
+          resourceTypeId: rt.id,
+          resourceTypeName: rt.name,
+          unitId: unit.id,
+          unitName: unit.name,
+          unitCode: unit.code,
+          quantity: qty,
+          entryMode: 'Manual',
+          evidenceNotes: notes || 'Manual entry by Department Manager',
+          evidenceFileName: ''
         });
 
-        const resourceContainer = document.getElementById('resourceContainer');
-        const emptyState = document.getElementById('resourceEmptyState');
-        let resourceCount = 0;
-        let rowToRemove = null;
-        let latestValidation = {
-            state: 'empty',
-            statusType: 'amber',
-            totalQty: 0,
-            totalCO2: 0,
-            averageQty: 0,
-            exceedsThreshold: false,
+        document.getElementById('manualQty').value = '';
+        document.getElementById('manualNotes').value = '';
+        renderStagedRecords();
+        Utils.showToast('Manual resource record added.');
+      });
+
+      // =========================================================================
+      // 2. CSV / EXCEL INGESTION WORKFLOW
+      // =========================================================================
+      let parsedCsvRows = [];
+
+      function parseDelimited(text) {
+        const lines = text.split(/\r?\n/).filter(Boolean);
+        if (!lines.length) return [];
+        const headers = lines.shift().split(',').map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+        const rtIdx = headers.findIndex(h => ['resourcetype', 'resource', 'type', 'name'].includes(h));
+        const qtyIdx = headers.findIndex(h => ['quantity', 'qty', 'amount', 'val'].includes(h));
+        const unitIdx = headers.findIndex(h => ['unit', 'uom', 'unitofmeasure'].includes(h));
+
+        return lines.map((line, idx) => {
+          const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
+          const rawRt = rtIdx >= 0 ? parts[rtIdx] : parts[0];
+          const rawQty = qtyIdx >= 0 ? parseFloat(parts[qtyIdx]) : parseFloat(parts[1]);
+          const rawUnit = unitIdx >= 0 ? parts[unitIdx] : parts[2];
+
+          const rt = findResourceType(rawRt);
+          const unit = findUnit(rawUnit);
+          const errors = [];
+
+          if (!rt) errors.push(`Unknown resource "${rawRt || ''}"`);
+          if (!unit) errors.push(`Unknown unit "${rawUnit || ''}"`);
+          if (rt && unit && !isCompatible(rt.id, unit.id)) errors.push(`Unit "${unit.code}" incompatible with ${rt.name}`);
+          if (isNaN(rawQty) || rawQty <= 0) errors.push('Invalid quantity (must be > 0)');
+
+          return {
+            rowNum: idx + 1,
+            rawRt,
+            rawQty,
+            rawUnit,
+            rt,
+            unit,
+            errors
+          };
+        });
+      }
+
+      document.getElementById('csvFileInput').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (/\.xlsx$/i.test(file.name)) {
+          Utils.showToast('Workbook detected. Reading tabular data...', 'info');
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const text = String(reader.result || '').trim();
+          parsedCsvRows = parseDelimited(text);
+          renderCsvPreview();
+        };
+        reader.readAsText(file);
+      });
+
+      function renderCsvPreview() {
+        const validRows = parsedCsvRows.filter(r => !r.errors.length);
+        const invalidRows = parsedCsvRows.filter(r => r.errors.length > 0);
+
+        document.getElementById('csvProcessingArea').style.display = 'block';
+        document.getElementById('statTotalRows').textContent = parsedCsvRows.length;
+        document.getElementById('statValidRows').textContent = validRows.length;
+        document.getElementById('statInvalidRows').textContent = invalidRows.length;
+
+        document.getElementById('btnImportValidCsvRows').disabled = validRows.length === 0;
+
+        document.getElementById('tbodyCsvPreview').innerHTML = parsedCsvRows.map(r => `
+          <tr class="${r.errors.length ? 'preview-row-err' : ''}">
+            <td class="td--bold">${r.rawRt || '--'}</td>
+            <td>${isNaN(r.rawQty) ? '--' : r.rawQty.toLocaleString()}</td>
+            <td>${r.rawUnit || '--'}</td>
+            <td>
+              ${r.errors.length
+            ? `<span style="color:#dc2626; font-weight:600;">⚠️ ${r.errors.join('; ')}</span>`
+            : `<span style="color:#16a34a; font-weight:600;">✓ Valid Row</span>`
+          }
+            </td>
+          </tr>
+        `).join('') || '<tr><td colspan="4" style="text-align:center;">No rows parsed.</td></tr>';
+      }
+
+      window.resetCsvUpload = function () {
+        document.getElementById('csvFileInput').value = '';
+        document.getElementById('csvProcessingArea').style.display = 'none';
+        parsedCsvRows = [];
+      };
+
+      document.getElementById('btnImportValidCsvRows').addEventListener('click', () => {
+        const validRows = parsedCsvRows.filter(r => !r.errors.length);
+        if (!validRows.length) return;
+
+        validRows.forEach(r => {
+          stagedRecords.push({
+            id: Utils.generateId('rec'),
+            resourceTypeId: r.rt.id,
+            resourceTypeName: r.rt.name,
+            unitId: r.unit.id,
+            unitName: r.unit.name,
+            unitCode: r.unit.code,
+            quantity: r.rawQty,
+            entryMode: 'CSV / Excel',
+            evidenceNotes: `Imported from CSV row #${r.rowNum}`,
+            evidenceFileName: document.getElementById('csvFileInput').files[0]?.name || 'import.csv'
+          });
+        });
+
+        Utils.showToast(`${validRows.length} valid record${validRows.length === 1 ? '' : 's'} staged from spreadsheet.`);
+        resetCsvUpload();
+        renderStagedRecords();
+      });
+
+      // =========================================================================
+      // 3. DOCUMENT / INVOICE EXTRACTION WORKFLOW
+      // =========================================================================
+      let currentExtractedDocFile = null;
+
+      document.getElementById('docFileInput').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        currentExtractedDocFile = file;
+
+        // Simulated Candidate Extraction for Prototype
+        const fileName = file.name.toLowerCase();
+        let candidateRtName = 'Diesel';
+        let candidateQty = 450.0;
+        let candidateUnitName = 'Liters';
+
+        if (fileName.includes('elec') || fileName.includes('power')) {
+          candidateRtName = 'Electricity';
+          candidateQty = 1250.0;
+          candidateUnitName = 'kWh';
+        } else if (fileName.includes('water')) {
+          candidateRtName = 'Water';
+          candidateQty = 30.0;
+          candidateUnitName = 'Cubic Meter';
+        }
+
+        const rt = findResourceType(candidateRtName) || (db().resourceTypes[0]);
+        const unit = findUnit(candidateUnitName) || (db().units[0]);
+
+        document.getElementById('docFileNameBadge').textContent = file.name;
+        document.getElementById('docCandidateType').value = rt.id;
+        document.getElementById('docCandidateType').dispatchEvent(new Event('change'));
+        document.getElementById('docCandidateQty').value = candidateQty;
+        document.getElementById('docCandidateUnit').value = unit.id;
+        document.getElementById('docCandidateRef').value = `Invoice ref: ${file.name.replace(/\.[^/.]+$/, '')}`;
+        document.getElementById('docExtractionArea').style.display = 'block';
+
+        Utils.showToast('Candidate data extracted from invoice. Please inspect and confirm.');
+      });
+
+      document.getElementById('btnConfirmDocRecord').addEventListener('click', () => {
+        const rtId = document.getElementById('docCandidateType').value;
+        const qty = parseFloat(document.getElementById('docCandidateQty').value);
+        const unitId = document.getElementById('docCandidateUnit').value;
+        const ref = document.getElementById('docCandidateRef').value.trim();
+
+        if (!rtId || isNaN(qty) || qty <= 0 || !unitId) {
+          Utils.showToast('Please check extracted values and provide positive quantity and unit.', 'error');
+          return;
+        }
+
+        if (!isCompatible(rtId, unitId)) {
+          Utils.showToast('Selected unit is incompatible with resource type.', 'error');
+          return;
+        }
+
+        const rt = findResourceType(rtId);
+        const unit = findUnit(unitId);
+
+        stagedRecords.push({
+          id: Utils.generateId('rec'),
+          resourceTypeId: rt.id,
+          resourceTypeName: rt.name,
+          unitId: unit.id,
+          unitName: unit.name,
+          unitCode: unit.code,
+          quantity: qty,
+          entryMode: 'Invoice Extraction',
+          evidenceNotes: ref || 'Verified invoice extraction',
+          evidenceFileName: currentExtractedDocFile?.name || 'invoice.pdf'
+        });
+
+        document.getElementById('docExtractionArea').style.display = 'none';
+        document.getElementById('docFileInput').value = '';
+        currentExtractedDocFile = null;
+        renderStagedRecords();
+        Utils.showToast('Invoice activity record confirmed and staged.');
+      });
+
+      // =========================================================================
+      // 4. STAGED RECORDS & VALIDATION ENGINE (Admin Table Matching)
+      // =========================================================================
+      function renderStagedRecords() {
+        const host = document.getElementById('stagedRecordsList');
+        const empty = document.getElementById('emptyStagedState');
+        document.getElementById('stagedCountBadge').textContent = `${stagedRecords.length} Record${stagedRecords.length === 1 ? '' : 's'} Staged`;
+
+        if (!stagedRecords.length) {
+          host.innerHTML = '';
+          empty.style.display = 'block';
+        } else {
+          empty.style.display = 'none';
+          host.innerHTML = `
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>RESOURCE TYPE</th>
+                    <th>QUANTITY</th>
+                    <th>INGESTION SOURCE</th>
+                    <th>EVIDENCE / NOTES</th>
+                    <th>STATUS</th>
+                    <th>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${stagedRecords.map((rec, idx) => {
+            const badgeClass = rec.entryMode === 'Manual' ? 'blue' : (rec.entryMode.includes('CSV') ? 'green' : 'purple');
+            return `
+                      <tr>
+                        <td class="td--bold">${rec.resourceTypeName}</td>
+                        <td class="td--bold" style="color:#0f172a;">${rec.quantity.toLocaleString(undefined, { maximumFractionDigits: 2 })} <span style="font-size:12px; color:#64748b; font-weight:400;">${rec.unitCode || rec.unitName}</span></td>
+                        <td><span class="status-badge status-badge--${badgeClass}">${rec.entryMode}</span></td>
+                        <td class="td--muted" style="font-size:12px;">${rec.evidenceFileName ? `📄 ${rec.evidenceFileName}` : rec.evidenceNotes}</td>
+                        <td><span class="status-badge status-badge--green">Validated</span></td>
+                        <td>
+                          <button class="action-btn warn" onclick="removeStagedRecord(${idx})">Remove</button>
+                        </td>
+                      </tr>
+                    `;
+          }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+
+        runValidationEngine();
+      }
+
+      window.removeStagedRecord = function (index) {
+        rowToRemoveIndex = index;
+        Utils.toggleModal('confirmModal', true);
+      };
+
+      document.getElementById('confirmRemoveBtn').addEventListener('click', () => {
+        if (rowToRemoveIndex !== null) {
+          stagedRecords.splice(rowToRemoveIndex, 1);
+          rowToRemoveIndex = null;
+          renderStagedRecords();
+          Utils.showToast('Record removed from staging batch.');
+        }
+        Utils.toggleModal('confirmModal', false);
+      });
+
+      function runValidationEngine() {
+        const activeDepartment = getSelectedDepartment();
+        const thresholdNumeric = getThresholdNumeric();
+        const totalQty = stagedRecords.reduce((sum, r) => sum + r.quantity, 0);
+        const hasRecords = stagedRecords.length > 0;
+        const exceedsThreshold = thresholdNumeric > 0 && totalQty > thresholdNumeric;
+
+        document.getElementById('valTotalConsumption').textContent = `${totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units`;
+        document.getElementById('valDeptThreshold').textContent = thresholdNumeric > 0 ? `${thresholdNumeric.toLocaleString()} Units` : '--';
+
+        const historicalSubs = (db().submissions || []).filter(s => s.departmentId === activeDepartment?.id);
+        const prevTotals = historicalSubs.map(s => Number(s.totalConsumption) || 0).filter(Boolean);
+        const avgQty = prevTotals.length ? prevTotals.reduce((a, b) => a + b, 0) / prevTotals.length : 0;
+        document.getElementById('valHistoricalAverage').textContent = avgQty > 0 ? `${avgQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units` : '--';
+
+        const badge = document.getElementById('validationStateBadge');
+        const msg = document.getElementById('validationMessage');
+        const devCard = document.getElementById('deviationCard');
+        const btnSubmit = document.getElementById('btnSubmitSubmission');
+
+        if (!hasRecords) {
+          badge.textContent = 'Needs Review';
+          badge.className = 'status-badge status-badge--amber';
+          msg.textContent = 'Add monthly activity records to run validation.';
+          devCard.style.display = 'none';
+          btnSubmit.disabled = true;
+          btnSubmit.style.opacity = '0.5';
+          btnSubmit.style.cursor = 'not-allowed';
+          return;
+        }
+
+        if (exceedsThreshold) {
+          badge.textContent = 'Threshold Breach';
+          badge.className = 'status-badge status-badge--red';
+          msg.textContent = `Total consumption exceeds the monthly threshold (${thresholdNumeric.toLocaleString()} units). Provide a deviation explanation below before submitting.`;
+          devCard.style.display = 'block';
+
+          const hasExplanation = document.getElementById('deviationReasonInput').value.trim().length > 0;
+          btnSubmit.disabled = !hasExplanation;
+          btnSubmit.style.opacity = hasExplanation ? '1' : '0.5';
+          btnSubmit.style.cursor = hasExplanation ? 'pointer' : 'not-allowed';
+        } else {
+          badge.textContent = 'Valid';
+          badge.className = 'status-badge status-badge--green';
+          msg.textContent = 'Data validation passed. Activity consumption is within established thresholds and ready for lock and submission.';
+          devCard.style.display = 'none';
+          btnSubmit.disabled = false;
+          btnSubmit.style.opacity = '1';
+          btnSubmit.style.cursor = 'pointer';
+        }
+      }
+
+      document.getElementById('deviationReasonInput').addEventListener('input', runValidationEngine);
+
+      // Pre-fill records: if resubmitting, load existing submission records; otherwise initialize from department target profile
+      if (resubmitSubId) {
+        const existingSub = (db().submissions || []).find(s => s.id === resubmitSubId);
+        if (existingSub) {
+          document.getElementById('correctionBanner').style.display = 'block';
+          document.getElementById('correctionNotesText').textContent = existingSub.analystNotes || existingSub.correctionNotes || 'Please correct flagged activity records and resubmit.';
+          document.getElementById('btnSubmitLabel').textContent = 'Save Corrections & Resubmit';
+
+          if (existingSub.period) {
+            const [m, y] = existingSub.period.split(' ');
+            if (m) document.getElementById('monthSelect').value = m;
+            if (y) document.getElementById('yearSelect').value = y;
+          }
+
+          if (existingSub.resources && existingSub.resources.length) {
+            stagedRecords = existingSub.resources.map(r => {
+              const rt = findResourceType(r.resourceTypeId || r.type);
+              const unit = findUnit(r.unitId || r.unit);
+              return {
+                id: Utils.generateId('rec'),
+                resourceTypeId: rt?.id || r.resourceTypeId || '',
+                resourceTypeName: rt?.name || r.type,
+                unitId: unit?.id || r.unitId || '',
+                unitName: unit?.name || r.unit,
+                unitCode: unit?.code || '',
+                quantity: Number(r.qty || 0),
+                entryMode: r.entryMode || 'Manual',
+                evidenceNotes: r.evidenceNotes || 'From previous submission batch',
+                evidenceFileName: r.evidenceFileName || ''
+              };
+            });
+            renderStagedRecords();
+          }
+        }
+      }
+
+      // Pre-fill returned submission if resubmitId is present
+      if (resubmitSubId) {
+        const targetSub = db().submissions.find(s => String(s.id) === String(resubmitSubId));
+        if (targetSub) {
+          if (deptSelect && targetSub.departmentId) {
+            deptSelect.value = targetSub.departmentId;
+          }
+          const banner = document.getElementById('correctionBanner');
+          const notesElem = document.getElementById('correctionNotesText');
+          if (banner && notesElem) {
+            banner.style.display = 'block';
+            notesElem.textContent = targetSub.analystNotes || targetSub.rejectionReason || 'Please review and resubmit your departmental Activity Data.';
+          }
+          if (Array.isArray(targetSub.resources) && targetSub.resources.length > 0) {
+            stagedRecords = targetSub.resources.map(r => {
+              const rt = findResourceType(r.resourceTypeId || r.type);
+              const u = findUnit(r.unitId || r.unit);
+              return {
+                id: 'staged-' + Date.now() + Math.random(),
+                resourceTypeId: rt ? rt.id : (r.resourceTypeId || ''),
+                resourceTypeName: rt ? rt.name : (r.type || 'Resource'),
+                quantity: Number(r.qty || r.quantity || 0),
+                unitId: u ? u.id : (r.unitId || ''),
+                unitName: u ? u.name : (r.unit || 'Units'),
+                unitCode: u ? u.code : '',
+                entryMode: r.entryMode || 'Manual',
+                evidenceFileName: r.evidenceFileName || '',
+                evidenceNotes: r.evidenceNotes || ''
+              };
+            });
+            renderStagedRecords();
+          }
+        }
+      }
+
+      // =========================================================================
+      // 5. LOCK & SUBMIT SUBMISSION
+      // =========================================================================
+      document.getElementById('btnSubmitSubmission').addEventListener('click', async () => {
+        const activeDepartment = getSelectedDepartment();
+        const activeOrg = getSelectedOrg();
+        const thresholdNumeric = getThresholdNumeric();
+
+        if (!activeDepartment || !activeOrg) {
+          Utils.showToast('Your account is not linked to an active department.', 'error');
+          return;
+        }
+
+        if (!stagedRecords.length) {
+          Utils.showToast('Please stage at least one resource record before submitting.', 'error');
+          return;
+        }
+
+        const totalQty = stagedRecords.reduce((sum, r) => sum + r.quantity, 0);
+        const exceedsThreshold = thresholdNumeric > 0 && totalQty > thresholdNumeric;
+        const deviationReason = document.getElementById('deviationReasonInput').value.trim();
+
+        if (exceedsThreshold && !deviationReason) {
+          Utils.showToast('Please provide an operational deviation explanation for the threshold breach.', 'error');
+          return;
+        }
+
+        const mm = document.getElementById('monthSelect').value;
+        const yy = document.getElementById('yearSelect').value;
+        const period = `${mm} ${yy}`;
+
+        const submissionId = resubmitSubId || ('sub-' + Date.now());
+
+        const newSub = {
+          id: submissionId,
+          organizationId: activeOrg.id,
+          departmentId: activeDepartment.id,
+          departmentName: activeDepartment.name,
+          managerName: currentUser.name || activeDepartment.manager,
+          managerUserId: currentUser.id || null,
+          period,
+          status: 'Submitted',
+          score: 'Evaluating',
+          submittedAt: new Date().toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          dataReadinessStatus: 'Ready',
+          calculationStatus: 'Pending',
+          totalConsumption: totalQty,
+          totalCO2: 0,
+          validation: {
+            state: exceedsThreshold ? 'threshold_breach' : 'valid',
             anomalyScore: 0,
-            message: 'Add or update resources to run validation.'
+            deviationReason: deviationReason || ''
+          },
+          resources: stagedRecords.map(r => ({
+            type: r.resourceTypeName,
+            qty: r.quantity,
+            unit: r.unitName,
+            resourceTypeId: r.resourceTypeId,
+            unitId: r.unitId,
+            entryMode: r.entryMode,
+            evidenceFileName: r.evidenceFileName,
+            evidenceNotes: r.evidenceNotes
+          })),
+          locked: true
         };
 
-        document.getElementById('confirmRemoveBtn').addEventListener('click', () => {
-            if (rowToRemove) {
-                rowToRemove.remove();
-                resourceCount--;
-                if(resourceCount === 0) emptyState.style.display = 'block';
-                rowToRemove = null;
-                validateForm();
-            }
-            Utils.toggleModal('confirmModal', false);
-        });
+        const dbState = db();
+        if (!Array.isArray(dbState.submissions)) dbState.submissions = [];
+        const existIdx = dbState.submissions.findIndex(s => s.id === newSub.id);
+        if (existIdx >= 0) dbState.submissions[existIdx] = { ...dbState.submissions[existIdx], ...newSub };
+        else dbState.submissions.unshift(newSub);
+        Utils.replaceDB(dbState);
 
-        function createResourceRow(typeVal, qtyVal, unitVal) {
-            const row = document.createElement('div');
-            row.className = 'ds-resource-row';
-            
-            // Build the read-only and edit state templates
-            function renderRow(t, q, u, isEditing) {
-                const co2Val = (q * 2.5).toFixed(2); 
-                if (isEditing) {
-                    row.innerHTML = `
-                        <div><label>Type</label><input type="text" class="form-input r-type" value="${t}" list="resourceSuggestions"/></div>
-                        <div><label>Quantity</label><input class="form-input r-qty" type="number" value="${q}" step="0.01" min="0.01" /></div>
-                        <div><label>Unit</label><input type="text" class="form-input r-unit" value="${u}" list="unitSuggestions"/></div>
-                        <div><label>Est. CO2</label><span class="ds-co2-calc">${co2Val} kg</span></div>
-                        <div style="flex: 0 0 auto; display: flex; align-items: flex-end; gap: 8px;">
-                            <button class="btn-primary save-btn" type="button" style="height: 42px;">Save</button>
-                        </div>
-                    `;
-                    row.querySelector('.save-btn').addEventListener('click', () => {
-                        renderRow(row.querySelector('.r-type').value, parseFloat(row.querySelector('.r-qty').value) || 0, row.querySelector('.r-unit').value, false);
-                        validateForm();
-                    });
-                } else {
-                    row.innerHTML = `
-                        <div><label>Type</label><strong><span class="r-type-disp">${t}</span></strong></div>
-                        <div><label>Quantity</label><strong><span class="r-qty-disp">${q}</span></strong></div>
-                        <div><label>Unit</label><strong><span class="r-unit-disp">${u}</span></strong></div>
-                        <div><label>Est. CO2</label><span class="ds-co2-calc">${co2Val} kg</span></div>
-                        <div style="flex: 0 0 auto; display: flex; align-items: flex-end; gap: 8px;">
-                            <button class="btn-outline edit-btn" type="button" style="height: 42px;">Edit</button>
-                            <button class="btn-outline remove-btn" type="button" style="height: 42px; color:#ef4444; border-color:#fca5a5;"><img src="../assets/icons/trash-20.svg" alt="" style="width:16px; margin-right:6px;" /> Remove</button>
-                        </div>
-                    `;
-                    row.querySelector('.edit-btn').addEventListener('click', () => {
-                        renderRow(t, q, u, true);
-                        validateForm();
-                    });
-                    row.querySelector('.remove-btn').addEventListener('click', () => {
-                        rowToRemove = row;
-                        Utils.toggleModal('confirmModal', true);
-                    });
-                }
-            }
-            
-            renderRow(typeVal, qtyVal, unitVal, false);
-            resourceContainer.appendChild(row);
-            resourceCount++;
-        }
+        const res = await Utils.apiFetch('POST', '/api/submissions', newSub);
+        await Utils.loadDB();
+        Utils.logAction(`Submitted activity data for ${activeDepartment.name} (${period})`, 'Success', 'green');
+        Utils.showToast(`Activity data for ${activeDepartment.name} locked and submitted successfully!`);
+        setTimeout(() => {
+          window.location.href = 'dm-submission-history.html';
+        }, 1000);
+      });
 
-        [{type:'Diesel', qty:2500, unit:'Liters'}, {type:'LPG', qty:1800, unit:'Kg'}].forEach(r => createResourceRow(r.type, r.qty, r.unit));
-
-        document.getElementById('inlineAddBtn').addEventListener('click', () => {
-            const type = document.getElementById('inlineType').value.trim();
-            const qty = parseFloat(document.getElementById('inlineQty').value);
-            const unit = document.getElementById('inlineUnit').value.trim();
-            if(!type || isNaN(qty) || qty<=0 || !unit) { Utils.showToast("Provide valid type, quantity, unit.", "error"); return; }
-            createResourceRow(type, qty, unit);
-            emptyState.style.display = 'none';
-            document.getElementById('inlineType').value = ''; document.getElementById('inlineQty').value = ''; document.getElementById('inlineUnit').value = '';
-            validateForm();
-        });
-
-        const btnSubmit = document.getElementById('btnSubmitData');
-        const deviationReasonCard = document.getElementById('deviationReasonCard');
-        const deviationReasonInput = document.getElementById('deviationReason');
-        const validationStateBadge = document.getElementById('validationStateBadge');
-        const validationSummary = document.getElementById('validationSummary');
-        const historicalAverageValue = document.getElementById('historicalAverageValue');
-        const currentTotalValue = document.getElementById('currentTotalValue');
-        const thresholdValue = document.getElementById('thresholdValue');
-
-        function getDraftResources() {
-            return Array.from(document.getElementById('resourceContainer').querySelectorAll('.ds-resource-row')).map(row => ({
-                type: row.querySelector('.r-type-disp') ? row.querySelector('.r-type-disp').textContent : '',
-                qty: parseFloat(row.querySelector('.r-qty-disp') ? row.querySelector('.r-qty-disp').textContent : '0') || 0,
-                unit: row.querySelector('.r-unit-disp') ? row.querySelector('.r-unit-disp').textContent : ''
-            })).filter(resource => resource.type && resource.qty > 0 && resource.unit);
-        }
-
-        function calculateValidation(resources) {
-            const totalQty = resources.reduce((sum, resource) => sum + resource.qty, 0);
-            const totalCO2 = resources.reduce((sum, resource) => sum + (resource.qty * 2.5), 0);
-            const previousTotals = historicalSubs.map(sub => Number(sub.totalConsumption) || 0).filter(Boolean);
-            const averageQty = previousTotals.length ? previousTotals.reduce((sum, value) => sum + value, 0) / previousTotals.length : 0;
-            const exceedsThreshold = thresholdNumeric > 0 && totalQty > thresholdNumeric;
-            const varianceRatio = averageQty > 0 ? Math.abs(totalQty - averageQty) / averageQty : 0;
-            const anomalyScore = Math.round(varianceRatio * 100);
-            let state = 'valid';
-            let statusType = 'green';
-            let message = 'Consumption is within expected range and ready for analyst review.';
-
-            if (!resources.length) {
-                state = 'empty';
-                statusType = 'amber';
-                message = 'Add or update resources to run validation.';
-            } else if (exceedsThreshold) {
-                state = 'threshold_breach';
-                statusType = 'red';
-                message = `Total consumption exceeds the department threshold of ${thresholdNumeric.toLocaleString()} units. A deviation reason is required before locking the submission.`;
-            } else if (varianceRatio >= 0.25) {
-                state = 'anomalous';
-                statusType = 'amber';
-                message = 'Consumption deviates significantly from the historical average. Submission can proceed, but analyst review will be flagged.';
-            }
-
-            return { state, statusType, totalQty, totalCO2, averageQty, exceedsThreshold, anomalyScore, message };
-        }
-
-        function renderValidation(validation) {
-            latestValidation = validation;
-            const badgeLabelMap = {
-                empty: 'Needs Review',
-                valid: 'Validated',
-                anomalous: 'Anomaly Flag',
-                threshold_breach: 'Threshold Breach'
-            };
-
-            validationStateBadge.textContent = badgeLabelMap[validation.state] || 'Needs Review';
-            validationStateBadge.className = `status-badge status-badge--${validation.statusType}`;
-            validationSummary.textContent = validation.message;
-            historicalAverageValue.textContent = validation.averageQty ? `${validation.averageQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units` : '--';
-            currentTotalValue.textContent = validation.totalQty ? `${validation.totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units` : '--';
-            thresholdValue.textContent = thresholdNumeric ? `${thresholdNumeric.toLocaleString()} Units` : '--';
-            deviationReasonCard.style.display = validation.exceedsThreshold ? 'block' : 'none';
-            if (!validation.exceedsThreshold) {
-                deviationReasonInput.value = '';
-            }
-        }
-
-        function validateForm() {
-            const hasResource = resourceCount > 0;
-            // Any rows stuck in "edit" mode should block submission simply for UI safety
-            const isEditing = document.querySelectorAll('.save-btn').length > 0;
-            const validation = calculateValidation(getDraftResources());
-            renderValidation(validation);
-            const hasDeviationReason = !validation.exceedsThreshold || deviationReasonInput.value.trim().length > 0;
-
-            if(hasResource && !isEditing && hasDeviationReason) {
-                btnSubmit.disabled = false; btnSubmit.style.opacity = '1'; btnSubmit.style.cursor = 'pointer';
-            } else {
-                btnSubmit.disabled = true; btnSubmit.style.opacity = '0.5'; btnSubmit.style.cursor = 'not-allowed';
-            }
-            return hasResource && !isEditing && hasDeviationReason;
-        }
-
-        deviationReasonInput.addEventListener('input', validateForm);
-        validateForm();
-
-        btnSubmit.addEventListener('click', () => {
-            if(!validateForm()) return;
-
-            const dbState = Utils.getDB();
-            const resources = getDraftResources();
-            const totalQty = latestValidation.totalQty;
-            const totalCO2 = latestValidation.totalCO2;
-            const deviationReason = deviationReasonInput.value.trim();
-            
-            const mm = document.getElementById('monthSelect').value;
-            const yy = document.getElementById('yearSelect').value;
-            const formattedPeriod = `${mm} ${yy}`;
-            const periodLabel = `${yy}-${mm}`;
-
-            const newSub = {
-                id: 'sub_' + Date.now(),
-                organizationId: activeOrg ? activeOrg.id : '',
-                departmentId: activeDepartment ? activeDepartment.id : 'dept-ops',
-                departmentName,
-                managerName: currentUser.name || departmentName,
-                managerUserId: currentUser.id || null,
-                period: formattedPeriod,
-                status: 'Pending',
-                score: 'Evaluating',
-                submittedAt: new Date().toLocaleString([], {month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit'}),
-                resources: resources,
-                totalConsumption: totalQty,
-                totalCO2: totalCO2,
-                validation: {
-                    state: latestValidation.state,
-                    anomalyScore: latestValidation.anomalyScore,
-                    deviationReason: deviationReason
-                },
-                locked: true
-            };
-
-            if(!dbState.submissions) dbState.submissions = [];
-            if(!dbState.managerSubmissions) dbState.managerSubmissions = [];
-            if(!dbState.notifications) dbState.notifications = [];
-            if(!dbState.alerts) dbState.alerts = [];
-            if(!dbState.submissionTracker) dbState.submissionTracker = [];
-
-            dbState.submissions.unshift(newSub);
-            dbState.managerSubmissions.unshift({
-                id: newSub.id,
-                period: newSub.period,
-                status: newSub.status,
-                score: newSub.score,
-                submittedAt: newSub.submittedAt,
-                resources: newSub.resources,
-                totalConsumption: newSub.totalConsumption,
-                totalCO2: newSub.totalCO2
-            });
-
-            const orgRecord = (dbState.organizations || []).find(org => org.id === newSub.organizationId);
-            if (orgRecord) {
-                orgRecord.current = `${totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units`;
-                orgRecord.co2 = totalCO2.toLocaleString(undefined, { maximumFractionDigits: 0 });
-                orgRecord.lastSubmittedPeriod = periodLabel;
-                if (latestValidation.exceedsThreshold) {
-                    orgRecord.status = 'Exceeded';
-                    orgRecord.statusType = 'red';
-                } else if (latestValidation.state === 'anomalous') {
-                    orgRecord.status = 'Needs Review';
-                    orgRecord.statusType = 'amber';
-                } else {
-                    orgRecord.status = 'Submitted';
-                    orgRecord.statusType = 'green';
-                }
-            }
-
-            const deptRecord = (dbState.departments || []).find(dept => dept.id === newSub.departmentId);
-            if (deptRecord) {
-                deptRecord.current = `${totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units`;
-                deptRecord.co2 = totalCO2.toLocaleString(undefined, { maximumFractionDigits: 0 });
-                deptRecord.status = latestValidation.exceedsThreshold ? 'Exceeded' : (latestValidation.state === 'anomalous' ? 'Approaching' : 'Within Target');
-                deptRecord.statusType = latestValidation.exceedsThreshold ? 'red' : (latestValidation.state === 'anomalous' ? 'amber' : 'green');
-                deptRecord.consumption = `${totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units`;
-                deptRecord.submittedAt = newSub.submittedAt;
-            }
-
-            let trackerRecord = dbState.submissionTracker.find(item => item.name === departmentName);
-            if (!trackerRecord) {
-                trackerRecord = {
-                    id: departmentName.toLowerCase().slice(0, 3),
-                    name: departmentName,
-                    manager: currentUser.name || activeDepartment?.manager || '',
-                    status: 'pending',
-                    consumption: '--',
-                    submittedAt: '--'
-                };
-                dbState.submissionTracker.push(trackerRecord);
-            }
-            trackerRecord.status = 'submitted';
-            trackerRecord.manager = currentUser.name || activeOrg.manager;
-            trackerRecord.consumption = `${totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 })} Units`;
-            trackerRecord.submittedAt = newSub.submittedAt;
-
-            dbState.notifications.unshift({
-                id: Date.now(),
-                role: 'Analyst',
-                title: 'New Locked Submission',
-                body: `${departmentName} submitted ${formattedPeriod} resource data.`,
-                timestamp: 'Just now',
-                read: false,
-                details: `Submission ${newSub.id} is ready for analyst review with total consumption ${trackerRecord.consumption}.`
-            });
-
-            if (latestValidation.exceedsThreshold) {
-                const alertId = 'alt_' + Date.now();
-                dbState.alerts.unshift({
-                    id: alertId,
-                    type: 'Threshold Breach',
-                    severity: 'Critical',
-                    roleScope: ['Manager', 'COO'],
-                    departmentId: newSub.departmentId,
-                    departmentName,
-                    status: 'Open',
-                    message: `System detected consumption exceeding the monthly threshold by ${(totalQty - thresholdNumeric).toLocaleString(undefined, { maximumFractionDigits: 2 })} units.`,
-                    deviationReason,
-                    createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-                    updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-                });
-
-                dbState.notifications.unshift({
-                    id: Date.now() + 1,
-                    role: 'COO',
-                    title: 'Threshold Breach Raised',
-                    body: `${departmentName} exceeded its department threshold.`,
-                    timestamp: 'Just now',
-                    read: false,
-                    details: deviationReason
-                });
-                dbState.notifications.unshift({
-                    id: Date.now() + 2,
-                    role: 'Manager',
-                    title: 'Deviation Reason Logged',
-                    body: `Threshold breach for ${departmentName} was submitted for executive review.`,
-                    timestamp: 'Just now',
-                    read: false,
-                    details: deviationReason
-                });
-            }
-
-            Utils.replaceDB(dbState);
-            Utils.logAction(
-                `Locked Submission: ${departmentName} ${formattedPeriod}${latestValidation.exceedsThreshold ? ' (Threshold Breach)' : ''}`,
-                latestValidation.exceedsThreshold ? 'Warning' : 'Success',
-                latestValidation.exceedsThreshold ? 'amber' : 'green'
-            );
-            
-            Utils.showToast(latestValidation.exceedsThreshold ? "Threshold breach recorded and submitted with deviation reason." : "Data submitted successfully!");
-            btnSubmit.innerHTML = `<span>Submitted Successfully</span>`; btnSubmit.disabled = true; btnSubmit.style.backgroundColor = '#10b981'; btnSubmit.style.borderColor = '#10b981';
-            setTimeout(() => {
-                window.location.href = 'dm-submission-history.html';
-            }, 1000);
-        });
     });
   </script>
 </body>
+
 </html>
