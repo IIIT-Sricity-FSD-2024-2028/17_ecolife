@@ -6,33 +6,37 @@
   <title>Profile Settings - Rorizon</title>
   <link rel="stylesheet" href="../../css/style.css">
   <style>
-    .profile-grid{display:grid;grid-template-columns:minmax(280px,340px) 1fr;gap:24px}.profile-card{padding:32px}.summary-card{padding:28px;background:linear-gradient(160deg,#eff6ff 0%,#f8fafc 100%)}.summary-avatar{width:72px;height:72px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin-bottom:18px}.summary-meta{font-size:14px;color:var(--text-muted);margin-top:6px}.security-box{margin-top:20px;padding:16px;border:1px solid var(--border-light);border-radius:12px;background:#f8fafc}.security-box p{margin:0 0 8px 0;color:var(--text-muted);font-size:14px}@media(max-width:900px){.profile-grid{grid-template-columns:1fr}}
+    .profile-grid{display:grid;grid-template-columns:minmax(280px,340px) 1fr;gap:24px}.profile-card{padding:32px}.profile-card--full{grid-column:1/-1}.summary-card{padding:28px;background:linear-gradient(160deg,#eff6ff 0%,#f8fafc 100%)}.summary-avatar{width:72px;height:72px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin-bottom:18px}.summary-meta{font-size:14px;color:var(--text-muted);margin-top:6px}.security-box{margin-top:20px;padding:16px;border:1px solid var(--border-light);border-radius:12px;background:#f8fafc}.security-box p{margin:0 0 8px 0;color:var(--text-muted);font-size:14px}@media(max-width:900px){.profile-grid{grid-template-columns:1fr}.profile-card--full{grid-column:auto}}
   </style>
 </head>
 <body>
   <div id="app-layout" data-title="Profile Settings" data-subtitle="Manage your personal account">
     <div class="profile-grid">
       <div class="card summary-card">
-        <div class="summary-avatar" id="profileAvatar">SU</div>
-        <h2 class="card__title" id="summaryName" style="margin-bottom:6px;">System Admin</h2>
-        <p class="summary-meta" id="summaryRole">Super User</p>
-        <p class="summary-meta" id="summaryEmail">admin@rorizon.com</p>
+        <div class="summary-avatar" id="profileAvatar">--</div>
+        <h2 class="card__title" id="summaryName" style="margin-bottom:6px;">Profile</h2>
+        <p class="summary-meta" id="summaryRole">Role</p>
+        <p class="summary-meta" id="summaryEmail">--</p>
         <div class="security-box">
           <p>Account scope</p>
-          <strong>Platform-wide governance and administration</strong>
+          <strong id="summaryScope">Platform-wide governance and administration</strong>
         </div>
       </div>
       <div class="card profile-card">
-        <h2 style="font-size:20px;font-weight:600;margin-bottom:24px;border-bottom:1px solid var(--border-light);padding-bottom:12px;">Personal Details</h2>
-        <form id="profileForm" novalidate>
-          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Full Name</label><input type="text" class="form-input" id="profName" required></div>
-          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Email Address</label><input type="email" class="form-input" id="profEmail" disabled style="background:var(--bg-surface);"></div>
-          <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Phone</label><input type="text" class="form-input" id="profPhone" required></div>
-          <div class="form-group" style="margin-bottom:24px;"><label class="form-label">Role</label><input type="text" class="form-input" id="profRole" disabled style="background:var(--bg-surface);"></div>
-          <button type="submit" class="btn-primary" id="btnSaveProfile">Update Profile</button>
-        </form>
-        <div class="security-box">
-          <p>Security</p>
+        <section class="profile-section">
+          <h2 class="profile-section__title">Personal Details</h2>
+          <form id="profileForm" novalidate>
+            <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Full Name</label><input type="text" class="form-input" id="profName" required></div>
+            <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Email Address</label><input type="email" class="form-input" id="profEmail" required></div>
+            <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Phone</label><input type="text" class="form-input" id="profPhone" required></div>
+            <div class="form-group" style="margin-bottom:24px;"><label class="form-label">Role</label><input type="text" class="form-input readonly-field" id="profRole" value="Super User" disabled></div>
+            <button type="submit" class="btn-primary" id="btnSaveProfile">Update Profile</button>
+          </form>
+        </section>
+      </div>
+      <div class="card profile-card profile-card--full">
+        <section class="profile-section profile-section--muted">
+          <p style="margin:0 0 8px 0;color:var(--text-muted);font-size:14px">Security</p>
           <strong style="display:block;margin-bottom:14px;">Change account password</strong>
           <form id="passwordForm" novalidate>
             <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Current Password</label><input type="password" class="form-input" id="currentPassword" placeholder="Enter your current password" required></div>
@@ -40,7 +44,7 @@
             <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Confirm New Password</label><input type="password" class="form-input" id="confirmPassword" placeholder="Re-enter the new password" required></div>
             <button type="submit" class="btn-primary">Change Password</button>
           </form>
-        </div>
+        </section>
       </div>
     </div>
   </div>
@@ -48,13 +52,14 @@
   <script src="../../js/data.js"></script>
   <script src="../../js/utils.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
       const user = JSON.parse(localStorage.getItem('currentUser'));
       if(user) {
         document.getElementById('profName').value = user.name || '';
         document.getElementById('profEmail').value = user.email || '';
         document.getElementById('profPhone').value = user.phone || '';
-        document.getElementById('profRole').value = user.role || '';
+        document.getElementById('profRole').value = user.role || 'Super User';
         document.getElementById('summaryName').textContent = user.name || '';
         document.getElementById('summaryRole').textContent = user.role || '';
         document.getElementById('summaryEmail').textContent = user.email || '';
@@ -64,30 +69,39 @@
       document.getElementById('profileForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const newName = document.getElementById('profName').value.trim();
+        const newEmail = document.getElementById('profEmail').value.trim().toLowerCase();
         const newPhone = document.getElementById('profPhone').value.trim();
-
-        if(!newName || !Utils.validatePhone(newPhone)) {
-          return Utils.showToast('Provide valid name and phone details', 'error');
+        if(!newName || !Utils.validateEmail(newEmail) || !Utils.validatePhone(newPhone)) {
+          return Utils.showToast('Provide valid name, email, and phone details', 'error');
         }
 
         const db = Utils.getDB();
+        if ((db.users || []).some(entry => String(entry.id) !== String(user.id) && String(entry.email || '').toLowerCase() === newEmail)) {
+          return Utils.showToast('Another account already uses this email.', 'error');
+        }
         const userDbIndex = db.users.findIndex(u => String(u.id) === String(user.id));
         if(userDbIndex !== -1) {
             db.users[userDbIndex].name = newName;
+            db.users[userDbIndex].email = newEmail;
             db.users[userDbIndex].phone = newPhone;
+            Utils.prepareUserForRole(db, db.users[userDbIndex], 'Super User');
             Utils.syncUserDerivedFields(db, user.id);
             Utils.replaceDB(db);
             const updatedUser = db.users[userDbIndex];
             localStorage.setItem('currentUser', JSON.stringify(updatedUser));
             Utils.syncSessionUser();
             document.getElementById('summaryName').textContent = newName;
+            document.getElementById('summaryRole').textContent = 'Super User';
+            document.getElementById('summaryEmail').textContent = newEmail;
             document.getElementById('profileAvatar').textContent = newName.split(' ').map(word => word[0]).join('').slice(0,2).toUpperCase();
             Utils.logAction('Updated profile details', 'Success', 'green');
             Utils.showToast('Profile updated successfully!');
+            const nextPath = '../admin/adm-dashboard.html';
+            if (nextPath) setTimeout(() => { window.location.href = nextPath; }, 500);
         }
       });
 
-      document.getElementById('passwordForm').addEventListener('submit', (e) => {
+      document.getElementById('passwordForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const currentPassword = document.getElementById('currentPassword').value;
         const newPassword = document.getElementById('newPassword').value;
@@ -97,7 +111,7 @@
           return Utils.showToast('New password confirmation does not match', 'error');
         }
 
-        const result = Utils.updateUserPassword(user.id, currentPassword, newPassword);
+        const result = await Utils.updateUserPassword(user.id, currentPassword, newPassword);
         if(!result.ok) {
           return Utils.showToast(result.message, 'error');
         }

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revenue Overview – Rorizon Super User</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .stack { display: grid; gap: 20px; }
+    .overview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .two-col-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .summary-list { display: grid; gap: 12px; margin-top: 10px; }
+    .summary-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: #f8fafc; }
+    .summary-item__info { display: flex; flex-direction: column; gap: 2px; }
+    .summary-item__title { font-size: 14px; font-weight: 700; color: #0f172a; }
+    .summary-item__desc { font-size: 12px; color: #64748b; }
+    .summary-item__count { font-size: 18px; font-weight: 700; color: #0f172a; }
+    .metric-chip { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; font-size: 12px; font-weight: 600; }
+    .data-table td, .data-table th { white-space: normal !important; word-break: break-word !important; overflow-wrap: break-word !important; line-height: 1.45 !important; }
+    .action-btn { border: 1px solid #cbd5e1 !important; background: #fff !important; color: #0f172a !important; padding: 6px 12px !important; border-radius: 8px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+    .action-btn:hover { background: #f8fafc !important; border-color: #64748b !important; }
+    
+    /* Status Badge Styling (prevents override by notification bell .badge) */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      line-height: 1;
+    }
+    .status-badge--green { background: #dcfce7 !important; color: #15803d !important; border: 1px solid #86efac !important; }
+    .status-badge--red { background: #fee2e2 !important; color: #b91c1c !important; border: 1px solid #fca5a5 !important; }
+    .status-badge--blue { background: #dbeafe !important; color: #1d4ed8 !important; border: 1px solid #93c5fd !important; }
+    .status-badge--amber { background: #fef3c7 !important; color: #b45309 !important; border: 1px solid #fde68a !important; }
+    .status-badge--gray { background: #f1f5f9 !important; color: #475569 !important; border: 1px solid #cbd5e1 !important; }
+
+    @media(max-width: 1024px) { .overview-grid { grid-template-columns: repeat(2, 1fr); } .two-col-grid { grid-template-columns: 1fr; } }
+    @media(max-width: 640px) { .overview-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div id="app-layout" data-title="Revenue Overview" data-subtitle="Platform Subscription &amp; Recurring Revenue Summary">
+    <div class="stack">
+      
+      <!-- SECTION 1: REVENUE SUMMARY METRICS -->
+      <div class="card">
+        <div class="chart-header">
+          <div>
+            <h2 class="card__title">Revenue Summary</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">Key recurring revenue indicators and active customer subscription counts.</p>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <a href="adm-revenue-management.html" class="btn-primary" style="text-decoration:none; font-size:12px; padding:6px 12px;">Manage Revenue &amp; Subscriptions &rarr;</a>
+          </div>
+        </div>
+
+        <div class="overview-grid" style="margin-top: 16px;">
+          <div class="kpi-card" style="padding: 18px;">
+            <div>
+              <span style="font-weight: 700; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Current MRR</span>
+            </div>
+            <div style="margin-top: 10px;">
+              <p class="kpi-card__value text--green" id="valMrr" style="font-size:24px; font-weight:800;">INR 0</p>
+              <p class="kpi-card__label" style="margin-top:4px;">Monthly Recurring Revenue</p>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="padding: 18px;">
+            <div>
+              <span style="font-weight: 700; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Current ARR</span>
+            </div>
+            <div style="margin-top: 10px;">
+              <p class="kpi-card__value" id="valArr" style="font-size:24px; font-weight:800;">INR 0</p>
+              <p class="kpi-card__label" style="margin-top:4px;">Annualized MRR (MRR × 12)</p>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="padding: 18px;">
+            <div>
+              <span style="font-weight: 700; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Active Customers</span>
+            </div>
+            <div style="margin-top: 10px;">
+              <p class="kpi-card__value" id="valActiveCustomers" style="font-size:24px; font-weight:800;">0</p>
+              <p class="kpi-card__label" style="margin-top:4px;">Orgs with active paid subscriptions</p>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="padding: 18px;">
+            <div>
+              <span style="font-weight: 700; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Paid Subscriptions</span>
+            </div>
+            <div style="margin-top: 10px;">
+              <p class="kpi-card__value text--green" id="valPaidSubs" style="font-size:24px; font-weight:800;">0</p>
+              <p class="kpi-card__label" style="margin-top:4px;" id="lblTrialSubs">0 Trial Subscriptions</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: PLAN DISTRIBUTION -->
+      <div class="card">
+        <div class="chart-header">
+          <div>
+            <h2 class="card__title">Plan Distribution</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">Current active customer distribution across Starter, Professional, and Enterprise pricing tiers.</p>
+          </div>
+          <span class="metric-chip" id="valTotalSubsChip">0 subscriptions</span>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <div class="summary-list" id="planDistributionList"></div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: SUBSCRIPTIONS LIST -->
+      <div class="card">
+        <div class="chart-header">
+          <div>
+            <h2 class="card__title">Organization Subscriptions</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">Customer organization subscriptions and billing statuses derived from project records.</p>
+          </div>
+          <a href="adm-revenue-management.html" class="action-btn">Manage Subscriptions &rarr;</a>
+        </div>
+
+        <div class="table-wrapper" style="margin-top: 16px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ORGANIZATION</th>
+                <th>PLAN</th>
+                <th>BILLING CYCLE</th>
+                <th>STATUS</th>
+                <th>START DATE</th>
+                <th>RENEWAL DATE</th>
+              </tr>
+            </thead>
+            <tbody id="recentSubsTbody">
+              <tr><td colspan="6" style="text-align: center; padding: 24px; color: #64748b;">Loading subscription data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      Utils.checkSession();
+      Utils.injectLayout();
+      Utils.initGlobalHeader();
+
+      window.addEventListener('rorizon-db-updated', () => loadOverviewData());
+      await loadOverviewData();
+    });
+
+    async function loadOverviewData() {
+      let data = await Utils.apiFetch('GET', '/api/revenue/overview');
+      
+      if (!data) {
+        const db = Utils.getDB() || {};
+        const plans = Array.isArray(db.plans) ? db.plans : [];
+        const subs = Array.isArray(db.subscriptions) ? db.subscriptions : [];
+        const orgs = Array.isArray(db.organizations) ? db.organizations : [];
+
+        const planMap = new Map(plans.map(p => [p.id, p]));
+        const orgMap = new Map(orgs.map(o => [o.id, o]));
+
+        let mrr = 0;
+        let paidCount = 0;
+        let trialCount = 0;
+        const activePaidOrgs = new Set();
+        const planDist = { Starter: 0, Professional: 0, Enterprise: 0 };
+
+        subs.forEach(s => {
+          const plan = planMap.get(s.planId);
+          if (plan) {
+            planDist[plan.name] = (planDist[plan.name] || 0) + 1;
+            if (s.status === 'ACTIVE') {
+              paidCount++;
+              activePaidOrgs.add(s.organizationId);
+              mrr += (s.billingCycle === 'ANNUAL' ? plan.priceAnnual / 12 : plan.priceMonthly);
+            } else if (s.status === 'TRIAL') {
+              trialCount++;
+            }
+          }
+        });
+
+        const roundedMrr = Math.round(mrr);
+        data = {
+          mrr: roundedMrr,
+          arr: roundedMrr * 12,
+          activeCustomers: activePaidOrgs.size,
+          paidSubscriptions: paidCount,
+          trialSubscriptions: trialCount,
+          totalSubscriptions: subs.length,
+          planDistribution: planDist,
+          recentSubscriptions: subs.map(s => {
+            const org = orgMap.get(s.organizationId);
+            const plan = planMap.get(s.planId);
+            return {
+              ...s,
+              organizationName: org ? org.name : s.organizationId,
+              planName: plan ? plan.name : s.planId
+            };
+          })
+        };
+      }
+
+      const formatCurr = (num) => 'INR ' + Number(num || 0).toLocaleString('en-IN');
+
+      // Populate Revenue Summary Metrics
+      document.getElementById('valMrr').textContent = formatCurr(data.mrr);
+      document.getElementById('valArr').textContent = formatCurr(data.arr);
+      document.getElementById('valActiveCustomers').textContent = data.activeCustomers || 0;
+      document.getElementById('valPaidSubs').textContent = data.paidSubscriptions || 0;
+      document.getElementById('lblTrialSubs').textContent = `${data.trialSubscriptions || 0} Trial Subscriptions`;
+      
+      const totalSubs = data.totalSubscriptions || 0;
+      document.getElementById('valTotalSubsChip').textContent = `${totalSubs} ${totalSubs === 1 ? 'subscription' : 'subscriptions'}`;
+
+      // Render Plan Distribution List
+      const distEl = document.getElementById('planDistributionList');
+      if (distEl && data.planDistribution) {
+        const total = totalSubs || 1;
+        const planNames = ['Starter', 'Professional', 'Enterprise'];
+        
+        distEl.innerHTML = planNames.map(pName => {
+          const count = data.planDistribution[pName] || 0;
+          const percent = totalSubs > 0 ? Math.round((count / total) * 100) : 0;
+          return `
+            <div class="summary-item">
+              <div class="summary-item__info">
+                <span class="summary-item__title">${pName} Plan</span>
+                <span class="summary-item__desc">${percent}% of total subscriptions</span>
+              </div>
+              <span class="summary-item__count">${count}</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Subscriptions Data Table
+      const tbody = document.getElementById('recentSubsTbody');
+      if (tbody && Array.isArray(data.recentSubscriptions)) {
+        if (data.recentSubscriptions.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: #64748b;">No subscriptions found.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data.recentSubscriptions.map(sub => {
+          let statusBadgeClass = 'status-badge--green';
+          if (sub.status === 'TRIAL') statusBadgeClass = 'status-badge--blue';
+          else if (sub.status === 'CANCELLED' || sub.status === 'EXPIRED') statusBadgeClass = 'status-badge--red';
+          else if (sub.status === 'PAST_DUE') statusBadgeClass = 'status-badge--amber';
+
+          return `
+            <tr>
+              <td style="font-weight: 700; color: #0f172a;">${sub.organizationName || sub.organizationId}</td>
+              <td><span class="status-badge status-badge--gray">${sub.planName || sub.planId}</span></td>
+              <td style="font-weight: 500;">${sub.billingCycle}</td>
+              <td><span class="status-badge ${statusBadgeClass}">${sub.status}</span></td>
+              <td>${sub.startDate || '--'}</td>
+              <td>${sub.renewalDate || '--'}</td>
+            </tr>
+          `;
+        }).join('');
+
+      }
+    }
+  </script>
+</body>
+</html>

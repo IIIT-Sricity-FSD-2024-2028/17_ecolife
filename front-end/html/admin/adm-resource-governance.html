@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emission Factors Governance – Rorizon Super User</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <style>
+    .toggle-group{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:16px;flex-wrap:wrap;gap:12px}.toggle-btn-group{display:flex;gap:8px}.view-section{display:none}.view-section.active{display:block}.stack{display:grid;gap:16px}.helper-copy{margin:10px 0 18px;color:var(--text-muted);font-size:14px}.actions{display:flex;gap:6px;flex-wrap:wrap}.action-btn{border:1px solid #cbd5e1!important;background:#fff!important;color:#0f172a!important;padding:5px 9px!important;border-radius:8px!important;font-size:12px!important;font-weight:700!important;cursor:pointer}.action-btn:hover{background:#f8fafc!important;border-color:#64748b!important}.action-btn.warn{color:#dc2626!important;border-color:#fca5a5!important}.action-btn.accent{border-color:#cbd5e1!important;background:#fff!important;color:#0f172a!important}.action-btn.success{color:#16a34a!important;border-color:#86efac!important}.toolbar-row,.user-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}.user-toolbar .form-input,.toolbar-row .form-input{flex:1 1 0%;max-width:none}.metric-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#f8fafc;border:1px solid #e2e8f0;color:#0f172a;font-size:12px;font-weight:600}.assignment-box{padding:14px;border:1px solid var(--border-light);border-radius:12px;background:#f8fafc}.assignment-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.assignment-item{display:flex;align-items:center;gap:8px;font-size:14px;color:#0f172a;cursor:pointer}.sub-section-card{padding:18px;border:1px solid var(--border-light);border-radius:12px;background:#fff;margin-top:16px}.sub-section-title{font-size:15px;font-weight:700;color:#0f172a;margin:0 0 4px 0}.sub-section-desc{font-size:13px;color:#64748b;margin:0 0 14px 0}.hidden{display:none!important}.data-table td,.data-table th{white-space:normal!important;word-break:break-word!important;overflow-wrap:break-word!important;line-height:1.45!important}
+    .modal form{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+    .form-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .form-span-2{grid-column:span 2}
+    @media(max-width:580px){.form-grid-2{grid-template-columns:1fr}.form-span-2{grid-column:span 1}}
+  </style>
+</head>
+<body>
+  <div id="app-layout" data-title="Emission Factors" data-subtitle="Source datasets, version baselines, and conversion rate governance">
+    <div class="card stack">
+      <div class="chart-header">
+        <div>
+          <h2 class="card__title" id="sectionTitle">Emission Factors</h2>
+          <p class="helper-copy" id="sectionDesc" style="margin:4px 0 0;">Manage conversion factor rates and departmental scope assignments.</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="btn-outline hidden" id="addUnitBtn" type="button">+ Add Unit</button>
+          <button class="btn-primary" id="openFormBtn" type="button">+ Add Factor</button>
+        </div>
+      </div>
+      
+      <div class="toggle-group">
+        <div class="toggle-btn-group">
+          <button class="toggle-btn active" id="factorsTab" type="button">Emission Factors</button>
+          <button class="toggle-btn" id="datasetsTab" type="button">Datasets &amp; Versions</button>
+          <button class="toggle-btn" id="unitsTab" type="button">Resource Types &amp; Units</button>
+        </div>
+      </div>
+
+      <!-- 1. EMISSION FACTORS VIEW -->
+      <div id="factorsView" class="view-section active">
+        <div class="user-toolbar">
+          <input class="form-input" id="searchFactors" placeholder="Search factors by resource type, unit, scope, source, or version...">
+          <span class="metric-chip" id="badgeFactorsCount">0 factors</span>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>RESOURCE TYPE</th>
+                <th>UNIT</th>
+                <th>CONVERSION FACTOR</th>
+                <th>SCOPE</th>
+                <th>SOURCE &amp; VERSION</th>
+                <th>STATUS</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyFactors"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 2. DATASETS & VERSIONS VIEW (GROUPED MASTER-DETAIL) -->
+      <div id="datasetsView" class="view-section">
+        <div class="user-toolbar">
+          <input class="form-input" id="searchSources" placeholder="Search dataset sources by provider name, publisher, dataset, or region...">
+          <span class="metric-chip" id="badgeSourcesCount">0 sources</span>
+        </div>
+        
+        <!-- Master Table: Sources -->
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SOURCE / PROVIDER</th>
+                <th>PUBLISHER</th>
+                <th>DATASET / REFERENCE</th>
+                <th>VERSIONS</th>
+                <th>STATUS</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="tbodySources"></tbody>
+          </table>
+        </div>
+
+        <!-- Detail Table: Versions for Selected Source -->
+        <div class="sub-section-card" id="versionsSection">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+            <div>
+              <h3 class="sub-section-title" id="versionSectionTitle">Versions &amp; Editions</h3>
+              <p class="sub-section-desc" id="versionSectionDesc" style="margin:0;">Select a dataset source above to view its versions.</p>
+            </div>
+            <button class="btn-outline" id="addVersionBtn" type="button">+ Add Version</button>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>VERSION / EDITION</th>
+                  <th>SOURCE</th>
+                  <th>EFFECTIVE YEAR</th>
+                  <th>FACTORS</th>
+                  <th>STATUS</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyVersions"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. RESOURCE TYPES & UNITS VIEW -->
+      <div id="unitsView" class="view-section">
+        <div class="user-toolbar">
+          <input class="form-input" id="searchUnits" placeholder="Search resource types or measurement units...">
+          <span class="metric-chip" id="badgeUnitsCount">0 items</span>
+        </div>
+
+        <!-- Section A: Measurement Units Catalog -->
+        <div style="margin-bottom:28px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h3 style="font-size:16px; font-weight:700; color:#0f172a; margin:0;">Measurement Units Catalog</h3>
+              <p style="font-size:13px; color:#64748b; margin:2px 0 0;">All physical measurement units configured across energy, fuel, mass, and volume.</p>
+            </div>
+            <span class="metric-chip" id="badgeUnitsCatalogCount">0 units</span>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>UNIT NAME</th>
+                  <th>SYMBOL / CODE</th>
+                  <th>STATUS</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyUnitsCatalog"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section B: Resource Types & Compatibilities -->
+        <div style="padding-top:20px; border-top:1px solid var(--border-light);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h3 style="font-size:16px; font-weight:700; color:#0f172a; margin:0;">Resource Types &amp; Compatibilities</h3>
+              <p style="font-size:13px; color:#64748b; margin:2px 0 0;">Configured emission resource categories and their accepted input measurement units.</p>
+            </div>
+            <span class="metric-chip" id="badgeRtCount">0 resource types</span>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>RESOURCE TYPE</th>
+                  <th>DEFAULT UNIT</th>
+                  <th>ACCEPTED / COMPATIBLE UNITS</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyUnits"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT FACTOR -->
+  <div class="modal-overlay" id="factorModal">
+    <div class="modal modal--md">
+      <button class="modal__close" type="button" onclick="Utils.toggleModal('factorModal', false)">
+        <img src="../assets/icons/x0.svg" alt="X" />
+      </button>
+      <div class="modal__header">
+        <h2 class="modal__title" id="factorModalTitle">Add Emission Factor</h2>
+      </div>
+      <form id="formFactor">
+        <div class="modal__body">
+          <input type="hidden" id="factorEditId" />
+          <div class="form-grid-2">
+            <div>
+              <label class="form-label">Factor Source / Dataset</label>
+              <select class="form-input" id="efSource" required></select>
+            </div>
+            <div>
+              <label class="form-label">Version / Edition</label>
+              <select class="form-input" id="efVersion" required></select>
+            </div>
+            <div>
+              <label class="form-label">Resource Type</label>
+              <select class="form-input" id="efRt" required></select>
+            </div>
+            <div>
+              <label class="form-label">Input Unit</label>
+              <select class="form-input" id="efUnit" required></select>
+              <p class="helper-text" id="unitCompatHelp" style="font-size:12px; color:#64748b; margin-top:4px;">Restricted to compatible units.</p>
+            </div>
+            <div>
+              <label class="form-label">Emission Factor Value</label>
+              <input class="form-input" type="number" step="0.0001" min="0" id="efValue" placeholder="e.g. 2.5000" required />
+            </div>
+            <div>
+              <label class="form-label">Factor Unit / Basis</label>
+              <input class="form-input" type="text" id="efFactorUnit" placeholder="e.g. kgCO2e/L" required />
+            </div>
+            <div>
+              <label class="form-label">Scope</label>
+              <select class="form-input" id="efScope">
+                <option value="Scope 1">Scope 1 (Direct)</option>
+                <option value="Scope 2">Scope 2 (Indirect - Electricity)</option>
+                <option value="Scope 3">Scope 3 (Other Indirect / Utilities)</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Applicability / Geography</label>
+              <input class="form-input" type="text" id="efGeo" value="IN" placeholder="e.g. IN, Global, US" required />
+            </div>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn-outline" type="button" onclick="Utils.toggleModal('factorModal', false)">Cancel</button>
+          <button class="btn-primary" type="submit">Save Factor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT SOURCE -->
+  <div class="modal-overlay" id="sourceModal">
+    <div class="modal modal--md">
+      <button class="modal__close" type="button" onclick="Utils.toggleModal('sourceModal', false)">
+        <img src="../assets/icons/x0.svg" alt="X" />
+      </button>
+      <div class="modal__header">
+        <h2 class="modal__title" id="sourceModalTitle">Add Factor Source / Dataset</h2>
+      </div>
+      <form id="formSource">
+        <div class="modal__body">
+          <input type="hidden" id="sourceEditId" />
+          <div class="form-grid-2">
+            <div>
+              <label class="form-label">Source / Provider Name</label>
+              <input class="form-input" id="fsName" placeholder="e.g. EPA GHG Hub, IPCC" required />
+            </div>
+            <div>
+              <label class="form-label">Publisher / Authority</label>
+              <input class="form-input" id="fsPub" placeholder="e.g. US Environmental Protection Agency" required />
+            </div>
+            <div>
+              <label class="form-label">Region / Geography Scope</label>
+              <input class="form-input" id="fsRegion" placeholder="e.g. Global, IN, US, UK" required />
+            </div>
+            <div>
+              <label class="form-label">Acquisition Method</label>
+              <select class="form-input" id="fsMethod">
+                <option value="Published Dataset">Published Dataset</option>
+                <option value="Manual Upload">Manual Upload</option>
+                <option value="API">API</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-span-2">
+              <label class="form-label">Dataset Name / Reference Link</label>
+              <input class="form-input" id="fsDataset" placeholder="e.g. GHG Emission Factors Hub v2026 or URL" />
+            </div>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn-outline" type="button" onclick="Utils.toggleModal('sourceModal', false)">Cancel</button>
+          <button class="btn-primary" type="submit">Save Source</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT VERSION -->
+  <div class="modal-overlay" id="versionModal">
+    <div class="modal modal--md">
+      <button class="modal__close" type="button" onclick="Utils.toggleModal('versionModal', false)">
+        <img src="../assets/icons/x0.svg" alt="X" />
+      </button>
+      <div class="modal__header">
+        <h2 class="modal__title" id="versionModalTitle">Add Factor Version</h2>
+      </div>
+      <form id="formVersion">
+        <div class="modal__body">
+          <input type="hidden" id="versionEditId" />
+          <div class="form-grid-2">
+            <div class="form-span-2">
+              <label class="form-label">Source / Dataset</label>
+              <select class="form-input" id="fvSource" required></select>
+            </div>
+            <div>
+              <label class="form-label">Version / Edition Name</label>
+              <input class="form-input" id="fvName" placeholder="e.g. 2026 Baseline Set" required />
+            </div>
+            <div>
+              <label class="form-label">Dataset Year</label>
+              <input class="form-input" id="fvYear" placeholder="e.g. 2026" />
+            </div>
+            <div>
+              <label class="form-label">Effective From</label>
+              <input class="form-input" id="fvFrom" type="date" required />
+            </div>
+            <div>
+              <label class="form-label">Effective To</label>
+              <input class="form-input" id="fvTo" type="date" />
+            </div>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn-outline" type="button" onclick="Utils.toggleModal('versionModal', false)">Cancel</button>
+          <button class="btn-primary" type="submit">Save Version as Draft</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: MANAGE COMPATIBLE UNITS -->
+  <div class="modal-overlay" id="manageUnitsModal">
+    <div class="modal modal--md">
+      <button class="modal__close" type="button" onclick="Utils.toggleModal('manageUnitsModal', false)">
+        <img src="../assets/icons/x0.svg" alt="X" />
+      </button>
+      <div class="modal__header">
+        <h2 class="modal__title" id="manageUnitsTitle">Manage Accepted Units</h2>
+      </div>
+      <form id="formManageUnits">
+        <div class="modal__body">
+          <input type="hidden" id="manageUnitsRtId" />
+          <p class="modal-section__copy" style="margin-bottom:14px; font-size:14px; color:#64748b;">Select all measurement units accepted for this resource type:</p>
+          <div class="assignment-box">
+            <div class="assignment-list" id="unitCheckboxList"></div>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn-outline" type="button" onclick="Utils.toggleModal('manageUnitsModal', false)">Cancel</button>
+          <button class="btn-primary" type="submit">Save Unit Compatibilities</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD RESOURCE TYPE -->
+  <div class="modal-overlay" id="rtModal">
+    <div class="modal modal--sm">
+      <button class="modal__close" type="button" onclick="Utils.toggleModal('rtModal', false)">
+        <img src="../assets/icons/x0.svg" alt="X" />
+      </button>
+      <div class="modal__header">
+        <h2 class="modal__title" id="rtModalTitle">Add Resource Type</h2>
+      </div>
+      <form id="formRt">
+        <div class="modal__body">
+          <input type="hidden" id="rtEditId" />
+          <div style="display:grid; grid-template-columns:1fr; gap:14px;">
+            <div>
+              <label class="form-label">Resource Type Name</label>
+              <input class="form-input" id="rtName" placeholder="e.g. Diesel, Solar Power, Biofuel" required />
+            </div>
+            <div>
+              <label class="form-label">Default Unit</label>
+              <select class="form-input" id="rtDefaultUnit" required></select>
+            </div>
+            <div id="newUnitFields" class="hidden" style="padding:14px; border:1px solid #cbd5e1; border-radius:10px; background:#f8fafc;">
+              <div style="font-weight:600; font-size:13px; margin-bottom:8px; color:#0f172a;">New Measurement Unit Details</div>
+              <div style="display:grid; gap:10px;">
+                <div>
+                  <label class="form-label" style="font-size:12px;">Unit Name</label>
+                  <input class="form-input" id="newUnitName" placeholder="e.g. Gigajoules, Therms, Barrels" />
+                </div>
+                <div>
+                  <label class="form-label" style="font-size:12px;">Unit Symbol / Code</label>
+                  <input class="form-input" id="newUnitCode" placeholder="e.g. GJ, thm, bbl" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn-outline" type="button" onclick="Utils.toggleModal('rtModal', false)">Cancel</button>
+          <button class="btn-primary" type="submit">Save Resource Type</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD MEASUREMENT UNIT -->
+  <div class="modal-overlay" id="unitModal">
+    <div class="modal modal--sm">
+      <button class="modal__close" type="button" onclick="Utils.toggleModal('unitModal', false)">
+        <img src="../assets/icons/x0.svg" alt="X" />
+      </button>
+      <div class="modal__header">
+        <h2 class="modal__title" id="unitModalTitle">Add Measurement Unit</h2>
+      </div>
+      <form id="formUnit">
+        <div class="modal__body">
+          <input type="hidden" id="unitEditId" />
+          <div style="display:grid; grid-template-columns:1fr; gap:14px;">
+            <div>
+              <label class="form-label">Unit Name</label>
+              <input class="form-input" id="unitNameInput" placeholder="e.g. Gigajoules, Therms, Barrels" required />
+            </div>
+            <div>
+              <label class="form-label">Unit Code / Symbol</label>
+              <input class="form-input" id="unitCodeInput" placeholder="e.g. GJ, thm, bbl" required />
+            </div>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn-outline" type="button" onclick="Utils.toggleModal('unitModal', false)">Cancel</button>
+          <button class="btn-primary" type="submit">Save Measurement Unit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast toast--success" id="toastMessage">
+    <div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt="" /></div>
+    <p class="toast__text" id="toastText"></p>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
+      const $ = id => document.getElementById(id);
+      const db = () => Utils.ensureCollections(Utils.getDB());
+
+      let mode = 'factors';
+      let selectedSourceId = null;
+
+      // Ensure seed data for Resource Types, Units, and Compatibilities if empty
+      function ensureSeedData() {
+        const state = db();
+        let changed = false;
+
+        if (!Array.isArray(state.units) || state.units.length === 0) {
+          state.units = [
+            { id: 'u-litres', name: 'Litres', code: 'L', active: true },
+            { id: 'u-gallons', name: 'Gallons', code: 'gal', active: true },
+            { id: 'u-kwh', name: 'Kilowatt-hours', code: 'kWh', active: true },
+            { id: 'u-mwh', name: 'Megawatt-hours', code: 'MWh', active: true },
+            { id: 'u-m3', name: 'Cubic Meters', code: 'm³', active: true },
+            { id: 'u-kg', name: 'Kilograms', code: 'kg', active: true },
+            { id: 'u-t', name: 'Metric Tons', code: 't', active: true }
+          ];
+          changed = true;
+        }
+
+        if (!Array.isArray(state.resourceTypes) || state.resourceTypes.length === 0) {
+          state.resourceTypes = [
+            { id: 'rt-diesel', name: 'Diesel', defaultUnitId: 'u-litres', active: true },
+            { id: 'rt-electricity', name: 'Electricity', defaultUnitId: 'u-kwh', active: true },
+            { id: 'rt-gas', name: 'Natural Gas', defaultUnitId: 'u-m3', active: true },
+            { id: 'rt-petrol', name: 'Petrol', defaultUnitId: 'u-litres', active: true },
+            { id: 'rt-water', name: 'Water', defaultUnitId: 'u-m3', active: true }
+          ];
+          changed = true;
+        }
+
+        if (!Array.isArray(state.resourceUnitCompatibilities) || state.resourceUnitCompatibilities.length === 0) {
+          state.resourceUnitCompatibilities = [
+            { id: 'c-1', resourceTypeId: 'rt-diesel', unitId: 'u-litres', active: true },
+            { id: 'c-2', resourceTypeId: 'rt-diesel', unitId: 'u-gallons', active: true },
+            { id: 'c-3', resourceTypeId: 'rt-electricity', unitId: 'u-kwh', active: true },
+            { id: 'c-4', resourceTypeId: 'rt-electricity', unitId: 'u-mwh', active: true },
+            { id: 'c-5', resourceTypeId: 'rt-gas', unitId: 'u-m3', active: true },
+            { id: 'c-6', resourceTypeId: 'rt-gas', unitId: 'u-kwh', active: true },
+            { id: 'c-7', resourceTypeId: 'rt-petrol', unitId: 'u-litres', active: true },
+            { id: 'c-8', resourceTypeId: 'rt-petrol', unitId: 'u-gallons', active: true },
+            { id: 'c-9', resourceTypeId: 'rt-water', unitId: 'u-m3', active: true },
+            { id: 'c-10', resourceTypeId: 'rt-water', unitId: 'u-litres', active: true }
+          ];
+          changed = true;
+        }
+
+        if (changed) {
+          Utils.replaceDB(state);
+        }
+      }
+
+      ensureSeedData();
+
+      // Lookups
+      const unitLabel = id => (db().units.find(u => u.id === id) || {}).name || '--';
+      const unitCode = id => (db().units.find(u => u.id === id) || {}).code || '';
+      const rtLabel = id => (db().resourceTypes.find(rt => rt.id === id) || {}).name || '--';
+      const sourceLabel = id => (db().factorSources.find(s => s.id === id) || {}).name || '--';
+      const versionLabel = id => (db().factorVersions.find(v => v.id === id) || {}).name || '--';
+
+      function switchMode(next) {
+        mode = next;
+        $('factorsTab').classList.toggle('active', next === 'factors');
+        $('datasetsTab').classList.toggle('active', next === 'datasets');
+        $('unitsTab').classList.toggle('active', next === 'units');
+
+        $('factorsView').classList.toggle('active', next === 'factors');
+        $('datasetsView').classList.toggle('active', next === 'datasets');
+        $('unitsView').classList.toggle('active', next === 'units');
+
+        if (next === 'factors') {
+          $('sectionTitle').textContent = 'Emission Factors';
+          $('sectionDesc').textContent = 'Manage conversion factor rates and departmental scope assignments.';
+          $('openFormBtn').textContent = '+ Add Factor';
+          $('addUnitBtn').classList.add('hidden');
+        } else if (next === 'datasets') {
+          $('sectionTitle').textContent = 'Datasets & Versions';
+          $('sectionDesc').textContent = 'Select a dataset source to view and govern its version editions.';
+          $('openFormBtn').textContent = '+ Add Source';
+          $('addUnitBtn').classList.add('hidden');
+        } else {
+          $('sectionTitle').textContent = 'Resource Types & Unit Compatibilities';
+          $('sectionDesc').textContent = 'Manage accepted measurement units and compatibilities for resource types.';
+          $('openFormBtn').textContent = '+ Add Resource Type';
+          $('addUnitBtn').classList.remove('hidden');
+        }
+      }
+
+      $('factorsTab').onclick = () => switchMode('factors');
+      $('datasetsTab').onclick = () => switchMode('datasets');
+      $('unitsTab').onclick = () => switchMode('units');
+
+      $('openFormBtn').onclick = () => {
+        if (mode === 'factors') openFactorModal();
+        else if (mode === 'datasets') openSourceModal();
+        else if (mode === 'units') openRtModal();
+      };
+
+      $('addUnitBtn').onclick = () => openUnitModal();
+
+      $('addVersionBtn').onclick = () => {
+        openVersionModal(null, selectedSourceId);
+      };
+
+      // ==========================================
+      // RENDER 1: PRIMARY FACTORS VIEW
+      // ==========================================
+      function renderFactors() {
+        const state = db();
+        const q = ($('searchFactors').value || '').trim().toLowerCase();
+
+        const factors = state.emissionFactors.filter(f => {
+          if (!q) return true;
+          return [
+            rtLabel(f.resourceTypeId),
+            unitLabel(f.unitId),
+            sourceLabel(f.sourceId),
+            versionLabel(f.versionId),
+            f.factorUnit,
+            f.scope,
+            String(f.factor)
+          ].some(val => String(val || '').toLowerCase().includes(q));
+        });
+
+        $('badgeFactorsCount').textContent = `${factors.length} factor${factors.length === 1 ? '' : 's'}`;
+
+        $('tbodyFactors').innerHTML = factors.map(f => {
+          const isActive = f.active !== false;
+          const scopeStr = f.scope || 'Scope 1';
+          const srcLabel = sourceLabel(f.sourceId);
+          const verLabel = versionLabel(f.versionId);
+          const sourceVersionStr = verLabel && verLabel !== '--' ? `${srcLabel} (${verLabel})` : srcLabel;
+
+          return `
+            <tr>
+              <td class="td--bold">${rtLabel(f.resourceTypeId)}</td>
+              <td class="td--muted">${unitLabel(f.unitId)}</td>
+              <td><span style="font-weight:700; color:#0f172a; font-size:14px;">${Number(f.factor || 0).toFixed(4)} ${f.factorUnit || ''}</span></td>
+              <td class="td--muted">${scopeStr}</td>
+              <td class="td--muted">${sourceVersionStr}</td>
+              <td><span class="status-badge status-badge--${isActive ? 'green' : 'amber'}">${isActive ? 'Active' : 'Archived'}</span></td>
+              <td>
+                <div class="actions">
+                  <button class="action-btn" onclick="editFactor('${f.id}')">Edit</button>
+                  <button class="action-btn ${isActive ? 'warn' : 'success'}" onclick="toggleFactor('${f.id}')">
+                    ${isActive ? 'Archive' : 'Restore'}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('') || Utils.renderEmptyTableRow(7, 'No Emission Factors Found', 'No emission factors match the current search query.', 'search');
+      }
+
+      // ==========================================
+      // RENDER 2: SOURCES & VERSIONS VIEW (MASTER-DETAIL)
+      // ==========================================
+      function renderSourcesAndVersions() {
+        const state = db();
+        const q = ($('searchSources').value || '').trim().toLowerCase();
+        const sources = state.factorSources.filter(s => {
+          if (!q) return true;
+          return [s.name, s.publisher, s.region, s.datasetName].some(v => String(v || '').toLowerCase().includes(q));
+        });
+
+        if (sources.length > 0 && (!selectedSourceId || !state.factorSources.some(s => s.id === selectedSourceId))) {
+          selectedSourceId = sources[0].id;
+        }
+
+        $('badgeSourcesCount').textContent = `${sources.length} source${sources.length === 1 ? '' : 's'}`;
+
+        $('tbodySources').innerHTML = sources.map(s => {
+          const isActive = s.active !== false;
+          const isSelected = s.id === selectedSourceId;
+          const versionsCount = state.factorVersions.filter(v => v.sourceId === s.id && v.status !== 'Archived').length;
+          return `
+            <tr style="cursor:pointer; ${isSelected ? 'background: #eff6ff;' : ''}" onclick="selectSource('${s.id}')">
+              <td class="td--bold">${s.name} ${isSelected ? '<span class="status-badge status-badge--blue" style="margin-left:6px; font-size:11px;">Selected</span>' : ''}</td>
+              <td class="td--muted">${s.publisher || '--'}</td>
+              <td class="td--muted">${s.datasetName || s.name}</td>
+              <td><strong>${versionsCount}</strong> active version${versionsCount === 1 ? '' : 's'}</td>
+              <td><span class="status-badge status-badge--${isActive ? 'green' : 'amber'}">${isActive ? 'Active' : 'Archived'}</span></td>
+              <td onclick="event.stopPropagation()">
+                <div class="actions">
+                  <button class="action-btn" onclick="editSource('${s.id}')">Edit</button>
+                  <button class="action-btn ${isActive ? 'warn' : 'success'}" onclick="toggleSource('${s.id}')">
+                    ${isActive ? 'Archive' : 'Restore'}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('') || Utils.renderEmptyTableRow(6, 'No Factor Sources Found', 'No factor sources match the current search query.', 'search');
+
+        // Update Versions Section
+        const currentSource = state.factorSources.find(s => s.id === selectedSourceId);
+        if (currentSource) {
+          $('versionSectionTitle').textContent = `Versions & Editions – ${currentSource.name}`;
+          $('versionSectionDesc').textContent = `Manage version editions and baseline sets for ${currentSource.name}.`;
+        } else {
+          $('versionSectionTitle').textContent = 'Versions & Editions';
+          $('versionSectionDesc').textContent = 'Select a dataset source above to view its version editions.';
+        }
+
+        const visibleVersions = state.factorVersions.filter(v => !selectedSourceId || v.sourceId === selectedSourceId);
+
+        $('tbodyVersions').innerHTML = visibleVersions.map(v => {
+          const factorsCount = state.emissionFactors.filter(f => f.versionId === v.id && f.active !== false).length;
+          const statusClass = v.status === 'Active' ? 'green' : (v.status === 'Draft' ? 'amber' : 'red');
+          return `
+            <tr>
+              <td class="td--bold">${v.name}</td>
+              <td class="td--muted">${sourceLabel(v.sourceId)}</td>
+              <td class="td--muted">${v.datasetYear || '--'}</td>
+              <td><strong>${factorsCount}</strong> factor${factorsCount === 1 ? '' : 's'}</td>
+              <td><span class="status-badge status-badge--${statusClass}">${v.status}</span></td>
+              <td>
+                <div class="actions">
+                  <button class="action-btn accent" onclick="filterFactorsByVersion('${v.id}')">View Factors</button>
+                  <button class="action-btn" onclick="editVersion('${v.id}')">Edit</button>
+                  <button class="action-btn" onclick="openFactorModalForVersion('${v.sourceId}', '${v.id}')">+ Factor</button>
+                  ${v.status === 'Draft' ? `<button class="action-btn success" onclick="activateVersion('${v.id}')">Activate</button>` : ''}
+                  ${v.status === 'Active' || v.status === 'Draft' ? `<button class="action-btn warn" onclick="archiveVersion('${v.id}')">Archive</button>` : ''}
+                  ${v.status === 'Archived' ? `<button class="action-btn success" onclick="restoreVersion('${v.id}')">Restore</button>` : ''}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('') || Utils.renderEmptyTableRow(6, 'No Factor Versions Found', 'No factor versions found for the selected dataset source.', 'search');
+      }
+
+      window.selectSource = function(id) {
+        selectedSourceId = id;
+        renderSourcesAndVersions();
+        const vSection = $('versionsSection');
+        if (vSection) vSection.scrollIntoView({ behavior: 'smooth' });
+      };
+
+      // ==========================================
+      // RENDER 3: RESOURCE TYPES & UNITS VIEW
+      // ==========================================
+      function renderUnits() {
+        const state = db();
+        const q = ($('searchUnits')?.value || '').trim().toLowerCase();
+
+        // 1. Measurement Units Catalog
+        const units = state.units.filter(u => {
+          if (!q) return true;
+          return [u.name, u.code].some(val => String(val || '').toLowerCase().includes(q));
+        });
+
+        $('badgeUnitsCatalogCount').textContent = `${units.length} unit${units.length === 1 ? '' : 's'}`;
+
+        $('tbodyUnitsCatalog').innerHTML = units.map(u => {
+          const isActive = u.active !== false;
+          return `
+            <tr>
+              <td class="td--bold">${u.name}</td>
+              <td><span class="status-badge status-badge--blue" style="font-family:monospace; font-size:12px;">${u.code}</span></td>
+              <td><span class="status-badge status-badge--${isActive ? 'green' : 'amber'}">${isActive ? 'Active' : 'Archived'}</span></td>
+              <td>
+                <div class="actions">
+                  <button class="action-btn" onclick="editUnit('${u.id}')">Edit</button>
+                  <button class="action-btn ${isActive ? 'warn' : 'success'}" onclick="toggleUnit('${u.id}')">
+                    ${isActive ? 'Archive' : 'Restore'}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('') || Utils.renderEmptyTableRow(4, 'No Measurement Units Found', 'No measurement units match the current search query.', 'search');
+
+        // 2. Resource Types
+        const rts = state.resourceTypes.filter(r => {
+          if (r.active === false) return false;
+          if (!q) return true;
+          const compatUnitIds = state.resourceUnitCompatibilities
+            .filter(c => c.resourceTypeId === r.id && c.active !== false)
+            .map(c => c.unitId);
+          const compatNames = compatUnitIds.map(uId => `${unitLabel(uId)} ${unitCode(uId)}`).join(' ');
+          return [r.name, unitLabel(r.defaultUnitId || r.unitId), compatNames].some(val => String(val || '').toLowerCase().includes(q));
+        });
+
+        $('badgeRtCount').textContent = `${rts.length} resource type${rts.length === 1 ? '' : 's'}`;
+        $('badgeUnitsCount').textContent = `${units.length} unit${units.length === 1 ? '' : 's'}, ${rts.length} resource type${rts.length === 1 ? '' : 's'}`;
+
+        $('tbodyUnits').innerHTML = rts.map(r => {
+          const defaultUnitName = unitLabel(r.defaultUnitId || r.unitId);
+          const compatUnitIds = state.resourceUnitCompatibilities
+            .filter(c => c.resourceTypeId === r.id && c.active !== false)
+            .map(c => c.unitId);
+
+          const unitText = compatUnitIds.map(uId => {
+            const u = state.units.find(entry => entry.id === uId);
+            return u ? `${u.name} (${u.code})` : '';
+          }).filter(Boolean).join(', ') || 'None configured';
+
+          return `
+            <tr>
+              <td class="td--bold">${r.name}</td>
+              <td class="td--muted">${defaultUnitName}</td>
+              <td class="td--muted">${unitText}</td>
+              <td>
+                <div class="actions">
+                  <button class="action-btn accent" onclick="openManageUnitsModal('${r.id}')">Manage Accepted Units</button>
+                  <button class="action-btn" onclick="editRt('${r.id}')">Edit</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('') || Utils.renderEmptyTableRow(4, 'No Resource Types Found', 'No resource types match the current search query.', 'search');
+      }
+
+      function renderAll() {
+        renderFactors();
+        renderSourcesAndVersions();
+        renderUnits();
+      }
+
+      // ==========================================
+      // MODAL CONTROLS & FORM HANDLERS
+      // ==========================================
+
+      function syncFactorModalUnits() {
+        const state = db();
+        const selectedRtId = $('efRt').value;
+        const compatUnitIds = state.resourceUnitCompatibilities
+          .filter(c => c.resourceTypeId === selectedRtId && c.active !== false)
+          .map(c => c.unitId);
+        const allowedUnits = state.units.filter(u => u.active !== false && compatUnitIds.includes(u.id));
+
+        if (allowedUnits.length > 0) {
+          $('efUnit').innerHTML = allowedUnits.map(u => `<option value="${u.id}">${u.name} (${u.code})</option>`).join('');
+          $('efUnit').disabled = false;
+          $('unitCompatHelp').textContent = `${allowedUnits.length} accepted unit(s) available for this resource.`;
+          $('unitCompatHelp').style.color = '#64748b';
+        } else {
+          $('efUnit').innerHTML = `<option value="">No compatible unit configured</option>`;
+          $('efUnit').disabled = true;
+          $('unitCompatHelp').textContent = `No compatible units configured. Add compatibility in Resource Types & Units tab.`;
+          $('unitCompatHelp').style.color = '#dc2626';
+        }
+        suggestFactorUnit();
+      }
+
+      function suggestFactorUnit() {
+        const unit = db().units.find(u => u.id === $('efUnit').value);
+        if (unit) {
+          $('efFactorUnit').value = `kgCO2e/${unit.code || unit.name}`;
+        }
+      }
+
+      function syncFactorModalVersions() {
+        const state = db();
+        const selectedSourceId = $('efSource').value;
+        const matchingVersions = state.factorVersions.filter(v => v.sourceId === selectedSourceId && v.status !== 'Archived');
+
+        if (matchingVersions.length > 0) {
+          $('efVersion').innerHTML = matchingVersions.map(v => `<option value="${v.id}">${v.name} (${v.status})</option>`).join('');
+          $('efVersion').disabled = false;
+        } else {
+          $('efVersion').innerHTML = `<option value="">No active version for this source</option>`;
+          $('efVersion').disabled = true;
+        }
+      }
+
+      window.openFactorModal = function(editFactorObj = null, prefillSourceId = null, prefillVersionId = null) {
+        const state = db();
+        const sources = state.factorSources.filter(s => s.active !== false);
+        const rts = state.resourceTypes.filter(t => t.active !== false);
+
+        $('efSource').innerHTML = sources.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        $('efRt').innerHTML = rts.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+
+        if (prefillSourceId) $('efSource').value = prefillSourceId;
+        syncFactorModalVersions();
+        if (prefillVersionId) $('efVersion').value = prefillVersionId;
+
+        syncFactorModalUnits();
+
+        if (editFactorObj) {
+          $('factorModalTitle').textContent = 'Edit Emission Factor';
+          $('factorEditId').value = editFactorObj.id;
+          $('efSource').value = editFactorObj.sourceId;
+          syncFactorModalVersions();
+          $('efVersion').value = editFactorObj.versionId;
+          $('efRt').value = editFactorObj.resourceTypeId;
+          syncFactorModalUnits();
+          $('efUnit').value = editFactorObj.unitId;
+          $('efValue').value = editFactorObj.factor;
+          $('efFactorUnit').value = editFactorObj.factorUnit;
+          $('efScope').value = editFactorObj.scope || 'Scope 1';
+          $('efGeo').value = editFactorObj.geography || 'IN';
+        } else {
+          $('factorModalTitle').textContent = 'Add Emission Factor';
+          $('factorEditId').value = '';
+          $('efValue').value = '';
+          $('efScope').value = 'Scope 1';
+          $('efGeo').value = 'IN';
+          suggestFactorUnit();
+        }
+
+        Utils.toggleModal('factorModal', true);
+      };
+
+      $('efSource').addEventListener('change', syncFactorModalVersions);
+      $('efRt').addEventListener('change', syncFactorModalUnits);
+      $('efUnit').addEventListener('change', suggestFactorUnit);
+
+      $('formFactor').onsubmit = e => {
+        e.preventDefault();
+        const state = db();
+        const editId = $('factorEditId').value;
+        const sourceId = $('efSource').value;
+        const versionId = $('efVersion').value;
+        const resourceTypeId = $('efRt').value;
+        const unitId = $('efUnit').value;
+        const factor = parseFloat($('efValue').value);
+        const factorUnit = $('efFactorUnit').value.trim();
+        const scope = $('efScope').value;
+        const geography = $('efGeo').value.trim() || 'IN';
+
+        if (!sourceId || !versionId || !resourceTypeId || !unitId || isNaN(factor) || factor < 0 || !factorUnit) {
+          Utils.showToast('Please provide valid factor values and selections.', 'error');
+          return;
+        }
+
+        if (!state.resourceUnitCompatibilities.some(c => c.resourceTypeId === resourceTypeId && c.unitId === unitId && c.active !== false)) {
+          Utils.showToast('Selected Resource Type and Unit are not compatible.', 'error');
+          return;
+        }
+
+        const version = state.factorVersions.find(v => v.id === versionId);
+
+        const payload = {
+          id: editId || Utils.generateId('ef'),
+          sourceId,
+          versionId,
+          resourceTypeId,
+          unitId,
+          factor,
+          factorUnit,
+          geography,
+          scope,
+          validFrom: version?.effectiveFrom || '2025-01-01',
+          validTo: version?.effectiveTo || '',
+          active: true
+        };
+
+        if (editId) {
+          const idx = state.emissionFactors.findIndex(f => f.id === editId);
+          if (idx > -1) state.emissionFactors[idx] = { ...state.emissionFactors[idx], ...payload };
+          Utils.logAction(`Updated emission factor for ${rtLabel(resourceTypeId)} (${payload.factor} ${payload.factorUnit})`, 'Success', 'green');
+        } else {
+          state.emissionFactors.unshift(payload);
+          Utils.logAction(`Created emission factor for ${rtLabel(resourceTypeId)} (${payload.factor} ${payload.factorUnit})`, 'Success', 'green');
+        }
+
+        Utils.replaceDB(state);
+        Utils.toggleModal('factorModal', false);
+        renderAll();
+        Utils.showToast(editId ? 'Emission factor updated successfully.' : 'Emission factor created successfully.');
+      };
+
+      // Source Modal & Form
+      window.openSourceModal = function(editSourceObj = null) {
+        if (editSourceObj) {
+          $('sourceModalTitle').textContent = 'Edit Factor Source';
+          $('sourceEditId').value = editSourceObj.id;
+          $('fsName').value = editSourceObj.name;
+          $('fsPub').value = editSourceObj.publisher;
+          $('fsRegion').value = editSourceObj.region;
+          $('fsMethod').value = editSourceObj.acquisitionMethod || 'Published Dataset';
+          $('fsDataset').value = editSourceObj.datasetName || '';
+        } else {
+          $('sourceModalTitle').textContent = 'Add Factor Source / Dataset';
+          $('sourceEditId').value = '';
+          $('formSource').reset();
+          $('fsRegion').value = 'Global';
+        }
+        Utils.toggleModal('sourceModal', true);
+      };
+
+      $('formSource').onsubmit = e => {
+        e.preventDefault();
+        const state = db();
+        const editId = $('sourceEditId').value;
+        const name = $('fsName').value.trim();
+        const publisher = $('fsPub').value.trim();
+        const region = $('fsRegion').value.trim();
+        const acquisitionMethod = $('fsMethod').value;
+        const datasetName = $('fsDataset').value.trim();
+
+        if (!name || !publisher || !region) {
+          Utils.showToast('Source name, publisher, and region are required.', 'error');
+          return;
+        }
+
+        const payload = {
+          id: editId || Utils.generateId('efs'),
+          name,
+          publisher,
+          region,
+          acquisitionMethod,
+          datasetName: datasetName || name,
+          active: true
+        };
+
+        if (editId) {
+          const idx = state.factorSources.findIndex(s => s.id === editId);
+          if (idx > -1) state.factorSources[idx] = { ...state.factorSources[idx], ...payload };
+          Utils.logAction(`Updated factor source ${name}`, 'Success', 'green');
+        } else {
+          state.factorSources.unshift(payload);
+          selectedSourceId = payload.id;
+          Utils.logAction(`Created factor source ${name}`, 'Success', 'green');
+        }
+
+        Utils.replaceDB(state);
+        Utils.toggleModal('sourceModal', false);
+        renderAll();
+        Utils.showToast('Factor source saved successfully.');
+      };
+
+      // Version Modal & Form
+      window.openVersionModal = function(editVersionObj = null, prefillSourceId = null) {
+        const state = db();
+        const sources = state.factorSources.filter(s => s.active !== false);
+        $('fvSource').innerHTML = sources.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+        if (prefillSourceId) $('fvSource').value = prefillSourceId;
+
+        if (editVersionObj) {
+          $('versionModalTitle').textContent = 'Edit Factor Version';
+          $('versionEditId').value = editVersionObj.id;
+          $('fvSource').value = editVersionObj.sourceId;
+          $('fvName').value = editVersionObj.name;
+          $('fvYear').value = editVersionObj.datasetYear || '';
+          $('fvFrom').value = editVersionObj.effectiveFrom || '';
+          $('fvTo').value = editVersionObj.effectiveTo || '';
+        } else {
+          $('versionModalTitle').textContent = 'Add Factor Version';
+          $('versionEditId').value = '';
+          $('formVersion').reset();
+          if (prefillSourceId) $('fvSource').value = prefillSourceId;
+          $('fvFrom').value = new Date().toISOString().slice(0, 10);
+        }
+        Utils.toggleModal('versionModal', true);
+      };
+
+      $('formVersion').onsubmit = e => {
+        e.preventDefault();
+        const state = db();
+        const editId = $('versionEditId').value;
+        const sourceId = $('fvSource').value;
+        const name = $('fvName').value.trim();
+        const datasetYear = $('fvYear').value.trim();
+        const effectiveFrom = $('fvFrom').value;
+        const effectiveTo = $('fvTo').value;
+
+        if (!sourceId || !name || !effectiveFrom) {
+          Utils.showToast('Source, version name, and effective from date are required.', 'error');
+          return;
+        }
+
+        const source = state.factorSources.find(s => s.id === sourceId);
+        const payload = {
+          id: editId || Utils.generateId('fv'),
+          sourceId,
+          name,
+          datasetName: source?.datasetName || '',
+          datasetYear: datasetYear || new Date().getFullYear().toString(),
+          importedAt: new Date().toISOString(),
+          importedBy: (Utils.getCurrentUser() || {}).name || 'Super User',
+          effectiveFrom,
+          effectiveTo,
+          status: editId ? (state.factorVersions.find(v => v.id === editId)?.status || 'Draft') : 'Draft',
+          locked: false
+        };
+
+        if (editId) {
+          const idx = state.factorVersions.findIndex(v => v.id === editId);
+          if (idx > -1) state.factorVersions[idx] = { ...state.factorVersions[idx], ...payload };
+          Utils.logAction(`Updated factor version ${name}`, 'Success', 'green');
+        } else {
+          state.factorVersions.unshift(payload);
+          Utils.logAction(`Created factor version "${name}" as Draft`, 'Success', 'green');
+        }
+
+        Utils.replaceDB(state);
+        Utils.toggleModal('versionModal', false);
+        renderAll();
+        Utils.showToast(editId ? 'Factor version updated.' : 'Factor version saved as Draft. Use Activate to publish.');
+      };
+
+      // MANAGE ACCEPTED UNITS MODAL
+      window.openManageUnitsModal = function(rtId) {
+        const state = db();
+        const rt = state.resourceTypes.find(r => r.id === rtId);
+        if (!rt) return;
+
+        $('manageUnitsTitle').textContent = `Manage Accepted Units – ${rt.name}`;
+        $('manageUnitsRtId').value = rtId;
+
+        const currentCompatIds = state.resourceUnitCompatibilities
+          .filter(c => c.resourceTypeId === rtId && c.active !== false)
+          .map(c => c.unitId);
+
+        const html = state.units.filter(u => u.active !== false).map(u => {
+          const isChecked = currentCompatIds.includes(u.id);
+          return `
+            <label class="assignment-item">
+              <input type="checkbox" value="${u.id}" ${isChecked ? 'checked' : ''}>
+              <span>${u.name} (${u.code})</span>
+            </label>
+          `;
+        }).join('') || '<span class="text--muted">No measurement units found.</span>';
+
+        $('unitCheckboxList').innerHTML = html;
+        Utils.toggleModal('manageUnitsModal', true);
+      };
+
+      $('formManageUnits').onsubmit = e => {
+        e.preventDefault();
+        const state = db();
+        const rtId = $('manageUnitsRtId').value;
+        const rt = state.resourceTypes.find(r => r.id === rtId);
+        if (!rt) return;
+
+        const checkedBoxes = Array.from(document.querySelectorAll('#unitCheckboxList input[type="checkbox"]:checked'));
+        const checkedUnitIds = checkedBoxes.map(cb => cb.value);
+
+        if (checkedUnitIds.length === 0) {
+          Utils.showToast('Please select at least one accepted measurement unit.', 'error');
+          return;
+        }
+
+        state.resourceUnitCompatibilities = state.resourceUnitCompatibilities.filter(c => c.resourceTypeId !== rtId);
+
+        checkedUnitIds.forEach((uId, idx) => {
+          state.resourceUnitCompatibilities.push({
+            id: `c-${rtId}-${uId}-${idx}`,
+            resourceTypeId: rtId,
+            unitId: uId,
+            active: true
+          });
+        });
+
+        Utils.replaceDB(state);
+        Utils.toggleModal('manageUnitsModal', false);
+        renderAll();
+        Utils.showToast(`Accepted units saved for ${rt.name}.`);
+      };
+
+      // ADD / EDIT RESOURCE TYPE MODAL
+      window.openRtModal = function(editRtObj = null) {
+        const state = db();
+        const unitOptions = state.units.filter(u => u.active !== false).map(u => `<option value="${u.id}">${u.name} (${u.code})</option>`).join('');
+
+        if (editRtObj) {
+          $('rtModalTitle').textContent = 'Edit Resource Type';
+          $('rtEditId').value = editRtObj.id;
+          $('rtName').value = editRtObj.name;
+          $('rtDefaultUnit').innerHTML = unitOptions;
+          $('rtDefaultUnit').value = editRtObj.defaultUnitId || editRtObj.unitId || state.units[0]?.id;
+          $('newUnitFields').classList.add('hidden');
+        } else {
+          $('rtModalTitle').textContent = 'Add Resource Type';
+          $('rtEditId').value = '';
+          $('rtName').value = '';
+          $('rtDefaultUnit').innerHTML = unitOptions + `<option value="__new__">+ Create New Unit...</option>`;
+          $('rtDefaultUnit').value = state.units[0]?.id || '__new__';
+          $('newUnitFields').classList.add('hidden');
+          $('newUnitName').value = '';
+          $('newUnitCode').value = '';
+        }
+        Utils.toggleModal('rtModal', true);
+      };
+
+      $('rtDefaultUnit').addEventListener('change', () => {
+        if ($('rtDefaultUnit').value === '__new__') {
+          $('newUnitFields').classList.remove('hidden');
+        } else {
+          $('newUnitFields').classList.add('hidden');
+        }
+      });
+
+      $('formRt').onsubmit = e => {
+        e.preventDefault();
+        const state = db();
+        const editId = $('rtEditId').value;
+        const name = $('rtName').value.trim();
+        let defaultUnitId = $('rtDefaultUnit').value;
+
+        if (!name) {
+          Utils.showToast('Resource Type Name is required.', 'error');
+          return;
+        }
+
+        if (defaultUnitId === '__new__') {
+          const uName = $('newUnitName').value.trim();
+          const uCode = $('newUnitCode').value.trim();
+          if (!uName || !uCode) {
+            Utils.showToast('Please provide Name and Symbol for the new measurement unit.', 'error');
+            return;
+          }
+          const newUnitId = Utils.generateId('u');
+          state.units.push({
+            id: newUnitId,
+            name: uName,
+            code: uCode,
+            active: true
+          });
+          defaultUnitId = newUnitId;
+        }
+
+        if (editId) {
+          const idx = state.resourceTypes.findIndex(r => r.id === editId);
+          if (idx > -1) {
+            state.resourceTypes[idx].name = name;
+            state.resourceTypes[idx].defaultUnitId = defaultUnitId;
+            state.resourceTypes[idx].unitId = defaultUnitId;
+          }
+          if (!state.resourceUnitCompatibilities.some(c => c.resourceTypeId === editId && c.unitId === defaultUnitId && c.active !== false)) {
+            state.resourceUnitCompatibilities.push({
+              id: Utils.generateId('c'),
+              resourceTypeId: editId,
+              unitId: defaultUnitId,
+              active: true
+            });
+          }
+          Utils.logAction(`Updated resource type ${name}`, 'Success', 'green');
+        } else {
+          const rtId = Utils.generateId('rt');
+          const payload = {
+            id: rtId,
+            name,
+            defaultUnitId,
+            unitId: defaultUnitId,
+            active: true
+          };
+
+          state.resourceTypes.unshift(payload);
+          state.resourceUnitCompatibilities.push({
+            id: Utils.generateId('c'),
+            resourceTypeId: rtId,
+            unitId: defaultUnitId,
+            active: true
+          });
+          Utils.logAction(`Created resource type ${name}`, 'Success', 'green');
+        }
+
+        Utils.replaceDB(state);
+        Utils.toggleModal('rtModal', false);
+        renderAll();
+        Utils.showToast(editId ? `Resource Type "${name}" updated successfully.` : `Resource Type "${name}" created successfully.`);
+      };
+
+      // ADD / EDIT MEASUREMENT UNIT MODAL
+      window.openUnitModal = function(editUnitObj = null) {
+        if (editUnitObj) {
+          $('unitModalTitle').textContent = 'Edit Measurement Unit';
+          $('unitEditId').value = editUnitObj.id;
+          $('unitNameInput').value = editUnitObj.name;
+          $('unitCodeInput').value = editUnitObj.code;
+        } else {
+          $('unitModalTitle').textContent = 'Add Measurement Unit';
+          $('unitEditId').value = '';
+          $('unitNameInput').value = '';
+          $('unitCodeInput').value = '';
+        }
+        Utils.toggleModal('unitModal', true);
+      };
+
+      $('formUnit').onsubmit = e => {
+        e.preventDefault();
+        const state = db();
+        const editId = $('unitEditId').value;
+        const uName = $('unitNameInput').value.trim();
+        const uCode = $('unitCodeInput').value.trim();
+
+        if (!uName || !uCode) {
+          Utils.showToast('Unit name and symbol/code are required.', 'error');
+          return;
+        }
+
+        if (editId) {
+          const idx = state.units.findIndex(u => u.id === editId);
+          if (idx > -1) {
+            state.units[idx].name = uName;
+            state.units[idx].code = uCode;
+          }
+          Utils.logAction(`Updated measurement unit ${uName} (${uCode})`, 'Success', 'green');
+        } else {
+          const newUnitId = Utils.generateId('u');
+          state.units.push({
+            id: newUnitId,
+            name: uName,
+            code: uCode,
+            active: true
+          });
+          Utils.logAction(`Created measurement unit ${uName} (${uCode})`, 'Success', 'green');
+        }
+
+        Utils.replaceDB(state);
+        Utils.toggleModal('unitModal', false);
+        renderAll();
+        Utils.showToast(editId ? `Measurement unit "${uName} (${uCode})" updated.` : `Measurement unit "${uName} (${uCode})" created successfully.`);
+      };
+
+      window.editUnit = function(id) {
+        const unit = db().units.find(u => u.id === id);
+        if (unit) openUnitModal(unit);
+      };
+
+      window.toggleUnit = function(id) {
+        const state = db();
+        const unit = state.units.find(u => u.id === id);
+        if (!unit) return;
+        unit.active = unit.active === false;
+        Utils.replaceDB(state);
+        Utils.logAction(`${unit.active ? 'Restored' : 'Archived'} measurement unit ${unit.name}`, 'Success', 'green');
+        renderAll();
+        Utils.showToast(`Measurement unit ${unit.name} ${unit.active ? 'restored' : 'archived'}.`);
+      };
+
+      window.editRt = function(id) {
+        const rt = db().resourceTypes.find(r => r.id === id);
+        if (rt) openRtModal(rt);
+      };
+
+      // Actions & Quick Links
+      window.editFactor = function(id) {
+        const factor = db().emissionFactors.find(f => f.id === id);
+        if (factor) openFactorModal(factor);
+      };
+
+      window.editSource = function(id) {
+        const source = db().factorSources.find(s => s.id === id);
+        if (source) openSourceModal(source);
+      };
+
+      window.editVersion = function(id) {
+        const version = db().factorVersions.find(v => v.id === id);
+        if (version) openVersionModal(version);
+      };
+
+      document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', e => {
+          if (e.target === overlay) {
+            Utils.toggleModal(overlay.id, false);
+          }
+        });
+      });
+
+      window.toggleFactor = function(id) {
+        const state = db();
+        const factor = state.emissionFactors.find(f => f.id === id);
+        if (!factor) return;
+        factor.active = factor.active === false;
+        Utils.replaceDB(state);
+        Utils.logAction(`${factor.active ? 'Restored' : 'Archived'} emission factor ${id}`, 'Success', 'green');
+        renderAll();
+        Utils.showToast(`Factor ${factor.active ? 'restored' : 'archived'}.`);
+      };
+
+      window.toggleSource = function(id) {
+        const state = db();
+        const source = state.factorSources.find(s => s.id === id);
+        if (!source) return;
+        source.active = source.active === false;
+        Utils.replaceDB(state);
+        Utils.logAction(`${source.active ? 'Restored' : 'Archived'} factor source ${source.name}`, 'Success', 'green');
+        renderAll();
+        Utils.showToast(`Source ${source.active ? 'restored' : 'archived'}.`);
+      };
+
+      window.openVersionModalForSource = function(sourceId) {
+        openVersionModal(null, sourceId);
+      };
+
+      window.filterFactorsByVersion = function(versionId) {
+        switchMode('factors');
+        const version = db().factorVersions.find(v => v.id === versionId);
+        if (version && $('searchFactors')) $('searchFactors').value = version.name;
+        renderFactors();
+      };
+
+      window.openFactorModalForVersion = function(sourceId, versionId) {
+        openFactorModal(null, sourceId, versionId);
+      };
+
+      window.activateVersion = function(id) {
+        const state = db();
+        const version = state.factorVersions.find(v => v.id === id);
+        if (!version) return;
+        version.status = 'Active';
+        Utils.replaceDB(state);
+        Utils.logAction(`Activated factor version "${version.name}"`, 'Success', 'green');
+        renderAll();
+        Utils.showToast(`Version "${version.name}" is now Active.`);
+      };
+
+      window.archiveVersion = function(id) {
+        const state = db();
+        const version = state.factorVersions.find(v => v.id === id);
+        if (!version) return;
+        version.status = 'Archived';
+        version.locked = true;
+        Utils.replaceDB(state);
+        Utils.logAction(`Archived factor version "${version.name}"`, 'Warning', 'amber');
+        renderAll();
+        Utils.showToast(`Version archived.`);
+      };
+
+      window.restoreVersion = function(id) {
+        const state = db();
+        const version = state.factorVersions.find(v => v.id === id);
+        if (!version) return;
+        version.status = 'Draft';
+        version.locked = false;
+        Utils.replaceDB(state);
+        Utils.logAction(`Restored factor version "${version.name}" to Draft`, 'Success', 'green');
+        renderAll();
+        Utils.showToast(`Version restored to Draft status.`);
+      };
+
+      // Search Event Listeners
+      $('searchFactors').addEventListener('input', renderFactors);
+      $('searchSources').addEventListener('input', renderSourcesAndVersions);
+      $('searchUnits').addEventListener('input', renderUnits);
+
+      renderAll();
+      window.addEventListener('rorizon-db-updated', renderAll);
+      window.addEventListener('storage', renderAll);
+      Utils.startPolling(15000);
+    });
+  </script>
+</body>
+</html>

@@ -5,75 +5,804 @@
 <title>System Management - Rorizon Super User</title>
 <link rel="stylesheet" href="../../css/style.css">
 <style>
-.toggle-group{display:flex;gap:8px;margin-bottom:18px}.toggle-btn{padding:8px 14px;border:1px solid var(--border-light);background:#fff;border-radius:8px;cursor:pointer}.toggle-btn.active{background:var(--bg-surface);color:var(--text-hero)}.view{display:none}.view.active{display:block}.stack{display:grid;gap:16px}.helper-copy{margin:10px 0 18px;color:var(--text-muted);font-size:14px}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{background:none;border:none;padding:0;font:inherit;cursor:pointer;color:#2563eb}.actions .warn{color:#dc2626}.actions .accent{color:#7c3aed}.modal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.modal-card{max-width:820px;width:calc(100% - 32px)}.view-pairs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.view-box{padding:14px;border:1px solid var(--border-light);border-radius:12px;background:#f8fafc}.view-box span{display:block;font-size:12px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px}.view-box strong{font-size:15px;color:var(--text-hero)}.org-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}.org-toolbar .form-input{max-width:320px}.metric-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:600}.assignment-box{grid-column:1/-1;padding:14px;border:1px solid var(--border-light);border-radius:12px;background:#f8fafc}.assignment-box__title{font-size:12px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px}.assignment-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.assignment-item{display:flex;align-items:center;gap:8px;font-size:14px;color:#0f172a}.hidden{display:none!important}
+.toggle-group{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:16px;flex-wrap:wrap;gap:12px}.toggle-btn-group{display:flex;gap:8px}.view{display:none}.view.active{display:block}.stack{display:grid;gap:16px}.helper-copy{margin:10px 0 18px;color:var(--text-muted);font-size:14px}.actions{display:flex;gap:6px;flex-wrap:wrap}.action-btn{border:1px solid #cbd5e1!important;background:#fff!important;color:#0f172a!important;padding:5px 9px!important;border-radius:8px!important;font-size:12px!important;font-weight:700!important}.action-btn:hover{background:#f8fafc!important;border-color:#64748b!important}.action-btn.warn{color:#dc2626!important;border-color:#fca5a5!important}.action-btn.accent{border-color:#cbd5e1!important;background:#fff!important;color:#0f172a!important}.action-btn.success{color:#16a34a!important;border-color:#86efac!important}.modal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.modal-card{max-width:860px;width:calc(100% - 32px)}.modal-form-shell{display:grid;gap:20px}.modal-section{padding:20px;border:1px solid var(--border-light);border-radius:14px;background:#fff}.modal-section--muted{background:#f8fafc}.modal-section__title{margin:0 0 6px 0;font-size:15px;font-weight:700;color:#0f172a}.modal-section__copy{margin:0;color:#64748b;font-size:13px}.view-pairs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.view-box{padding:14px;border:1px solid var(--border-light);border-radius:12px;background:#f8fafc}.view-box span{display:block;font-size:12px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px}.view-box strong{font-size:15px;color:var(--text-hero)}.org-toolbar,.user-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}.user-toolbar .form-input,.org-toolbar .form-input{flex:1 1 0%;max-width:none}.metric-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#f8fafc;border:1px solid #e2e8f0;color:#0f172a;font-size:12px;font-weight:600}.assignment-box{grid-column:1/-1;padding:14px;border:1px solid var(--border-light);border-radius:12px;background:#f8fafc}.assignment-box__title{font-size:12px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px}.assignment-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.assignment-item{display:flex;align-items:center;gap:8px;font-size:14px;color:#0f172a}.form-span-2{grid-column:1/-1}.hidden{display:none!important}.data-table td,.data-table th{white-space:normal!important;word-break:break-word!important;overflow-wrap:break-word!important;line-height:1.45!important}
 </style>
 </head>
 <body>
-<div id="app-layout" data-title="System Management" data-subtitle="Approve organizations and govern platform access">
+<div id="app-layout" data-title="System Management" data-subtitle="Manage organizations and govern platform user access">
   <div class="card stack">
-    <div class="chart-header"><h2 class="card__title" id="sectionTitle">Manage Users</h2><button class="btn-primary" id="openFormBtn" type="button">+ Add User</button></div>
-    <p class="helper-copy">Organizations are companies. Each organization is created with a COO and can contain multiple departments.</p>
-    <div class="toggle-group"><button class="toggle-btn active" id="usersTab">Users</button><button class="toggle-btn" id="orgsTab">Organizations</button></div>
-    <div id="usersView" class="view active"><div class="table-wrapper"><table class="data-table"><thead><tr><th>NAME</th><th>ROLE</th><th>EMAIL</th><th>DEPARTMENT</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody id="userRows"></tbody></table></div></div>
+    <div class="chart-header">
+      <div>
+        <h2 class="card__title" id="sectionTitle">Manage Users</h2>
+        <p class="helper-copy" id="sectionDesc" style="margin:4px 0 0;">Platform-wide user accounts, roles, and departmental permissions.</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button class="btn-outline" id="openSuperUserBtn" type="button">+ Add Super User</button>
+        <button class="btn-primary" id="openFormBtn" type="button">+ Add User</button>
+      </div>
+    </div>
+    
+    <div class="toggle-group">
+      <div class="toggle-btn-group">
+        <button class="toggle-btn active" id="usersTab" type="button">Users</button>
+        <button class="toggle-btn" id="orgsTab" type="button">Organizations</button>
+      </div>
+    </div>
+
+    <!-- 1. USERS VIEW -->
+    <div id="usersView" class="view active">
+      <div class="user-toolbar">
+        <input class="form-input" id="userSearch" placeholder="Search users by name, email, role, or organization">
+        <span class="metric-chip" id="userResultCount">0 users</span>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr><th>NAME</th><th>ROLE</th><th>EMAIL</th><th>DEPARTMENT</th><th>STATUS</th><th>ACTIONS</th></tr>
+          </thead>
+          <tbody id="userRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. ORGANIZATIONS VIEW -->
     <div id="orgsView" class="view">
       <div class="org-toolbar">
-        <select class="form-input" id="orgDetailSelect"></select>
-        <span class="metric-chip" id="orgLimitSummary">0 departments</span>
+        <input class="form-input" id="orgSearch" placeholder="Search organizations by name, COO, or industry...">
+        <span class="metric-chip" id="orgResultCount">0 organizations</span>
       </div>
-      <div class="table-wrapper" style="margin-bottom:16px;"><table class="data-table"><thead><tr><th>ORGANIZATION</th><th>COO</th><th>DEPARTMENTS</th><th>REGISTRATION</th><th>TARGET</th><th>ACTIONS</th></tr></thead><tbody id="orgRows"></tbody></table></div>
-      <div class="table-wrapper"><table class="data-table"><thead><tr><th>DEPARTMENT</th><th>MANAGER</th><th>LIMIT</th><th>THRESHOLD</th><th>ORGANIZATION</th><th>ACTIONS</th></tr></thead><tbody id="deptRows"></tbody></table></div>
+
+      <!-- Organizations Table -->
+      <div class="table-wrapper" style="margin-bottom:24px;">
+        <table class="data-table">
+          <thead>
+            <tr><th>ORGANIZATION</th><th>COO</th><th>DEPARTMENTS</th><th>ACTIONS</th></tr>
+          </thead>
+          <tbody id="orgRows"></tbody>
+        </table>
+      </div>
+
+      <!-- Departments Section for Selected Organization -->
+      <div id="deptSection" style="margin-top:28px; padding-top:20px; border-top:1px solid var(--border-light);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h3 style="font-size:17px; font-weight:700; color:#0f172a; margin:0;" id="deptSectionTitle">Organization Departments</h3>
+            <p style="font-size:13px; color:#64748b; margin:2px 0 0;" id="deptSectionSub">Select an organization above to view and manage its departments.</p>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <span class="metric-chip" id="orgLimitSummary">0 departments</span>
+            <button class="btn-primary" id="addDeptBtn" type="button">+ Add Department</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr><th>DEPARTMENT</th><th>MANAGER</th><th>ORGANIZATION</th><th>ACTIONS</th></tr>
+            </thead>
+            <tbody id="deptRows"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
+
   </div>
 </div>
 
-<div class="modal-overlay" id="userModal"><div class="modal modal-card"><button class="modal__close" type="button" onclick="Utils.toggleModal('userModal', false)"><img src="../assets/icons/x0.svg" alt="X"></button><div class="modal__header"><h2 class="modal__title" id="userModalTitle">Add User</h2></div><form id="userForm"><div class="modal__body"><input id="userId" type="hidden"><div class="modal-grid"><div><label class="form-label">Full Name</label><input class="form-input" id="userName" required></div><div><label class="form-label">Email Address</label><input class="form-input" id="userEmail" type="email" required></div><div><label class="form-label">Role</label><select class="form-input" id="userRole"><option>Manager</option><option>Analyst</option><option>COO</option><option>Super User</option></select></div><div><label class="form-label">Organization</label><select class="form-input" id="userOrg"></select></div><div id="singleDeptField"><label class="form-label">Department</label><select class="form-input" id="userDept"></select></div><div><label class="form-label">Phone</label><input class="form-input" id="userPhone"></div><div><label class="form-label">Password</label><input class="form-input" id="userPassword" required></div><div><label class="form-label">Status</label><select class="form-input" id="userStatus"><option>Active</option><option>Inactive</option><option>Pending Approval</option></select></div><div class="assignment-box hidden" id="analystAssignmentBox"><div class="assignment-box__title">Analyst Department Assignments</div><div class="assignment-list" id="analystDeptList"></div></div></div></div><div class="modal__footer"><button class="btn-outline" type="button" onclick="Utils.toggleModal('userModal', false)">Cancel</button><button class="btn-primary" type="submit">Save User</button></div></form></div></div>
+<!-- MODALS -->
+<div class="modal-overlay" id="userModal"><div class="modal modal-card"><button class="modal__close" type="button" onclick="Utils.toggleModal('userModal', false)"><img src="../assets/icons/x0.svg" alt="X"></button><div class="modal__header"><h2 class="modal__title" id="userModalTitle">Add User</h2></div><form id="userForm"><div class="modal__body modal-form-shell"><input id="userId" type="hidden"><section class="modal-section"><h3 class="modal-section__title">Account Details</h3><p class="modal-section__copy">New accounts start active with the shared default password.</p></section><section class="modal-section modal-section--muted"><div class="modal-grid"><div><label class="form-label">Full Name</label><input class="form-input" id="userName" placeholder="e.g. Jane Doe" required></div><div><label class="form-label">Email Address</label><input class="form-input" id="userEmail" type="email" placeholder="e.g. jane.doe@company.com" required></div><div><label class="form-label">Role</label><select class="form-input" id="userRole"><option>Manager</option><option>Analyst</option><option>Super User</option></select></div><div><label class="form-label">Phone</label><input class="form-input" id="userPhone" placeholder="e.g. +1 (555) 019-2834"></div><div id="userOrgField"><label class="form-label">Organization</label><select class="form-input" id="userOrg"></select></div><div id="singleDeptField"><label class="form-label">Department</label><select class="form-input" id="userDept"></select></div><div class="assignment-box hidden" id="analystAssignmentBox"><div class="assignment-box__title">Analyst Department Assignments</div><div class="assignment-list" id="analystDeptList"></div></div></div></section></div><div class="modal__footer"><button class="btn-outline" type="button" onclick="Utils.toggleModal('userModal', false)">Cancel</button><button class="btn-primary" type="submit">Save User</button></div></form></div></div>
 <div class="modal-overlay" id="viewUserModal"><div class="modal modal-card"><button class="modal__close" type="button" onclick="Utils.toggleModal('viewUserModal', false)"><img src="../assets/icons/x0.svg" alt="X"></button><div class="modal__header"><h2 class="modal__title">User Details</h2></div><div class="modal__body"><div class="view-pairs"><div class="view-box"><span>Name</span><strong id="vuName"></strong></div><div class="view-box"><span>Email</span><strong id="vuEmail"></strong></div><div class="view-box"><span>Role</span><strong id="vuRole"></strong></div><div class="view-box"><span>Organization</span><strong id="vuOrg"></strong></div><div class="view-box"><span>Department</span><strong id="vuDept"></strong></div><div class="view-box"><span>Status</span><strong id="vuStatus"></strong></div></div></div><div class="modal__footer"><button class="btn-primary" type="button" onclick="Utils.toggleModal('viewUserModal', false)">Close</button></div></div></div>
-<div class="modal-overlay" id="orgModal"><div class="modal modal-card"><button class="modal__close" type="button" onclick="Utils.toggleModal('orgModal', false)"><img src="../assets/icons/x0.svg" alt="X"></button><div class="modal__header"><h2 class="modal__title" id="orgModalTitle">Add Organization</h2></div><form id="orgForm"><div class="modal__body"><input id="orgId" type="hidden"><div class="modal-grid"><div><label class="form-label">Organization Name</label><input class="form-input" id="orgName" required></div><div><label class="form-label">Industry</label><input class="form-input" id="orgIndustry" required></div><div><label class="form-label">COO Name</label><input class="form-input" id="orgCoo" required></div><div><label class="form-label">COO Email</label><input class="form-input" id="orgCooEmail" type="email" required></div><div><label class="form-label">COO Password</label><input class="form-input" id="orgCooPassword" required></div><div><label class="form-label">Registration Status</label><select class="form-input" id="orgReg"><option>Approved</option><option>Pending Approval</option></select></div><div><label class="form-label">Organization Target</label><input class="form-input" id="orgTarget" required></div><div><label class="form-label">Organization Threshold</label><input class="form-input" id="orgThreshold"></div><div style="grid-column:1/-1"><label class="form-label">Departments</label><textarea class="form-textarea" id="orgDepartments" rows="4" placeholder="Operations, Manufacturing, Logistics"></textarea></div></div></div><div class="modal__footer"><button class="btn-outline" type="button" onclick="Utils.toggleModal('orgModal', false)">Cancel</button><button class="btn-primary" type="submit">Save Organization</button></div></form></div></div>
-<div class="modal-overlay" id="viewOrgModal"><div class="modal modal-card"><button class="modal__close" type="button" onclick="Utils.toggleModal('viewOrgModal', false)"><img src="../assets/icons/x0.svg" alt="X"></button><div class="modal__header"><h2 class="modal__title">Organization Details</h2></div><div class="modal__body"><div class="view-pairs"><div class="view-box"><span>Organization</span><strong id="voName"></strong></div><div class="view-box"><span>Industry</span><strong id="voIndustry"></strong></div><div class="view-box"><span>COO</span><strong id="voCoo"></strong></div><div class="view-box"><span>COO Email</span><strong id="voCooEmail"></strong></div><div class="view-box"><span>Registration</span><strong id="voReg"></strong></div><div class="view-box"><span>Departments</span><strong id="voDepartments"></strong></div></div></div><div class="modal__footer"><button class="btn-primary" type="button" onclick="Utils.toggleModal('viewOrgModal', false)">Close</button></div></div></div>
-<div class="modal-overlay" id="deptModal"><div class="modal modal-card"><button class="modal__close" type="button" onclick="Utils.toggleModal('deptModal', false)"><img src="../assets/icons/x0.svg" alt="X"></button><div class="modal__header"><h2 class="modal__title" id="deptModalTitle">Add Department</h2></div><form id="deptForm"><div class="modal__body"><input id="deptId" type="hidden"><div class="modal-grid"><div><label class="form-label">Organization</label><select class="form-input" id="deptOrg" required></select></div><div><label class="form-label">Department Name</label><input class="form-input" id="deptName" required></div><div><label class="form-label">Manager</label><input class="form-input" id="deptManager" placeholder="Assign later or enter manager name"></div><div><label class="form-label">Department Limit</label><input class="form-input" id="deptTarget" placeholder="e.g. 5000 L" required></div><div><label class="form-label">Department Threshold</label><input class="form-input" id="deptThreshold" placeholder="e.g. 5500 L"></div><div><label class="form-label">Current Usage</label><input class="form-input" id="deptCurrent" placeholder="e.g. 4200 L"></div></div></div><div class="modal__footer"><button class="btn-outline" type="button" onclick="Utils.toggleModal('deptModal', false)">Cancel</button><button class="btn-primary" type="submit">Save Department</button></div></form></div></div>
+
+<div class="modal-overlay" id="orgModal"><div class="modal modal-card"><button class="modal__close" type="button" onclick="Utils.toggleModal('orgModal', false)"><img src="../assets/icons/x0.svg" alt="X"></button><div class="modal__header"><h2 class="modal__title" id="orgModalTitle">Add Organization</h2></div><form id="orgForm"><div class="modal__body modal-form-shell"><input id="orgId" type="hidden"><section class="modal-section"><h3 class="modal-section__title">Organization Setup</h3><p class="modal-section__copy">The COO account is created active with the shared default password, and departments can be adjusted later.</p></section><section class="modal-section modal-section--muted"><div class="modal-grid"><div><label class="form-label">Organization Name</label><input class="form-input" id="orgName" placeholder="e.g. Acme Global Industries" required></div><div><label class="form-label">Business Focus (Optional)</label><input class="form-input" id="orgIndustry" placeholder="e.g. Manufacturing, logistics, services"></div><div><label class="form-label">COO Name</label><input class="form-input" id="orgCoo" placeholder="e.g. Alex Morgan" required></div><div><label class="form-label">COO Email</label><input class="form-input" id="orgCooEmail" type="email" placeholder="e.g. alex.morgan@acme.com" required></div><div class="form-span-2"><label class="form-label">Departments</label><textarea class="form-textarea" id="orgDepartments" rows="4" placeholder="e.g. Operations, Manufacturing, Logistics"></textarea></div></div></section></div><div class="modal__footer"><button class="btn-outline" type="button" onclick="Utils.toggleModal('orgModal', false)">Cancel</button><button class="btn-primary" type="submit">Save Organization</button></div></form></div></div>
+<div class="modal-overlay" id="viewOrgModal"><div class="modal modal-card"><button class="modal__close" type="button" onclick="Utils.toggleModal('viewOrgModal', false)"><img src="../assets/icons/x0.svg" alt="X"></button><div class="modal__header"><h2 class="modal__title">Organization Details</h2></div><div class="modal__body"><div class="view-pairs"><div class="view-box"><span>Organization</span><strong id="voName"></strong></div><div class="view-box"><span>Business Focus</span><strong id="voIndustry"></strong></div><div class="view-box"><span>COO</span><strong id="voCoo"></strong></div><div class="view-box"><span>COO Email</span><strong id="voCooEmail"></strong></div><div class="view-box"><span>Registration</span><strong id="voReg"></strong></div><div class="view-box"><span>Departments</span><strong id="voDepartments"></strong></div></div></div><div class="modal__footer"><button class="btn-primary" type="button" onclick="Utils.toggleModal('viewOrgModal', false)">Close</button></div></div></div>
+
+<div class="modal-overlay" id="deptModal"><div class="modal modal--sm"><button class="modal__close" type="button" onclick="Utils.toggleModal('deptModal', false)"><img src="../assets/icons/x0.svg" alt="X"></button><div class="modal__header"><h2 class="modal__title" id="deptModalTitle">Add Department</h2></div><form id="deptForm"><div class="modal__body"><input id="deptId" type="hidden"><div style="display:grid; grid-template-columns:1fr; gap:16px;"><div><label class="form-label">Organization</label><select class="form-input" id="deptOrg" required></select></div><div><label class="form-label">Department Name</label><input class="form-input" id="deptName" placeholder="e.g. Logistics &amp; Fleet Ops" required></div><div><label class="form-label">Assigned Manager</label><select class="form-input" id="deptManagerSelect"></select></div></div></div><div class="modal__footer"><button class="btn-outline" type="button" onclick="Utils.toggleModal('deptModal', false)">Cancel</button><button class="btn-primary" type="submit">Save Department</button></div></form></div></div>
+<div class="modal-overlay" id="viewDeptModal"><div class="modal modal--sm"><button class="modal__close" type="button" onclick="Utils.toggleModal('viewDeptModal', false)"><img src="../assets/icons/x0.svg" alt="X"></button><div class="modal__header"><h2 class="modal__title">Department Details</h2></div><div class="modal__body"><div class="view-pairs" style="grid-template-columns:1fr; gap:12px;"><div class="view-box"><span>Department</span><strong id="vdName"></strong></div><div class="view-box"><span>Organization</span><strong id="vdOrg"></strong></div><div class="view-box"><span>Manager</span><strong id="vdManager"></strong></div></div></div><div class="modal__footer"><button class="btn-primary" type="button" onclick="Utils.toggleModal('viewDeptModal', false)">Close</button></div></div></div>
+
+<div class="modal-overlay" id="adminDeleteModal"><div class="modal modal--sm"><div class="modal__alert-header"><h2 class="modal__alert-title" id="adminDeleteTitle">Confirm deletion</h2><p class="modal__alert-desc" id="adminDeleteMessage">This action will remove the selected record.</p></div><div class="modal__alert-footer"><button class="btn-outline" type="button" onclick="Utils.toggleModal('adminDeleteModal', false)">Cancel</button><button class="btn-danger" type="button" id="adminDeleteConfirm">Delete</button></div></div></div>
 
 <div class="toast toast--success" id="toastMessage"><div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt=""></div><p class="toast__text" id="toastText"></p></div>
 <script src="../../js/data.js"></script><script src="../../js/utils.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded',()=>{
-const $=id=>document.getElementById(id);let mode='users';
-const badge=s=>s==='Active'||s==='Approved'||s==='Within Target'?'green':(s==='Pending Approval'||s==='Inactive'||s==='Approaching'?'amber':'red');
-const db=()=>Utils.ensureCollections(Utils.getDB());
-const orgLabel=id=>(db().organizations.find(o=>o.id===id)||{}).name||'--';
-const deptLabel=id=>(db().departments.find(d=>d.id===id)||{}).name||'--';
-function fillOrgOptions(){ const options=db().organizations.map(o=>`<option value="${o.id}">${o.name}</option>`).join(''); $('userOrg').innerHTML=options; $('deptOrg').innerHTML=options; $('orgDetailSelect').innerHTML=`<option value="">All organizations</option>${options}`; fillDeptOptions(); }
-function fillDeptOptions(){ const state=db(); const orgId=$('userOrg').value; const depts=state.departments.filter(d=>d.orgId===orgId); $('userDept').innerHTML=depts.map(d=>`<option value="${d.id}">${d.name}</option>`).join(''); }
-function renderAnalystAssignments(selectedIds=[]){ const state=db(); const orgId=$('userOrg').value; const depts=state.departments.filter(d=>d.orgId===orgId); $('analystDeptList').innerHTML=depts.map(dept=>`<label class="assignment-item"><input type="checkbox" value="${dept.id}" ${selectedIds.includes(dept.id)?'checked':''}> <span>${dept.name}</span></label>`).join('')||'<span class="text--muted">No departments available for this organization.</span>'; }
-function syncUserRoleFields(selectedIds=[]){ const role=$('userRole').value; const isAnalyst=role==='Analyst'; $('singleDeptField').classList.toggle('hidden',isAnalyst); $('analystAssignmentBox').classList.toggle('hidden',!isAnalyst); if(isAnalyst){ renderAnalystAssignments(selectedIds); } }
-function render(){ const state=db(); const selectedOrgId=$('orgDetailSelect').value; $('userRows').innerHTML=state.users.map(u=>`<tr><td class="td--bold">${u.name}</td><td class="td--muted">${u.role}</td><td class="td--muted">${u.email}</td><td class="td--muted">${deptLabel(u.departmentId)||u.department||'--'}</td><td><span class="status-badge status-badge--${badge(u.status)}">${u.status||'Active'}</span></td><td><div class="actions"><button onclick="viewUser(${u.id})">View</button><button onclick="editUser(${u.id})">Edit</button><button class="accent" onclick="toggleUser(${u.id})">${u.status==='Active'?'Deactivate':'Activate'}</button>${u.role==='Super User'?'':`<button class="warn" onclick="dropUser(${u.id})">Delete</button>`}</div></td></tr>`).join('');
-  $('orgRows').innerHTML=state.organizations.map(o=>{const deptCount=state.departments.filter(d=>d.orgId===o.id).length; return `<tr><td class="td--bold">${o.name}</td><td class="td--muted">${o.cooName||'--'}</td><td class="td--muted">${deptCount} department${deptCount===1?'':'s'}</td><td><span class="status-badge status-badge--${badge(o.registrationStatus||'Approved')}">${o.registrationStatus||'Approved'}</span></td><td class="td--muted">${o.target||'--'}</td><td><div class="actions"><button onclick="viewOrg('${o.id}')">View</button><button onclick="editOrg('${o.id}')">Edit</button><button onclick="openDeptModalForOrg('${o.id}')">Departments</button>${(o.registrationStatus||'Approved')==='Pending Approval'?`<button class="accent" onclick="approveOrg('${o.id}')">Approve</button>`:''}<button class="warn" onclick="dropOrg('${o.id}')">Delete</button></div></td></tr>`;}).join('');
-  const visibleDepartments=state.departments.filter(dept=>!selectedOrgId||dept.orgId===selectedOrgId);
-  $('deptRows').innerHTML=visibleDepartments.map(dept=>`<tr><td class="td--bold">${dept.name}</td><td class="td--muted">${dept.manager||'Unassigned'}</td><td class="td--muted">${dept.target||'0 L'}</td><td class="td--muted">${dept.threshold||'0 L'}</td><td class="td--muted">${orgLabel(dept.orgId)}</td><td><div class="actions"><button onclick="editDept('${dept.id}')">Edit</button><button class="warn" onclick="dropDept('${dept.id}')">Delete</button></div></td></tr>`).join('')||'<tr><td colspan="6" class="td--muted" style="text-align:center;">No departments found for this selection.</td></tr>';
-  const relatedOrgs=selectedOrgId?state.organizations.filter(org=>org.id===selectedOrgId):state.organizations;
-  const totalLimit=relatedOrgs.reduce((sum,org)=>sum+Utils.parseAmount(org.target),0);
-  $('orgLimitSummary').textContent=`${visibleDepartments.length} departments • ${Utils.formatVolume(totalLimit)} total limit`;
-}
-function switchMode(next){ mode=next; $('usersTab').classList.toggle('active',next==='users'); $('orgsTab').classList.toggle('active',next==='orgs'); $('usersView').classList.toggle('active',next==='users'); $('orgsView').classList.toggle('active',next==='orgs'); $('sectionTitle').textContent=next==='users'?'Manage Users':'Manage Organizations'; $('openFormBtn').textContent=next==='users'?'+ Add User':'+ Add Organization'; }
-function openUserModal(title,user){ fillOrgOptions(); $('userModalTitle').textContent=title; $('userId').value=user?.id||''; $('userName').value=user?.name||''; $('userEmail').value=user?.email||''; $('userRole').value=user?.role||'Manager'; $('userOrg').value=user?.organizationId||db().organizations[0]?.id||''; fillDeptOptions(); $('userDept').value=user?.departmentId||$('userDept').value; $('userPhone').value=user?.phone==='--'?'':(user?.phone||''); $('userPassword').value=user?.password||'ChangeMe@123'; $('userStatus').value=user?.status||'Active'; syncUserRoleFields(Array.isArray(user?.assignedDepartmentIds)?user.assignedDepartmentIds:[]); Utils.toggleModal('userModal',true); }
-function openOrgModal(title,org){ const state=db(); const coo=state.users.find(u=>u.id===org?.cooUserId&&u.role==='COO'); const deptNames=org?state.departments.filter(d=>d.orgId===org.id).map(d=>d.name).join(', '):'Operations'; $('orgModalTitle').textContent=title; $('orgId').value=org?.id||''; $('orgName').value=org?.name||''; $('orgIndustry').value=org?.industry||''; $('orgCoo').value=coo?.name||org?.cooName||''; $('orgCooEmail').value=coo?.email||org?.cooEmail||''; $('orgCooPassword').value=coo?.password||'ChangeMe@123'; $('orgReg').value=org?.registrationStatus||'Approved'; $('orgTarget').value=org?.target||''; $('orgThreshold').value=org?.threshold||org?.target||''; $('orgDepartments').value=deptNames; Utils.toggleModal('orgModal',true); }
-function openDeptModal(title,department,orgId){ fillOrgOptions(); $('deptModalTitle').textContent=title; $('deptId').value=department?.id||''; $('deptOrg').value=department?.orgId||orgId||db().organizations[0]?.id||''; $('deptName').value=department?.name||''; $('deptManager').value=department?.manager==='Unassigned'?'':(department?.manager||''); $('deptTarget').value=department?.target||''; $('deptThreshold').value=department?.threshold||''; $('deptCurrent').value=department?.current||''; Utils.toggleModal('deptModal',true); }
-$('usersTab').onclick=()=>switchMode('users'); $('orgsTab').onclick=()=>switchMode('orgs'); $('openFormBtn').onclick=()=>mode==='users'?openUserModal('Add User'):openOrgModal('Add Organization'); $('userOrg').addEventListener('change',()=>{ fillDeptOptions(); if($('userRole').value==='Analyst') renderAnalystAssignments(); }); $('userRole').addEventListener('change',()=>syncUserRoleFields());
-$('userForm').onsubmit=e=>{ e.preventDefault(); const state=db(); const id=$('userId').value; const name=$('userName').value.trim(); const email=$('userEmail').value.trim().toLowerCase(); const password=$('userPassword').value.trim(); const phone=$('userPhone').value.trim(); if(!name){ Utils.showToast('Enter the user name.','error'); return; } if(!Utils.validateEmail(email)){ Utils.showToast('Enter a valid email.','error'); return; } if(password.length<8){ Utils.showToast('Password must be at least 8 characters.','error'); return; } if(phone && !Utils.validatePhone(phone)){ Utils.showToast('Enter a valid phone number or leave it blank.','error'); return; } if(state.users.some(u=>String(u.id)!==String(id||'')&&u.email.toLowerCase()===email)){ Utils.showToast('A user with this email already exists.','error'); return; } const org=state.organizations.find(o=>o.id===$('userOrg').value); const dept=state.departments.find(d=>d.id===$('userDept').value); const role=$('userRole').value; if(role!=='Super User'&&!org){ Utils.showToast('Select an organization for this user.','error'); return; } const assignedDepartmentIds=role==='Analyst' ? Array.from(document.querySelectorAll('#analystDeptList input[type="checkbox"]:checked')).map(input=>input.value) : []; if(role==='Analyst' && !assignedDepartmentIds.length){ Utils.showToast('Assign at least one department to the analyst.','error'); return; } if(role==='Manager' && !dept){ Utils.showToast('Assign a department to the manager.','error'); return; } const departmentLabel=role==='Analyst'?'Multi-Department Review':role==='COO'?'Executive Office':role==='Super User'?'Platform Governance':(dept?dept.name:'--'); const departmentId=role==='Manager'&&dept?dept.id:role==='COO'&&org?`${org.id}-exec`:''; const organizationId=role==='Super User'?'':(org?org.id:''); const payload={id:id?Number(id):Date.now(),name,email,role,password,department:departmentLabel,departmentId,assignedDepartmentIds,organizationId,phone:phone||'--',status:$('userStatus').value,lastLogin:id?(state.users.find(u=>String(u.id)===id)||{}).lastLogin||'Never':'Never'}; if(id){ state.users=state.users.map(u=>String(u.id)===id?payload:u); Utils.logAction(`Updated user ${payload.name}`,'Success','green'); } else { state.users.unshift(payload); Utils.logAction(`Added user ${payload.name}`,'Success','green'); } Utils.syncUserDerivedFields(state,payload.id); if(payload.organizationId) Utils.recalculateOrganizationTotals(state,payload.organizationId); Utils.replaceDB(state); Utils.toggleModal('userModal',false); render(); Utils.showToast('User saved successfully.'); };
-$('orgForm').onsubmit=e=>{ e.preventDefault(); const state=db(); const id=$('orgId').value||`org-${Date.now()}`; const orgName=$('orgName').value.trim(); const industry=$('orgIndustry').value.trim(); const cooName=$('orgCoo').value.trim(); const cooEmail=$('orgCooEmail').value.trim().toLowerCase(); const cooPassword=$('orgCooPassword').value.trim()||'ChangeMe@123'; const orgTarget=$('orgTarget').value.trim(); const orgThreshold=$('orgThreshold').value.trim()||orgTarget; if(!orgName||!industry||!cooName||!Utils.validateEmail(cooEmail)){ Utils.showToast('Organization, industry, COO name, and valid COO email are required.','error'); return; } if(cooPassword.length<8){ Utils.showToast('COO password must be at least 8 characters.','error'); return; } if(!Utils.parseAmount(orgTarget)){ Utils.showToast('Enter a valid organization target.','error'); return; } if(state.organizations.some(org=>org.id!==id&&org.name.toLowerCase()===orgName.toLowerCase())){ Utils.showToast('An organization with this name already exists.','error'); return; } const deptNames=($('orgDepartments').value||'').split(',').map(v=>v.trim()).filter(Boolean); const uniqueDeptNames=deptNames.length?Array.from(new Set(deptNames)):['Operations']; let org=state.organizations.find(o=>o.id===id); const existingCoo=org?state.users.find(u=>u.id===org.cooUserId):null; const cooId=existingCoo?existingCoo.id:Date.now()+1; if(state.users.some(u=>u.id!==cooId&&u.email.toLowerCase()===cooEmail)){ Utils.showToast('That COO email is already used by another user.','error'); return; } const orgPayload={id,name:orgName,industry,cooName,cooUserId:cooId,cooEmail,target:orgTarget,threshold:orgThreshold,current:org?.current||'0 L',co2:org?.co2||'0',status:org?.status||'Within Target',statusType:org?.statusType||'green',registrationStatus:$('orgReg').value,registrationStatusType:badge($('orgReg').value)}; if(org){ Object.assign(org,orgPayload); } else { state.organizations.unshift(orgPayload); org=orgPayload; } const cooPayload={id:cooId,name:cooName,email:cooEmail,password:cooPassword,role:'COO',department:'Executive Office',departmentId:`${id}-exec`,organizationId:id,phone:existingCoo?.phone||'--',status:$('orgReg').value==='Approved'?'Active':'Pending Approval',lastLogin:existingCoo?.lastLogin||'Never'}; const cooIndex=state.users.findIndex(u=>u.id===cooId); if(cooIndex>-1) state.users[cooIndex]=cooPayload; else state.users.unshift(cooPayload); state.departments=state.departments.filter(d=>d.orgId!==id || uniqueDeptNames.includes(d.name)); uniqueDeptNames.forEach((name,index)=>{ const existing=state.departments.find(d=>d.orgId===id&&d.name===name); if(existing){ existing.orgName=orgName; } else { state.departments.push({id:`dept-${Date.now()}-${index}`,orgId:id,orgName:orgName,name,manager:'Unassigned',managerUserId:null,target:'0 L',threshold:'0 L',current:'0 L',co2:'0',status:'Within Target',statusType:'green'}); } }); org.departmentIds=state.departments.filter(d=>d.orgId===id).map(d=>d.id); Utils.syncOrganizationDerivedFields(state,id); Utils.replaceDB(state); Utils.logAction(`${$('orgId').value?'Updated':'Added'} organization ${orgName}`,'Success','green'); Utils.toggleModal('orgModal',false); render(); fillOrgOptions(); Utils.showToast('Organization saved successfully.'); };
-$('deptForm').onsubmit=e=>{ e.preventDefault(); const state=db(); const id=$('deptId').value; const orgId=$('deptOrg').value; const organization=state.organizations.find(org=>org.id===orgId); if(!organization){ Utils.showToast('Select an organization first.','error'); return; } const name=$('deptName').value.trim(); if(!name){ Utils.showToast('Department name is required.','error'); return; } const payload={id:id||Utils.generateId('dept'),orgId,orgName:organization.name,name,manager:$('deptManager').value.trim()||'Unassigned',managerUserId:(state.departments.find(dept=>dept.id===id)||{}).managerUserId||null,target:$('deptTarget').value.trim()||'0 L',threshold:$('deptThreshold').value.trim()||$('deptTarget').value.trim()||'0 L',current:$('deptCurrent').value.trim()||'0 L',co2:(state.departments.find(dept=>dept.id===id)||{}).co2||'0',status:'Within Target',statusType:'green'}; if(state.departments.some(dept=>dept.id!==id&&dept.orgId===orgId&&dept.name.toLowerCase()===name.toLowerCase())){ Utils.showToast('That organization already has a department with this name.','error'); return; } if(id){ state.departments=state.departments.map(dept=>dept.id===id?{...dept,...payload}:dept); Utils.logAction(`Updated department ${name}`,'Success','green'); } else { state.departments.unshift(payload); Utils.logAction(`Added department ${name}`,'Success','green'); } Utils.recalculateOrganizationTotals(state,orgId); Utils.replaceDB(state); $('orgDetailSelect').value=orgId; Utils.toggleModal('deptModal',false); render(); Utils.showToast('Department saved successfully.'); };
-$('orgDetailSelect').addEventListener('change',render);
-window.viewUser=id=>{ const user=db().users.find(u=>u.id===id); if(!user)return; $('vuName').textContent=user.name; $('vuEmail').textContent=user.email; $('vuRole').textContent=user.role; $('vuOrg').textContent=orgLabel(user.organizationId); $('vuDept').textContent=deptLabel(user.departmentId)||user.department||'--'; $('vuStatus').textContent=user.status||'Active'; Utils.toggleModal('viewUserModal',true); };
-window.editUser=id=>{ const user=db().users.find(u=>u.id===id); if(!user)return; openUserModal('Edit User',user); };
-window.toggleUser=id=>{ const state=db(); const user=state.users.find(u=>u.id===id); if(!user||user.role==='Super User')return; user.status=user.status==='Active'?'Inactive':'Active'; Utils.replaceDB(state); Utils.logAction(`${user.status==='Active'?'Activated':'Deactivated'} user ${user.name}`,'Success',user.status==='Active'?'green':'amber'); render(); Utils.showToast(`User ${user.status.toLowerCase()}.`); };
-window.dropUser=id=>{ if(!confirm('Delete this user? If it is a COO, the linked organization, departments, staff, and records will also be deleted.'))return; const state=db(); const result=Utils.deleteUserCascade(state,id); if(result?.blocked){ Utils.showToast(result.reason,'error'); return; } Utils.replaceDB(state); const deletedName=result?.user?.name||result?.organizationCascade?.organization?.cooName||id; Utils.logAction(`Deleted user ${deletedName}`,'Warning','amber'); render(); fillOrgOptions(); Utils.showToast(result?.organizationCascade?'COO deleted and linked organization data removed.':'User deleted.'); };
-window.viewOrg=id=>{ const state=db(); const org=state.organizations.find(o=>o.id===id); const coo=state.users.find(u=>u.id===org?.cooUserId); const departments=state.departments.filter(d=>d.orgId===id).map(d=>d.name).join(', '); if(!org)return; $('voName').textContent=org.name; $('voIndustry').textContent=org.industry||'--'; $('voCoo').textContent=org.cooName||'--'; $('voCooEmail').textContent=coo?.email||org.cooEmail||'--'; $('voReg').textContent=org.registrationStatus||'Approved'; $('voDepartments').textContent=departments||'--'; Utils.toggleModal('viewOrgModal',true); };
-window.editOrg=id=>{ const org=db().organizations.find(o=>o.id===id); if(!org)return; openOrgModal('Edit Organization',org); };
-window.approveOrg=id=>{ const state=db(); const org=state.organizations.find(o=>o.id===id); if(!org)return; org.registrationStatus='Approved'; org.registrationStatusType='green'; const coo=state.users.find(u=>u.id===org.cooUserId&&u.role==='COO'); if(coo){ coo.status='Active'; org.cooName=coo.name; org.cooUserId=coo.id; state.notifications.unshift({id:Date.now()+Math.random(),role:'COO',title:'Organization Approved',message:`${org.name} has been approved. Your account is now active.`,type:'info',read:false,createdAt:new Date().toISOString()}); } Utils.replaceDB(state); Utils.logAction(`Approved organization ${org.name}`,'Success','green'); render(); Utils.showToast('Organization approved.'); };
-window.dropOrg=id=>{ if(!confirm('Delete this organization, its COO account, departments, staff, and related records?'))return; const state=db(); const result=Utils.deleteOrganizationCascade(state,id); Utils.replaceDB(state); Utils.logAction(`Deleted organization ${result?.organization?.name||id}`,'Warning','amber'); render(); fillOrgOptions(); Utils.showToast('Organization deleted.'); };
-window.openDeptModalForOrg=id=>{ openDeptModal('Add Department',null,id); };
-window.editDept=id=>{ const department=db().departments.find(dept=>dept.id===id); if(!department)return; openDeptModal('Edit Department',department,department.orgId); };
-window.dropDept=id=>{ if(!confirm('Delete this department and all of its linked staff and records?'))return; const state=db(); const result=Utils.deleteDepartmentCascade(state,id); Utils.replaceDB(state); Utils.logAction(`Deleted department ${result?.department?.name||id}`,'Warning','amber'); render(); Utils.showToast('Department deleted.'); };
-fillOrgOptions(); switchMode('users'); render();
+document.addEventListener('DOMContentLoaded', async () => {
+  const $ = id => document.getElementById(id);
+  let mode = 'users';
+  let selectedOrgId = '';
+  const badge = s => s === 'Active' || s === 'Approved' || s === 'Within Target' ? 'green' : (s === 'Inactive' || s === 'Approaching' ? 'amber' : 'red');
+  const db = () => Utils.ensureCollections(Utils.getDB());
+  const orgLabel = id => (db().organizations.find(o => o.id === id) || {}).name || '--';
+  const deptLabel = id => (db().departments.find(d => d.id === id) || {}).name || '--';
+
+  function fillOrgOptions() {
+    const options = db().organizations.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+    $('userOrg').innerHTML = options;
+    $('deptOrg').innerHTML = options;
+    fillDeptOptions();
+  }
+
+  function fillDeptOptions() {
+    const state = db();
+    const orgId = $('userOrg').value;
+    const depts = state.departments.filter(d => d.orgId === orgId);
+    $('userDept').innerHTML = depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+  }
+
+  function renderAnalystAssignments(selectedIds = []) {
+    const state = db();
+    const orgId = $('userOrg').value;
+    const depts = state.departments.filter(d => d.orgId === orgId);
+    $('analystDeptList').innerHTML = depts.map(dept => `<label class="assignment-item"><input type="checkbox" value="${dept.id}" ${selectedIds.includes(dept.id) ? 'checked' : ''}> <span>${dept.name}</span></label>`).join('') || '<span class="text--muted">No departments available for this organization.</span>';
+  }
+
+  function userDeptDisplay(u) {
+    if (!u) return '--';
+    if (u.role === 'Super User') return 'Platform Wide';
+    if (u.role === 'COO') return 'Executive Office';
+    if (u.role === 'Analyst') {
+      const assignedIds = Array.isArray(u.assignedDepartmentIds) ? u.assignedDepartmentIds : [];
+      if (assignedIds.length > 0) {
+        const names = assignedIds.map(id => deptLabel(id)).filter(name => name && name !== '--');
+        if (names.length > 0) return names.join(', ');
+      }
+      if (Array.isArray(u.assignedDepartments) && u.assignedDepartments.length > 0) {
+        return u.assignedDepartments.join(', ');
+      }
+      return deptLabel(u.departmentId) || u.department || 'All Departments';
+    }
+    return deptLabel(u.departmentId) || u.department || '--';
+  }
+
+  function syncUserRoleFields(selectedIds = []) {
+    const role = $('userRole').value;
+    const isAnalyst = role === 'Analyst';
+    const isSuperUser = role === 'Super User';
+    const isCOO = role === 'COO';
+    $('userOrgField').classList.toggle('hidden', isSuperUser);
+    $('singleDeptField').classList.toggle('hidden', isAnalyst || isSuperUser || isCOO);
+    $('analystAssignmentBox').classList.toggle('hidden', !isAnalyst);
+    if (isAnalyst) renderAnalystAssignments(selectedIds);
+  }
+
+  function setUserRoleOptions(user, isSuperUserAdd = false) {
+    const isExisting = Boolean(user && user.id);
+    let roles = ['Manager', 'Analyst'];
+    if (isSuperUserAdd || (isExisting && user.role === 'Super User')) {
+      roles = ['Super User'];
+    } else if (isExisting && user.role === 'COO') {
+      roles = ['COO'];
+    } else if (isExisting && (user.organizationId || user.role === 'Manager' || user.role === 'Analyst')) {
+      roles = ['Manager', 'Analyst'];
+    }
+    $('userRole').innerHTML = roles.map(role => `<option value="${role}">${role}</option>`).join('');
+    $('userRole').disabled = roles.length === 1;
+  }
+
+  function confirmDelete(title, message, handler) {
+    $('adminDeleteTitle').textContent = title;
+    $('adminDeleteMessage').textContent = message;
+    $('adminDeleteConfirm').onclick = () => { Utils.toggleModal('adminDeleteModal', false); handler(); };
+    Utils.toggleModal('adminDeleteModal', true);
+  }
+
+  function render() {
+    const state = db();
+    const searchTerm = ($('userSearch')?.value || '').trim().toLowerCase();
+
+    // 1. Users
+    const visibleUsers = state.users.filter(u => {
+      const orgName = orgLabel(u.organizationId);
+      const deptStr = userDeptDisplay(u);
+      return !searchTerm || [u.name, u.email, u.role, u.status, u.department, deptStr, orgName].some(v => String(v || '').toLowerCase().includes(searchTerm));
+    });
+    $('userResultCount').textContent = `${visibleUsers.length} user${visibleUsers.length === 1 ? '' : 's'}`;
+    $('userRows').innerHTML = visibleUsers.map(u => `
+      <tr>
+        <td class="td--bold">${u.name}</td>
+        <td class="td--muted">${u.role}</td>
+        <td class="td--muted">${u.email}</td>
+        <td class="td--muted">${userDeptDisplay(u)}</td>
+        <td><span class="status-badge status-badge--${badge(u.status)}">${u.status || 'Active'}</span></td>
+        <td>
+          <div class="actions">
+            <button class="action-btn" onclick="viewUser(${u.id})">View</button>
+            <button class="action-btn" onclick="editUser(${u.id})">Edit</button>
+            <button class="action-btn accent" onclick="toggleUser(${u.id})">${u.status === 'Active' ? 'Deactivate' : 'Activate'}</button>
+            ${u.role === 'Super User' ? '' : `<button class="action-btn warn" onclick="dropUser(${u.id})">Delete</button>`}
+          </div>
+        </td>
+      </tr>
+    `).join('') || Utils.renderEmptyTableRow(6, 'No Users Found', 'No platform users match the current search query or filter criteria.', 'search');
+
+    // 2. Organizations
+    const orgSearchTerm = ($('orgSearch')?.value || '').trim().toLowerCase();
+    const visibleOrgs = state.organizations.filter(o => {
+      return !orgSearchTerm || [o.name, o.cooName, o.industry, o.cooEmail].some(v => String(v || '').toLowerCase().includes(orgSearchTerm));
+    });
+
+    if (visibleOrgs.length > 0 && (!selectedOrgId || !state.organizations.some(o => o.id === selectedOrgId))) {
+      selectedOrgId = visibleOrgs[0].id;
+    }
+
+    $('orgResultCount').textContent = `${visibleOrgs.length} organization${visibleOrgs.length === 1 ? '' : 's'}`;
+
+    $('orgRows').innerHTML = visibleOrgs.map(o => {
+      const deptCount = state.departments.filter(d => d.orgId === o.id).length;
+      const isSelected = o.id === selectedOrgId;
+      const isInactive = o.accountStatus === 'Inactive' || o.status === 'Inactive';
+      return `
+        <tr style="cursor:pointer; ${isSelected ? 'background: #eff6ff;' : ''}" onclick="selectOrg('${o.id}')">
+          <td class="td--bold">
+            ${o.name}
+            <span class="status-badge status-badge--${isInactive ? 'amber' : (o.statusType || 'green')}" style="margin-left:6px; font-size:11px;">
+              ${isInactive ? 'Inactive' : (o.status || 'Active')}
+            </span>
+            ${isSelected ? '<span class="status-badge status-badge--blue" style="margin-left:6px; font-size:11px;">Selected</span>' : ''}
+          </td>
+          <td class="td--muted">${o.cooName || '--'}</td>
+          <td class="td--muted">${deptCount} department${deptCount === 1 ? '' : 's'}</td>
+          <td onclick="event.stopPropagation()">
+            <div class="actions">
+              <button class="action-btn" onclick="viewOrg('${o.id}')">Details</button>
+              <button class="action-btn" onclick="editOrg('${o.id}')">Edit</button>
+              <button class="action-btn accent" onclick="toggleOrg('${o.id}')">${isInactive ? 'Activate' : 'Deactivate'}</button>
+              <button class="action-btn warn" onclick="dropOrg('${o.id}')">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('') || Utils.renderEmptyTableRow(4, 'No Organizations Found', 'No registered organizations match the current search query.', 'search');
+
+    const currentOrg = state.organizations.find(o => o.id === selectedOrgId);
+    if (currentOrg) {
+      $('deptSectionTitle').textContent = `Departments – ${currentOrg.name}`;
+      $('deptSectionSub').textContent = `Manage department structure and assigned managers for ${currentOrg.name}.`;
+    } else {
+      $('deptSectionTitle').textContent = 'Organization Departments';
+      $('deptSectionSub').textContent = 'Select an organization above to view and manage its departments.';
+    }
+
+    const visibleDepartments = state.departments.filter(dept => !selectedOrgId || dept.orgId === selectedOrgId);
+    $('deptRows').innerHTML = visibleDepartments.map(dept => {
+      const managerUser = state.users.find(u => 
+        u.role === 'Manager' && (
+          (dept.managerUserId && String(u.id) === String(dept.managerUserId)) ||
+          (u.departmentId && String(u.departmentId) === String(dept.id))
+        )
+      );
+      const managerName = managerUser ? managerUser.name : 'Unassigned';
+
+      return `
+        <tr>
+          <td class="td--bold">${dept.name}</td>
+          <td class="td--muted">${managerName}</td>
+          <td class="td--muted">${orgLabel(dept.orgId)}</td>
+          <td>
+            <div class="actions">
+              <button class="action-btn" onclick="viewDept('${dept.id}')">View</button>
+              <button class="action-btn" onclick="editDept('${dept.id}')">Edit</button>
+              <button class="action-btn warn" onclick="dropDept('${dept.id}')">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('') || Utils.renderEmptyTableRow(4, 'No Departments Found', 'No departments found for the selected organization.', 'inbox');
+
+    $('orgLimitSummary').textContent = `${visibleDepartments.length} department${visibleDepartments.length === 1 ? '' : 's'}`;
+    
+    const addDeptBtn = $('addDeptBtn');
+    if (addDeptBtn) {
+      addDeptBtn.onclick = () => openDeptModal('Add Department', null, selectedOrgId);
+    }
+  }
+
+  function switchMode(next) {
+    mode = next;
+    $('usersTab').classList.toggle('active', next === 'users');
+    $('orgsTab').classList.toggle('active', next === 'orgs');
+
+    $('usersView').classList.toggle('active', next === 'users');
+    $('orgsView').classList.toggle('active', next === 'orgs');
+
+    if (next === 'users') {
+      $('sectionTitle').textContent = 'Manage Users';
+      $('sectionDesc').textContent = 'Platform-wide user accounts, roles, and departmental permissions.';
+      $('openSuperUserBtn').style.display = 'inline-block';
+      $('openFormBtn').style.display = 'inline-block';
+      $('openFormBtn').textContent = '+ Add User';
+    } else {
+      $('sectionTitle').textContent = 'Manage Organizations';
+      $('sectionDesc').textContent = 'Registered companies with assigned COO leadership and departmental structure.';
+      $('openSuperUserBtn').style.display = 'none';
+      $('openFormBtn').style.display = 'inline-block';
+      $('openFormBtn').textContent = '+ Add Organization';
+    }
+  }
+
+  // Modals opening helpers
+  function openUserModal(title, user) {
+    fillOrgOptions();
+    const isSuperUserAdd = Boolean(user && !user.id && user.role === 'Super User');
+    setUserRoleOptions(user, isSuperUserAdd);
+    $('userModalTitle').textContent = title;
+    $('userId').value = user?.id || '';
+    $('userName').value = user?.name || '';
+    $('userEmail').value = user?.email || '';
+    $('userRole').value = user?.role || (isSuperUserAdd ? 'Super User' : 'Manager');
+    $('userOrg').value = user?.organizationId || db().organizations[0]?.id || '';
+    $('userOrg').disabled = Boolean(user && user.role === 'Super User') || isSuperUserAdd;
+    fillDeptOptions();
+    $('userDept').value = user?.departmentId || $('userDept').value;
+    $('userPhone').value = user?.phone === '--' ? '' : (user?.phone || '');
+    syncUserRoleFields(Array.isArray(user?.assignedDepartmentIds) ? user?.assignedDepartmentIds : []);
+    Utils.toggleModal('userModal', true);
+  }
+
+  function openOrgModal(title, org) {
+    const state = db();
+    const coo = state.users.find(u => u.id === org?.cooUserId && u.role === 'COO');
+    const deptNames = org ? state.departments.filter(d => d.orgId === org.id).map(d => d.name).join(', ') : '';
+    $('orgModalTitle').textContent = title;
+    $('orgId').value = org?.id || '';
+    $('orgName').value = org?.name || '';
+    $('orgIndustry').value = org?.industry || '';
+    $('orgCoo').value = coo?.name || org?.cooName || '';
+    $('orgCooEmail').value = coo?.email || org?.cooEmail || '';
+    $('orgDepartments').value = deptNames;
+    Utils.toggleModal('orgModal', true);
+  }
+
+  function fillManagerOptionsForDeptModal(orgId, selectedManagerUserId) {
+    const state = db();
+    const managers = state.users.filter(u => u.organizationId === orgId && u.role === 'Manager');
+    let html = `<option value="">Unassigned (Select Manager)</option>`;
+    html += managers.map(m => `<option value="${m.id}" ${String(m.id) === String(selectedManagerUserId || '') ? 'selected' : ''}>${m.name}</option>`).join('');
+    $('deptManagerSelect').innerHTML = html;
+  }
+
+  function openDeptModal(title, department, orgId) {
+    fillOrgOptions();
+    const targetOrgId = department?.orgId || orgId || db().organizations[0]?.id || '';
+    $('deptModalTitle').textContent = title;
+    $('deptId').value = department?.id || '';
+    $('deptOrg').value = targetOrgId;
+    $('deptName').value = department?.name || '';
+    fillManagerOptionsForDeptModal(targetOrgId, department?.managerUserId);
+    Utils.toggleModal('deptModal', true);
+  }
+
+  // Event Listeners
+  $('usersTab').onclick = () => switchMode('users');
+  $('orgsTab').onclick = () => switchMode('orgs');
+
+  $('openSuperUserBtn').onclick = () => openUserModal('Add Super User', { role: 'Super User' });
+  $('openFormBtn').onclick = () => mode === 'users' ? openUserModal('Add User') : openOrgModal('Add Organization');
+  $('userSearch').addEventListener('input', render);
+  $('orgSearch').addEventListener('input', render);
+  $('userOrg').addEventListener('change', () => { fillDeptOptions(); if ($('userRole').value === 'Analyst') renderAnalystAssignments(); });
+  $('userRole').addEventListener('change', () => syncUserRoleFields());
+  $('deptOrg').addEventListener('change', () => fillManagerOptionsForDeptModal($('deptOrg').value));
+
+  // Form Submits
+  $('userForm').onsubmit = e => {
+    e.preventDefault();
+    const state = db();
+    const id = $('userId').value;
+    const name = $('userName').value.trim();
+    const email = $('userEmail').value.trim().toLowerCase();
+    const phone = $('userPhone').value.trim();
+    if (!name) { Utils.showToast('Enter the user name.', 'error'); return; }
+    if (!Utils.validateEmail(email)) { Utils.showToast('Enter a valid email.', 'error'); return; }
+    if (phone && !Utils.validatePhone(phone)) { Utils.showToast('Enter a valid phone number or leave it blank.', 'error'); return; }
+    if (state.users.some(u => String(u.id) !== String(id || '') && u.email.toLowerCase() === email)) {
+      Utils.showToast('A user with this email already exists.', 'error');
+      return;
+    }
+    const existingUser = id ? state.users.find(u => String(u.id) === String(id)) : null;
+    const allowedRoles = existingUser ? (existingUser.role === 'COO' ? ['COO'] : existingUser.role === 'Super User' ? ['Super User'] : ['Manager', 'Analyst']) : ['Manager', 'Analyst', 'Super User'];
+    const role = $('userRole').value;
+    if (!allowedRoles.includes(role)) { Utils.showToast('This account type cannot be changed to the selected role.', 'error'); return; }
+    const org = state.organizations.find(o => o.id === $('userOrg').value);
+    const dept = state.departments.find(d => d.id === $('userDept').value);
+    if (role !== 'Super User' && !org) { Utils.showToast('Select an organization for this user.', 'error'); return; }
+    const assignedDepartmentIds = role === 'Analyst' ? Array.from(document.querySelectorAll('#analystDeptList input[type="checkbox"]:checked')).map(input => input.value) : [];
+    if (role === 'Analyst' && !assignedDepartmentIds.length) { Utils.showToast('Assign at least one department to the analyst.', 'error'); return; }
+    if (role === 'Manager' && !dept) { Utils.showToast('Assign a department to the manager.', 'error'); return; }
+
+    const maxUsersLimit = parseInt(state.globalSettings?.maxUsers || '100', 10);
+    if (!id && org) {
+      const currentOrgUsers = state.users.filter(u => u.organizationId === org.id);
+      if (currentOrgUsers.length >= maxUsersLimit) {
+        Utils.showToast(`Organization user capacity limit (${maxUsersLimit} users) reached. Update System Settings to increase capacity.`, 'error');
+        return;
+      }
+    }
+
+    const payload = {
+      id: id ? Number(id) : Date.now(),
+      name,
+      email,
+      role,
+      password: existingUser?.password || RorizonData.defaultPassword,
+      department: existingUser?.department || '',
+      departmentId: existingUser?.departmentId || '',
+      assignedDepartmentIds,
+      organizationId: role === 'Super User' ? '' : (org ? org.id : ''),
+      phone: phone || '--',
+      status: existingUser?.status || 'Active',
+      lastLogin: existingUser?.lastLogin || 'Never'
+    };
+
+    if (role === 'Manager' && dept) {
+      payload.departmentId = dept.id;
+      payload.department = dept.name;
+      dept.manager = payload.name;
+      dept.managerUserId = payload.id;
+    }
+    Utils.prepareUserForRole(state, payload, role);
+    if (role === 'Analyst') payload.assignedDepartmentIds = assignedDepartmentIds;
+
+    if (id) {
+      state.users = state.users.map(u => String(u.id) === id ? payload : u);
+      Utils.logAction(`Updated user ${payload.name}`, 'Success', 'green');
+    } else {
+      state.users.unshift(payload);
+      Utils.logAction(`Added user ${payload.name}`, 'Success', 'green');
+    }
+
+    Utils.syncUserDerivedFields(state, payload.id);
+    if (payload.organizationId) Utils.recalculateOrganizationTotals(state, payload.organizationId);
+    Utils.replaceDB(state);
+    Utils.toggleModal('userModal', false);
+    render();
+    Utils.showToast(existingUser && existingUser.role !== payload.role ? 'User role updated and workspace access refreshed.' : `User saved successfully. Default password: ${RorizonData.defaultPassword}`);
+  };
+
+  $('orgForm').onsubmit = e => {
+    e.preventDefault();
+    const state = db();
+    const id = $('orgId').value || `org-${Date.now()}`;
+    const orgName = $('orgName').value.trim();
+    const industry = $('orgIndustry').value.trim() || orgName;
+    const cooName = $('orgCoo').value.trim();
+    const cooEmail = $('orgCooEmail').value.trim().toLowerCase();
+    const cooPassword = RorizonData.defaultPassword;
+    if (!orgName || !cooName || !Utils.validateEmail(cooEmail)) {
+      Utils.showToast('Organization name, COO name, and a valid COO email are required.', 'error');
+      return;
+    }
+    if (state.organizations.some(org => org.id !== id && org.name.toLowerCase() === orgName.toLowerCase())) {
+      Utils.showToast('An organization with this name already exists.', 'error');
+      return;
+    }
+    const deptNames = ($('orgDepartments').value || '').split(',').map(v => v.trim()).filter(Boolean);
+    const uniqueDeptNames = deptNames.length ? Array.from(new Set(deptNames)) : ['Operations'];
+    let org = state.organizations.find(o => o.id === id);
+    const existingCoo = org ? state.users.find(u => u.id === org.cooUserId) : null;
+    const cooId = existingCoo ? existingCoo.id : Date.now() + 1;
+    if (state.users.some(u => u.id !== cooId && u.email.toLowerCase() === cooEmail)) {
+      Utils.showToast('That COO email is already used by another user.', 'error');
+      return;
+    }
+
+    const orgPayload = {
+      id,
+      name: orgName,
+      industry,
+      cooName,
+      cooUserId: cooId,
+      cooEmail,
+      target: org?.target || '0 L',
+      threshold: org?.threshold || '0 L',
+      current: org?.current || '0 L',
+      co2: org?.co2 || '0',
+      status: org?.status || 'Within Target',
+      statusType: org?.statusType || 'green',
+      registrationStatus: 'Approved',
+      registrationStatusType: 'green'
+    };
+
+    if (org) Object.assign(org, orgPayload);
+    else { state.organizations.unshift(orgPayload); org = orgPayload; }
+
+    const cooPayload = {
+      id: cooId,
+      name: cooName,
+      email: cooEmail,
+      password: cooPassword,
+      role: 'COO',
+      department: 'Executive Office',
+      departmentId: `${id}-exec`,
+      assignedDepartmentIds: [],
+      organizationId: id,
+      phone: existingCoo?.phone || '--',
+      status: 'Active',
+      lastLogin: existingCoo?.lastLogin || 'Never'
+    };
+    Utils.prepareUserForRole(state, cooPayload, 'COO');
+    const cooIndex = state.users.findIndex(u => u.id === cooId);
+    if (cooIndex > -1) state.users[cooIndex] = cooPayload; else state.users.unshift(cooPayload);
+
+    state.departments = state.departments.filter(d => d.orgId !== id || uniqueDeptNames.includes(d.name));
+    uniqueDeptNames.forEach((name, index) => {
+      const existing = state.departments.find(d => d.orgId === id && d.name === name);
+      if (existing) existing.orgName = orgName;
+      else {
+        state.departments.push({
+          id: `dept-${Date.now()}-${index}`,
+          orgId: id,
+          orgName: orgName,
+          name,
+          manager: 'Unassigned',
+          managerUserId: null,
+          target: '0 L',
+          threshold: '0 L',
+          current: '0 L',
+          co2: '0',
+          status: 'Within Target',
+          statusType: 'green'
+        });
+      }
+    });
+
+    org.departmentIds = state.departments.filter(d => d.orgId === id).map(d => d.id);
+    Utils.syncOrganizationDerivedFields(state, id);
+    Utils.recalculateOrganizationTotals(state, id);
+    Utils.replaceDB(state);
+    Utils.logAction(`${$('orgId').value ? 'Updated' : 'Added'} organization ${orgName}`, 'Success', 'green');
+    Utils.toggleModal('orgModal', false);
+    render();
+    fillOrgOptions();
+    Utils.showToast(`Organization saved successfully. COO default password: ${RorizonData.defaultPassword}`);
+  };
+
+  $('deptForm').onsubmit = e => {
+    e.preventDefault();
+    const state = db();
+    const id = $('deptId').value;
+    const orgId = $('deptOrg').value;
+    const organization = state.organizations.find(org => org.id === orgId);
+    if (!organization) { Utils.showToast('Select an organization first.', 'error'); return; }
+    const name = $('deptName').value.trim();
+    if (!name) { Utils.showToast('Department name is required.', 'error'); return; }
+
+    const selectedManagerId = $('deptManagerSelect').value;
+    const selectedManager = selectedManagerId ? state.users.find(u => String(u.id) === String(selectedManagerId)) : null;
+
+    const payload = {
+      id: id || Utils.generateId('dept'),
+      orgId,
+      orgName: organization.name,
+      name,
+      manager: selectedManager ? selectedManager.name : 'Unassigned',
+      managerUserId: selectedManager ? selectedManager.id : null,
+      status: 'Active',
+      statusType: 'green'
+    };
+
+    if (state.departments.some(dept => dept.id !== id && dept.orgId === orgId && dept.name.toLowerCase() === name.toLowerCase())) {
+      Utils.showToast('That organization already has a department with this name.', 'error');
+      return;
+    }
+
+    if (id) {
+      state.departments = state.departments.map(dept => dept.id === id ? { ...dept, ...payload } : dept);
+      Utils.logAction(`Updated department ${name}`, 'Success', 'green');
+    } else {
+      state.departments.unshift(payload);
+      Utils.logAction(`Added department ${name}`, 'Success', 'green');
+    }
+
+    if (selectedManager) {
+      selectedManager.departmentId = payload.id;
+      selectedManager.department = payload.name;
+      selectedManager.organizationId = orgId;
+      Utils.syncUserDerivedFields(state, selectedManager.id);
+    }
+
+    Utils.recalculateOrganizationTotals(state, orgId);
+    Utils.replaceDB(state);
+    selectedOrgId = orgId;
+    Utils.toggleModal('deptModal', false);
+    render();
+    Utils.showToast('Department saved successfully.');
+  };
+
+  window.viewUser = id => {
+    const user = db().users.find(u => u.id === id);
+    if (!user) return;
+    $('vuName').textContent = user.name;
+    $('vuEmail').textContent = user.email;
+    $('vuRole').textContent = user.role;
+    $('vuOrg').textContent = orgLabel(user.organizationId);
+    $('vuDept').textContent = userDeptDisplay(user);
+    $('vuStatus').textContent = user.status || 'Active';
+    Utils.toggleModal('viewUserModal', true);
+  };
+
+  window.editUser = id => {
+    const user = db().users.find(u => u.id === id);
+    if (!user) return;
+    openUserModal('Edit User', user);
+  };
+
+  window.toggleUser = id => {
+    const previousDb = JSON.parse(JSON.stringify(Utils.getDB()));
+    const state = JSON.parse(JSON.stringify(previousDb));
+    const user = state.users.find(u => String(u.id) === String(id));
+    if (!user) return;
+
+    const isDeactivating = user.status === 'Active';
+
+    if (user.role === 'Super User' && isDeactivating) {
+      const otherActiveSuperUsers = state.users.filter(u => String(u.id) !== String(id) && u.role === 'Super User' && u.status === 'Active');
+      if (otherActiveSuperUsers.length === 0) {
+        Utils.showToast('Cannot deactivate this account. At least one other active Super User must exist on the platform.', 'error');
+        return;
+      }
+    }
+
+    const newStatus = isDeactivating ? 'Inactive' : 'Active';
+    user.status = newStatus;
+
+    let toastMsg = `User ${newStatus.toLowerCase()}.`;
+    if (user.role === 'COO') {
+      const org = state.organizations.find(o => String(o.cooUserId) === String(user.id) || o.id === user.organizationId);
+      if (org) {
+        org.accountStatus = newStatus;
+        org.status = newStatus;
+        org.statusType = isDeactivating ? 'amber' : 'green';
+        state.users.forEach(u => {
+          if (u.organizationId === org.id && u.role !== 'Super User') {
+            u.status = newStatus;
+          }
+        });
+        toastMsg = isDeactivating
+          ? `COO deactivated. Linked organization "${org.name}" and all staff accounts have been deactivated.`
+          : `COO activated. Linked organization "${org.name}" and staff access restored.`;
+      }
+    }
+
+    Utils.replaceDB(state, previousDb);
+    Utils.logAction(`${newStatus === 'Active' ? 'Activated' : 'Deactivated'} user ${user.name}`, 'Success', newStatus === 'Active' ? 'green' : 'amber');
+
+    const currentUser = Utils.getCurrentUser();
+    const isSelf = currentUser && (String(currentUser.id) === String(user.id) || (currentUser.email && currentUser.email.toLowerCase() === user.email.toLowerCase()));
+
+    if (isDeactivating && isSelf) {
+      Utils.showToast('Your account has been deactivated. Logging out...', 'warning');
+      setTimeout(() => {
+        Utils.logout();
+      }, 1200);
+    } else {
+      render();
+      Utils.showToast(toastMsg);
+    }
+  };
+
+
+  window.dropUser = id => {
+    const user = db().users.find(u => u.id === id);
+    confirmDelete('Delete user?', `Delete ${user?.name || 'this user'}? If the account is a COO, the linked organization, departments, staff, and records will also be deleted.`, () => {
+      const previousDb = JSON.parse(JSON.stringify(Utils.getDB()));
+      const state = JSON.parse(JSON.stringify(previousDb));
+      const result = Utils.deleteUserCascade(state, id);
+      if (result?.blocked) { Utils.showToast(result.reason, 'error'); return; }
+      Utils.replaceDB(state, previousDb);
+      const deletedName = result?.user?.name || result?.organizationCascade?.organization?.cooName || id;
+      Utils.logAction(`Deleted user ${deletedName}`, 'Warning', 'amber');
+      render();
+      fillOrgOptions();
+      Utils.showToast(result?.organizationCascade ? 'COO deleted and linked organization data removed.' : 'User deleted.');
+    });
+  };
+
+  window.selectOrg = id => {
+    selectedOrgId = id;
+    render();
+    const deptSection = $('deptSection');
+    if (deptSection) deptSection.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  window.toggleOrg = id => {
+    const previousDb = JSON.parse(JSON.stringify(Utils.getDB()));
+    const state = JSON.parse(JSON.stringify(previousDb));
+    const org = state.organizations.find(o => o.id === id);
+    if (!org) return;
+
+    const isDeactivating = org.accountStatus !== 'Inactive' && org.status !== 'Inactive';
+    const newStatus = isDeactivating ? 'Inactive' : 'Active';
+
+    org.accountStatus = newStatus;
+    org.status = newStatus;
+    org.statusType = isDeactivating ? 'amber' : 'green';
+
+    state.users.forEach(u => {
+      if (u.organizationId === id && u.role !== 'Super User') {
+        u.status = newStatus;
+      }
+    });
+
+    Utils.replaceDB(state, previousDb);
+    Utils.logAction(`${isDeactivating ? 'Deactivated' : 'Activated'} organization ${org.name}`, 'Success', isDeactivating ? 'amber' : 'green');
+    render();
+    Utils.showToast(`Organization ${org.name} set to ${newStatus.toLowerCase()}.`);
+  };
+
+
+  window.viewOrg = id => {
+    const state = db();
+    const org = state.organizations.find(o => o.id === id);
+    const coo = state.users.find(u => u.id === org?.cooUserId);
+    const departments = state.departments.filter(d => d.orgId === id).map(d => d.name).join(', ');
+    if (!org) return;
+    $('voName').textContent = org.name;
+    $('voIndustry').textContent = org.industry || '--';
+    $('voCoo').textContent = org.cooName || '--';
+    $('voCooEmail').textContent = coo?.email || org.cooEmail || '--';
+    $('voReg').textContent = org.registrationStatus || 'Approved';
+    $('voDepartments').textContent = departments || '--';
+    Utils.toggleModal('viewOrgModal', true);
+  };
+
+  window.viewDept = id => {
+    const state = db();
+    const dept = state.departments.find(entry => entry.id === id);
+    if (!dept) return;
+    const managerUser = state.users.find(u => 
+      u.role === 'Manager' && (
+        (dept.managerUserId && String(u.id) === String(dept.managerUserId)) ||
+        (u.departmentId && String(u.departmentId) === String(dept.id))
+      )
+    );
+    $('vdName').textContent = dept.name;
+    $('vdOrg').textContent = orgLabel(dept.orgId);
+    $('vdManager').textContent = managerUser ? managerUser.name : 'Unassigned';
+    Utils.toggleModal('viewDeptModal', true);
+  };
+
+  window.editOrg = id => {
+    const org = db().organizations.find(o => o.id === id);
+    if (!org) return;
+    openOrgModal('Edit Organization', org);
+  };
+
+  window.dropOrg = id => {
+    const org = db().organizations.find(o => o.id === id);
+    confirmDelete('Delete organization?', `Delete ${org?.name || 'this organization'}, its COO account, departments, staff, and related records?`, () => {
+      const state = db();
+      const result = Utils.deleteOrganizationCascade(state, id);
+      Utils.replaceDB(state);
+      Utils.logAction(`Deleted organization ${result?.organization?.name || id}`, 'Warning', 'amber');
+      render();
+      fillOrgOptions();
+      Utils.showToast('Organization deleted.');
+    });
+  };
+
+  window.openDeptModalForOrg = id => { openDeptModal('Add Department', null, id); };
+  window.editDept = id => {
+    const department = db().departments.find(dept => dept.id === id);
+    if (!department) return;
+    openDeptModal('Edit Department', department, department.orgId);
+  };
+  window.dropDept = id => {
+    const dept = db().departments.find(entry => entry.id === id);
+    confirmDelete('Delete department?', `Delete ${dept?.name || 'this department'} and all of its linked staff and records?`, () => {
+      const state = db();
+      const result = Utils.deleteDepartmentCascade(state, id);
+      Utils.replaceDB(state);
+      Utils.logAction(`Deleted department ${result?.department?.name || id}`, 'Warning', 'amber');
+      render();
+      Utils.showToast('Department deleted.');
+    });
+  };
+
+  await Utils.loadDB();
+  fillOrgOptions();
+  switchMode('users');
+  render();
+  window.addEventListener('rorizon-db-updated', () => { fillOrgOptions(); render(); });
+  window.addEventListener('storage', () => { fillOrgOptions(); render(); });
+  Utils.startPolling(15000);
 });
 </script>
 </body></html>

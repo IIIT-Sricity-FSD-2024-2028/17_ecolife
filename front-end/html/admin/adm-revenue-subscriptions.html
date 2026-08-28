@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscriptions Governance – Rorizon Super User</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .stack{display:grid;gap:16px}
+    .user-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+    .user-toolbar .form-input{flex:1 1 0%;max-width:none}
+    .metric-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#f8fafc;border:1px solid #e2e8f0;color:#0f172a;font-size:12px;font-weight:600}
+    .actions{display:flex;gap:6px;flex-wrap:wrap}
+    .action-btn{border:1px solid #cbd5e1!important;background:#fff!important;color:#0f172a!important;padding:5px 9px!important;border-radius:8px!important;font-size:12px!important;font-weight:700!important;cursor:pointer}
+    .action-btn:hover{background:#f8fafc!important;border-color:#64748b!important}
+    .modal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+    .modal-card{max-width:720px;width:calc(100% - 32px)}
+    .modal-form-shell{display:grid;gap:20px}
+    .modal-section{padding:20px;border:1px solid var(--color-border);border-radius:14px;background:#fff}
+    .modal-section--muted{background:#f8fafc}
+    .modal-section__title{margin:0 0 6px 0;font-size:15px;font-weight:700;color:#0f172a}
+    .modal-section__copy{margin:0;color:#64748b;font-size:13px}
+    .data-table td,.data-table th{white-space:normal!important;word-break:break-word!important;overflow-wrap:break-word!important;line-height:1.45!important}
+  </style>
+</head>
+<body>
+  <div id="app-layout" data-title="Subscriptions Governance" data-subtitle="Master Customer Subscriptions, Tier Assignment &amp; Billing Cycles">
+    <div class="card stack">
+      
+      <!-- PAGE HEADER -->
+      <div class="chart-header">
+        <div>
+          <h2 class="card__title">Organization Subscriptions</h2>
+          <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">View and govern customer organization plans, active statuses, and renewal timelines.</p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn-primary" id="openNewSubBtn" type="button">+ Assign Subscription</button>
+        </div>
+      </div>
+
+      <!-- SEARCH & FILTER TOOLBAR -->
+      <div class="user-toolbar">
+        <input class="form-input" id="subSearchInput" placeholder="Search subscriptions by organization, plan, or status...">
+        <select class="form-input" id="subStatusFilter" style="max-width: 180px;">
+          <option value="ALL">All Statuses</option>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="TRIAL">TRIAL</option>
+          <option value="PAST_DUE">PAST_DUE</option>
+          <option value="CANCELLED">CANCELLED</option>
+          <option value="EXPIRED">EXPIRED</option>
+        </select>
+        <span class="metric-chip" id="subCountBadge">0 subscriptions</span>
+      </div>
+
+      <!-- SUBSCRIPTIONS TABLE -->
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ORGANIZATION</th>
+              <th>PLAN</th>
+              <th>BILLING CYCLE</th>
+              <th>STATUS</th>
+              <th>START DATE</th>
+              <th>RENEWAL DATE</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="subscriptionsTbody">
+            <tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b;">Loading subscriptions...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ASSIGN / MODIFY SUBSCRIPTION MODAL -->
+  <div class="modal-overlay" id="subModal">
+    <div class="modal modal-card">
+      <button class="modal__close" type="button" onclick="Utils.toggleModal('subModal', false)">
+        <img src="../assets/icons/x0.svg" alt="X">
+      </button>
+      <div class="modal__header">
+        <h2 class="modal__title" id="subModalTitle">Assign Organization Subscription</h2>
+      </div>
+      <form id="subForm">
+        <div class="modal__body modal-form-shell">
+          <input type="hidden" id="subId">
+          
+          <section class="modal-section">
+            <h3 class="modal-section__title">Subscription Assignment</h3>
+            <p class="modal-section__copy">Assign or modify plan tier, status, and billing cycle for an organization.</p>
+          </section>
+
+          <section class="modal-section modal-section--muted">
+            <div class="modal-grid">
+              <div>
+                <label class="form-label">Organization</label>
+                <select class="form-input" id="subOrgSelect" required></select>
+              </div>
+              <div>
+                <label class="form-label">Plan Tier</label>
+                <select class="form-input" id="subPlanSelect" required></select>
+              </div>
+              <div>
+                <label class="form-label">Billing Cycle</label>
+                <select class="form-input" id="subCycleSelect" required>
+                  <option value="MONTHLY">MONTHLY</option>
+                  <option value="ANNUAL">ANNUAL</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Status</label>
+                <select class="form-input" id="subStatusSelect" required>
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="TRIAL">TRIAL</option>
+                  <option value="PAST_DUE">PAST_DUE</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                  <option value="EXPIRED">EXPIRED</option>
+                </select>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="modal__footer">
+          <button class="btn-outline" type="button" onclick="Utils.toggleModal('subModal', false)">Cancel</button>
+          <button class="btn-primary" type="submit">Save Subscription</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    let allSubs = [];
+    let allPlans = [];
+    let allOrgs = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      Utils.checkSession();
+      Utils.injectLayout();
+      Utils.initGlobalHeader();
+
+      document.getElementById('openNewSubBtn').addEventListener('click', () => openSubModal());
+      document.getElementById('subSearchInput').addEventListener('input', applyFilters);
+      document.getElementById('subStatusFilter').addEventListener('change', applyFilters);
+      document.getElementById('subForm').addEventListener('submit', handleSaveSub);
+
+      window.addEventListener('rorizon-db-updated', () => fetchSubs());
+      await Promise.all([fetchSubs(), fetchPlans(), fetchOrgs()]);
+    });
+
+    async function fetchSubs() {
+      const res = await Utils.apiFetch('GET', '/api/revenue/subscriptions');
+      if (Array.isArray(res)) {
+        allSubs = res;
+      } else {
+        const db = Utils.getDB() || {};
+        allSubs = Array.isArray(db.subscriptions) ? db.subscriptions : [];
+      }
+      applyFilters();
+    }
+
+    async function fetchPlans() {
+      const res = await Utils.apiFetch('GET', '/api/revenue/plans');
+      if (Array.isArray(res)) {
+        allPlans = res;
+      } else {
+        const db = Utils.getDB() || {};
+        allPlans = Array.isArray(db.plans) ? db.plans : [];
+      }
+    }
+
+    async function fetchOrgs() {
+      const res = await Utils.apiFetch('GET', '/api/organizations');
+      if (Array.isArray(res)) {
+        allOrgs = res;
+      } else {
+        const db = Utils.getDB() || {};
+        allOrgs = Array.isArray(db.organizations) ? db.organizations : [];
+      }
+    }
+
+    function applyFilters() {
+      const q = (document.getElementById('subSearchInput').value || '').toLowerCase().trim();
+      const statusFilter = document.getElementById('subStatusFilter').value;
+
+      let filtered = allSubs;
+      if (statusFilter !== 'ALL') {
+        filtered = filtered.filter(s => s.status === statusFilter);
+      }
+      if (q) {
+        filtered = filtered.filter(s =>
+          (s.organizationName || s.organizationId || '').toLowerCase().includes(q) ||
+          (s.planName || s.planId || '').toLowerCase().includes(q) ||
+          (s.status || '').toLowerCase().includes(q)
+        );
+      }
+      renderSubs(filtered);
+    }
+
+    function renderSubs(subs) {
+      const tbody = document.getElementById('subscriptionsTbody');
+      document.getElementById('subCountBadge').textContent = `${subs.length} subscriptions`;
+
+      if (!subs || subs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px; color: #64748b;">No subscriptions match your query.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = subs.map(sub => {
+        let statusBadge = 'badge--green';
+        if (sub.status === 'TRIAL') statusBadge = 'badge--blue';
+        else if (sub.status === 'CANCELLED' || sub.status === 'EXPIRED') statusBadge = 'badge--red';
+        else if (sub.status === 'PAST_DUE') statusBadge = 'badge--amber';
+
+        const orgName = sub.organizationName || (allOrgs.find(o => o.id === sub.organizationId) || {}).name || sub.organizationId;
+        const planName = sub.planName || (allPlans.find(p => p.id === sub.planId) || {}).name || sub.planId;
+
+        return `
+          <tr>
+            <td style="font-weight: 700; color: #0f172a;">${orgName}</td>
+            <td><span class="badge" style="background:#e2e8f0; color:#1e293b;">${planName}</span></td>
+            <td style="font-weight: 500;">${sub.billingCycle}</td>
+            <td><span class="badge ${statusBadge}">${sub.status}</span></td>
+            <td>${sub.startDate || '--'}</td>
+            <td>${sub.renewalDate || '--'}</td>
+            <td>
+              <div class="actions">
+                <button class="action-btn" type="button" onclick="openSubModal('${sub.id}')">Modify</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openSubModal(subId = null) {
+      const modalTitle = document.getElementById('subModalTitle');
+      const orgSelect = document.getElementById('subOrgSelect');
+      const planSelect = document.getElementById('subPlanSelect');
+      const form = document.getElementById('subForm');
+      form.reset();
+
+      // Populate Orgs Dropdown
+      orgSelect.innerHTML = allOrgs.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+
+      // Populate Plans Dropdown (Active plans)
+      const activePlans = allPlans.filter(p => p.status === 'ACTIVE');
+      planSelect.innerHTML = activePlans.map(p => `<option value="${p.id}">${p.name} (INR ${p.priceMonthly.toLocaleString('en-IN')}/mo)</option>`).join('');
+
+      if (subId) {
+        const sub = allSubs.find(s => s.id === subId);
+        if (!sub) return;
+        modalTitle.textContent = 'Modify Organization Subscription';
+        document.getElementById('subId').value = sub.id;
+        orgSelect.value = sub.organizationId;
+        orgSelect.disabled = true; // cannot change org of existing sub
+        planSelect.value = sub.planId;
+        document.getElementById('subCycleSelect').value = sub.billingCycle;
+        document.getElementById('subStatusSelect').value = sub.status;
+      } else {
+        modalTitle.textContent = 'Assign Organization Subscription';
+        document.getElementById('subId').value = '';
+        orgSelect.disabled = false;
+        document.getElementById('subStatusSelect').value = 'ACTIVE';
+      }
+
+      Utils.toggleModal('subModal', true);
+    }
+
+    async function handleSaveSub(e) {
+      e.preventDefault();
+      const subId = document.getElementById('subId').value;
+      const orgSelect = document.getElementById('subOrgSelect');
+
+      const payload = {
+        organizationId: orgSelect.value,
+        planId: document.getElementById('subPlanSelect').value,
+        billingCycle: document.getElementById('subCycleSelect').value,
+        status: document.getElementById('subStatusSelect').value,
+      };
+
+      let res;
+      if (subId) {
+        res = await Utils.apiFetch('PATCH', `/api/revenue/subscriptions/${subId}`, payload);
+      } else {
+        res = await Utils.apiFetch('POST', '/api/revenue/subscriptions', payload);
+      }
+
+      if (res) {
+        Utils.showToast(subId ? 'Subscription modified successfully.' : 'Subscription assigned successfully.', 'success');
+        Utils.toggleModal('subModal', false);
+        await fetchSubs();
+      } else {
+        Utils.showToast('Failed to save subscription.', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

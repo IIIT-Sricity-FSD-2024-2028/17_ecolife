@@ -5,38 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Master Audit Trail – Rorizon Super User</title>
   <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .stack{display:grid;gap:16px}
+    .user-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+    .user-toolbar .form-input{flex:1 1 0%;max-width:none}
+    .metric-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#f8fafc;border:1px solid #e2e8f0;color:#0f172a;font-size:12px;font-weight:600}
+    .data-table td,.data-table th{white-space:normal!important;word-break:break-word!important;overflow-wrap:break-word!important;line-height:1.45!important}
+    .category-tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:#f1f5f9;color:#475569;margin-right:6px;text-transform:uppercase;letter-spacing:0.02em}
+  </style>
 </head>
 <body>
 
   <div id="app-layout" data-title="System-Wide Audit Logs" data-subtitle="Security &amp; Platform Events">
-    <div class="card">
+    <div class="card stack">
       <div class="chart-header">
-        <h2 class="card__title">Recent Activity</h2>
-        <div class="header-actions">
-          <button class="btn-download" type="button" id="exportLogsBtn">
+        <div>
+          <h2 class="card__title">System-Wide Audit Logs</h2>
+          <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Track security events, user administration actions, and platform activities.</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="btn-outline" type="button" id="exportLogsBtn">
             <img src="../assets/icons/download0.svg" alt="" class="btn__icon" />
             <span>Export Logs (.CSV)</span>
           </button>
         </div>
       </div>
 
+      <div class="user-toolbar">
+        <input class="form-input" id="auditSearch" placeholder="Search logs by actor, event action, role, IP address, timestamp, or outcome...">
+        <span class="metric-chip" id="auditEntryCount">0 logs</span>
+      </div>
+
       <div class="table-wrapper">
         <table class="data-table">
           <thead>
             <tr>
-              <th>Timestamp</th>
-              <th>Actor</th>
-              <th>Event Type</th>
-              <th>IP Address</th>
-              <th>Outcome</th>
+              <th>TIMESTAMP</th>
+              <th>ACTOR / USER</th>
+              <th>EVENT ACTION &amp; CATEGORY</th>
+              <th>IP ADDRESS</th>
+              <th>OUTCOME</th>
             </tr>
           </thead>
           <tbody id="auditTableBody"></tbody>
         </table>
-      </div>
-      
-      <div class="table-footer" style="padding-top: 16px;">
-        <p id="auditEntryCount" class="text--muted">Showing 0 entries</p>
       </div>
     </div>
   </div>
@@ -45,44 +57,182 @@
   <script src="../../js/utils.js"></script>
   
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    let activeFilteredLogs = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
+      ensureSeedLogs();
       renderAuditTable();
+      document.getElementById('auditSearch')?.addEventListener('input', renderAuditTable);
       document.getElementById('exportLogsBtn')?.addEventListener('click', downloadCSV);
-      window.addEventListener('rorizon-db-updated', renderAuditTable);
+      window.addEventListener('rorizon-db-updated', () => { ensureSeedLogs(); renderAuditTable(); });
+      window.addEventListener('storage', () => { ensureSeedLogs(); renderAuditTable(); });
+      Utils.startPolling(15000);
     });
 
-    function renderAuditTable() {
-      const db = Utils.getDB();
-      const logs = db.auditLogs || [];
-      const tbody = document.getElementById('auditTableBody');
-      tbody.innerHTML = '';
+    function ensureSeedLogs() {
+      const state = Utils.ensureCollections(Utils.getDB());
+      if (!Array.isArray(state.auditLogs) || state.auditLogs.length === 0) {
+        state.auditLogs = [
+          {
+            id: 'log-seed-1',
+            timestamp: Utils.nowLabel(),
+            actor: 'System Administrator',
+            action: 'Successful Super User login and session initialization',
+            ip: '127.0.0.1',
+            status: 'Success',
+            statusType: 'green'
+          },
+          {
+            id: 'log-seed-2',
+            timestamp: Utils.nowLabel(),
+            actor: 'Anonymous',
+            action: 'Blocked login attempt: invalid credentials for admin@unknown.com',
+            ip: '192.168.1.105',
+            status: 'Blocked',
+            statusType: 'red'
+          },
+          {
+            id: 'log-seed-3',
+            timestamp: Utils.nowLabel(),
+            actor: 'System Administrator',
+            action: 'Published 2026 Emission Factor Baseline Set and unit compatibilities',
+            ip: '127.0.0.1',
+            status: 'Success',
+            statusType: 'green'
+          },
+          {
+            id: 'log-seed-4',
+            timestamp: Utils.nowLabel(),
+            actor: 'System Administrator',
+            action: 'Updated System Settings: Security Lockout Policy & Session Limits',
+            ip: '127.0.0.1',
+            status: 'Success',
+            statusType: 'green'
+          },
+          {
+            id: 'log-seed-5',
+            timestamp: Utils.nowLabel(),
+            actor: 'Elena Rostova',
+            action: 'Registered new organization: Apex Global Technologies',
+            ip: '192.168.1.42',
+            status: 'Success',
+            statusType: 'green'
+          },
+          {
+            id: 'log-seed-6',
+            timestamp: Utils.nowLabel(),
+            actor: 'Elena Rostova',
+            action: 'Deactivated staff account: mark.manager@apex.com',
+            ip: '192.168.1.42',
+            status: 'Warning',
+            statusType: 'amber'
+          },
+          {
+            id: 'log-seed-7',
+            timestamp: Utils.nowLabel(),
+            actor: 'Marcus Vance',
+            action: 'Analyst requested data correction for Logistics Dept (Q2 2026)',
+            ip: '192.168.1.88',
+            status: 'Warning',
+            statusType: 'amber'
+          }
+        ];
+        Utils.replaceDB(state);
+      }
+    }
 
-      if (logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No audit logs found.</td></tr>`;
-        document.getElementById('auditEntryCount').textContent = "Showing 0 entries";
+    function getEventCategory(actionText) {
+      const txt = String(actionText || '').toLowerCase();
+      if (txt.includes('login') || txt.includes('auth') || txt.includes('password') || txt.includes('session') || txt.includes('blocked')) {
+        return 'Security';
+      }
+      if (txt.includes('user') || txt.includes('staff') || txt.includes('role') || txt.includes('super user')) {
+        return 'Users';
+      }
+      if (txt.includes('organization') || txt.includes('coo') || txt.includes('department')) {
+        return 'Organizations';
+      }
+      if (txt.includes('emission') || txt.includes('factor') || txt.includes('unit') || txt.includes('source') || txt.includes('version')) {
+        return 'Governance';
+      }
+      if (txt.includes('submission') || txt.includes('data') || txt.includes('report') || txt.includes('alert')) {
+        return 'Submissions';
+      }
+      return 'System';
+    }
+
+    function renderAuditTable() {
+      const state = Utils.ensureCollections(Utils.getDB());
+      const logs = state.auditLogs || [];
+      const q = (document.getElementById('auditSearch')?.value || '').trim().toLowerCase();
+
+      const users = state.users || [];
+      const orgs = state.organizations || [];
+
+      const filteredLogs = logs.filter(log => {
+        if (!q) return true;
+        const cat = getEventCategory(log.action);
+        return [
+          log.timestamp,
+          log.actor,
+          log.action,
+          log.ip,
+          log.status,
+          cat
+        ].some(v => String(v || '').toLowerCase().includes(q));
+      });
+
+      activeFilteredLogs = filteredLogs;
+
+      const countChip = document.getElementById('auditEntryCount');
+      if (countChip) {
+        countChip.textContent = `${filteredLogs.length} log${filteredLogs.length === 1 ? '' : 's'}`;
+      }
+
+      const tbody = document.getElementById('auditTableBody');
+      if (!tbody) return;
+
+      if (filteredLogs.length === 0) {
+        tbody.innerHTML = Utils.renderEmptyTableRow(5, 'No Audit Logs Found', 'No security or platform audit events match the current search query.', 'search');
         return;
       }
 
-      tbody.innerHTML = logs.map(log => `
-        <tr>
-          <td class="td--timestamp">${log.timestamp || 'N/A'}</td>
-          <td class="${log.actor === 'Anonymous' ? 'text--danger' : 'td--muted'}">${log.actor || 'N/A'}</td>
-          <td class="${log.status === 'Blocked' ? 'text--danger' : ''}">${log.action || 'N/A'}</td>
-          <td class="td--muted">${log.ip || '192.168.1.1'}</td>
-          <td><span class="status-badge status-badge--${log.statusType || 'green'}">${log.status}</span></td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = filteredLogs.map(log => {
+        const statusType = log.statusType || (log.status === 'Blocked' || log.status === 'Failed' ? 'red' : (log.status === 'Warning' ? 'amber' : 'green'));
+        const matchedUser = users.find(u => u.name === log.actor || u.email === log.actor);
+        const userRole = matchedUser ? matchedUser.role : (log.actor === 'System Administrator' ? 'Super User' : (log.actor === 'Platform System' ? 'System Service' : 'User'));
+        const matchedOrg = matchedUser && matchedUser.organizationId ? orgs.find(o => o.id === matchedUser.organizationId) : null;
+        const orgSub = matchedOrg ? matchedOrg.name : '';
+        const roleOrgSub = orgSub ? `${userRole} • ${orgSub}` : userRole;
+        const category = getEventCategory(log.action);
 
-      document.getElementById('auditEntryCount').textContent = `Showing ${logs.length} dynamic entries`;
+        return `
+          <tr>
+            <td class="td--bold" style="white-space:nowrap;">${log.timestamp || 'N/A'}</td>
+            <td>
+              <div class="td--bold">${log.actor || 'N/A'}</div>
+              <div class="td--muted" style="font-size:12px; margin-top:2px;">${roleOrgSub}</div>
+            </td>
+            <td>
+              <span class="category-tag">${category}</span>
+              <span style="font-weight:500; color:#0f172a;">${log.action || 'N/A'}</span>
+            </td>
+            <td class="td--muted" style="font-family:monospace; font-size:13px;">${log.ip || '127.0.0.1'}</td>
+            <td><span class="status-badge status-badge--${statusType}">${log.status || 'Success'}</span></td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function downloadCSV() {
-      const logs = Utils.getDB().auditLogs || [];
+      const logs = activeFilteredLogs.length > 0 ? activeFilteredLogs : (Utils.getDB().auditLogs || []);
       if (logs.length === 0) return Utils.showToast("No data to export.", "error");
 
-      let csvContent = "Timestamp,Actor,Event Type,IP Address,Outcome\n";
+      let csvContent = "Timestamp,Actor,Category,Event Action,IP Address,Outcome\n";
       logs.forEach(log => {
-        csvContent += `"${log.timestamp}","${log.actor}","${log.action}","${log.ip || '192.168.1.1'}","${log.status}"\n`;
+        const cat = getEventCategory(log.action);
+        csvContent += `"${log.timestamp || ''}","${log.actor || ''}","${cat}","${log.action || ''}","${log.ip || ''}","${log.status || ''}"\n`;
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
