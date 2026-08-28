@@ -3,222 +3,291 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Submission History – Rorizon</title>
+  <title>Submission History - Rorizon</title>
   <link rel="stylesheet" href="../../css/style.css" />
   <style>
-    /* UI Helper styles for the dropdowns and toasts defined in utils.js */
-    .notif-panel, .profile-dropdown { display: none; position: absolute; z-index: 1000; }
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; }
-    .toast { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 9999; transition: opacity 0.3s ease; opacity: 0; }
-    
-    /* Animation for the detail toggle arrow */
+    .stack { display: grid; gap: 16px; }
+    .user-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .user-toolbar .form-input { flex: 1 1 0%; max-width: none; }
     .sh-toggle-btn img { transition: transform 0.3s ease; }
     .is-rotated { transform: rotate(180deg); }
+    .metric-chip { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; font-size: 12px; font-weight: 600; }
+    .data-table td, .data-table th { white-space: normal !important; word-break: break-word !important; overflow-wrap: break-word !important; line-height: 1.45 !important; }
+    
+    .detail-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+    @media (max-width: 768px) { .detail-card-grid { grid-template-columns: 1fr; } }
+    .detail-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; }
+    
+    .action-btn { border: 1px solid #cbd5e1 !important; background: #fff !important; color: #0f172a !important; padding: 5px 9px !important; border-radius: 8px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease; text-decoration: none; }
+    .action-btn:hover { background: #f8fafc !important; border-color: #64748b !important; }
+    .action-btn.warn { color: #dc2626 !important; border-color: #fca5a5 !important; }
+    .action-btn.warn:hover { background: #fef2f2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
   </style>
 </head>
 <body>
+  <div id="app-layout" data-title="Submission History" data-subtitle="Department submission history and status">
 
-  <div id="app-layout" data-title="Submission History" data-subtitle="Operations • TechCorp Industries">
-    <div class="page-heading">
+    <div class="card stack">
       <div class="chart-header">
-        <h2 class="page-heading__title">Submission History</h2>
-        <span class="kpi-tag kpi-tag--blue">Operations</span>
-      </div>
-      <p class="page-heading__subtitle">View past data submissions and their status</p>
-    </div>
-
-    <div class="card">
-      <div class="chart-header">
-        <h2 class="card__title">Recent Submissions</h2>
-        <span class="kpi-tag kpi-tag--muted" id="historyEntryCount">1 Entry Showing</span>
+        <div>
+          <h2 class="card__title">Submission History</h2>
+          <p style="color:#64748b; font-size:13px; margin:4px 0 0;">Audit trail of department reporting submissions, analyst review statuses, and calculation results.</p>
+        </div>
       </div>
 
+      <!-- Admin Style Toolbar with Flexible Search Bar & Department Selector -->
+      <div class="user-toolbar">
+        <input type="text" class="form-input" id="searchSubmissions" placeholder="Search reporting period, status, or notes..." />
+        <div style="display:flex; gap:12px; align-items:center; flex-shrink:0;">
+          <label style="font-size:13px; font-weight:600; color:#475569;">Active Department:</label>
+          <select class="form-input" id="deptHistorySelect" style="width: 170px; color:#0f172a;"></select>
+          <span class="metric-chip" id="historyEntryCount">0 Submissions</span>
+        </div>
+      </div>
+
+      <!-- Essential Submissions History Table -->
       <div class="table-wrapper">
         <table class="data-table sh-table">
           <thead>
             <tr>
-              <th class="sh-th--toggle"></th>
-              <th>Period</th>
-              <th>Status</th>
-              <th>Confidence Score</th>
-              <th>Submitted At</th>
-              <th>Total Consumption</th>
-              <th>Total CO2</th>
+              <th class="sh-th--toggle" style="width: 40px;"></th>
+              <th>REPORTING PERIOD</th>
+              <th>STATUS</th>
+              <th>TOTAL CONSUMPTION</th>
+              <th>SUBMITTED AT</th>
             </tr>
           </thead>
-          <tbody id="submissionHistoryBody">
-             <!-- JS injects dynamic rows here based on managerSubmissions array -->
-          </tbody>
+          <tbody id="submissionHistoryBody"></tbody>
         </table>
       </div>
     </div>
+
   </div>
 
   <script src="../../js/data.js"></script>
   <script src="../../js/utils.js"></script>
-
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        
-        // Legacy header logic removed - utils.js handles app-layout injection natively
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
+      const currentUser = Utils.getCurrentUser() || {};
+      const state = Utils.ensureCollections(Utils.getDB());
+      const shBody = document.getElementById('submissionHistoryBody');
+      const entryCount = document.getElementById('historyEntryCount');
+      const searchInput = document.getElementById('searchSubmissions');
 
-        // 3. Dynamic Data Fetching from LocalStorage
-        const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null') || {};
-        const shBody = document.getElementById('submissionHistoryBody');
-        const entryCount = document.getElementById('historyEntryCount');
+      // Resolve ONLY departments assigned to or managed by current user
+      const assignedDeptIds = Utils.getUserDepartmentScope(currentUser, state);
+      const managerDepartments = (state.departments || []).filter(d => {
+        if (!currentUser) return false;
+        if (assignedDeptIds.includes(d.id)) return true;
+        if (currentUser.departmentId === d.id) return true;
+        if (Array.isArray(currentUser.assignedDepartmentIds) && currentUser.assignedDepartmentIds.includes(d.id)) return true;
+        if (d.managerUserId && String(d.managerUserId) === String(currentUser.id)) return true;
+        if (d.manager && currentUser.name && d.manager.trim().toLowerCase() === currentUser.name.trim().toLowerCase()) return true;
+        return false;
+      });
 
-        function formatNumber(value) {
-            const numeric = Number(value || 0);
-            return Number.isFinite(numeric) ? numeric.toLocaleString() : '0';
+      const deptHistorySelect = document.getElementById('deptHistorySelect');
+      if (deptHistorySelect) {
+        if (managerDepartments.length > 0) {
+          deptHistorySelect.innerHTML = managerDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+          const initialId = currentUser.departmentId && managerDepartments.some(d => d.id === currentUser.departmentId)
+            ? currentUser.departmentId
+            : managerDepartments[0].id;
+          deptHistorySelect.value = initialId;
+        } else {
+          deptHistorySelect.innerHTML = `<option value="">No Department Assigned</option>`;
         }
 
-        function getScopedSubmissions() {
-            const db = Utils.getDB();
-            const departments = Array.isArray(db.departments) ? db.departments : [];
-            const activeDepartment = departments.find(dept => dept.id === currentUser.departmentId) || departments.find(dept => dept.manager === currentUser.name) || null;
-            const fallbackDepartmentName = currentUser.department || activeDepartment?.name || '';
+        deptHistorySelect.addEventListener('change', () => {
+          renderHistory();
+          const selectedDept = getSelectedDept();
+          if (selectedDept) {
+            Utils.showToast(`Filtered submission history for ${selectedDept.name}`);
+          }
+        });
+      }
 
-            const baseSubmissions = Array.isArray(db.submissions) && db.submissions.length
-                ? db.submissions
-                : (db.managerSubmissions || []);
+      if (searchInput) {
+        searchInput.addEventListener('input', renderHistory);
+      }
 
-            const normalized = baseSubmissions.map(submission => {
-                const matchedDepartment = departments.find(dept =>
-                    dept.id === submission.departmentId ||
-                    (submission.departmentName && dept.name === submission.departmentName)
-                ) || activeDepartment;
+      function getSelectedDept() {
+        const selectedId = deptHistorySelect ? deptHistorySelect.value : currentUser.departmentId;
+        return (state.departments || []).find(d => d.id === selectedId) || managerDepartments[0] || null;
+      }
 
-                return {
-                    organizationId: submission.organizationId || matchedDepartment?.orgId || currentUser.organizationId || '',
-                    departmentId: submission.departmentId || matchedDepartment?.id || currentUser.departmentId || '',
-                    departmentName: submission.departmentName || matchedDepartment?.name || fallbackDepartmentName,
-                    managerName: submission.managerName || currentUser.name || '',
-                    managerUserId: submission.managerUserId || currentUser.id || null,
-                    ...submission
-                };
-            });
+      function formatNumber(value) {
+        const numeric = Number(value || 0);
+        return Number.isFinite(numeric) ? numeric.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0';
+      }
 
-            return normalized.filter(submission => {
-                const sameDepartment = currentUser.departmentId
-                    ? submission.departmentId === currentUser.departmentId || submission.departmentName === fallbackDepartmentName
-                    : true;
-                const sameManager = currentUser.id
-                    ? String(submission.managerUserId || '') === String(currentUser.id) || submission.managerName === currentUser.name
-                    : true;
-                const sameOrganization = currentUser.organizationId
-                    ? submission.organizationId === currentUser.organizationId
-                    : true;
-                return sameDepartment && sameOrganization && sameManager;
-            });
+      function getScopedSubmissions() {
+        const db = Utils.ensureCollections(Utils.getDB());
+        const activeDept = getSelectedDept();
+        const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+        let subs = (db.submissions || []).filter(sub => {
+          const sameDept = activeDept ? (sub.departmentId === activeDept.id || sub.departmentName === activeDept.name) : true;
+          const sameOrg = currentUser.organizationId ? sub.organizationId === currentUser.organizationId : true;
+          return sameDept && sameOrg;
+        }).sort((a, b) => Utils.periodKey(b.period) - Utils.periodKey(a.period));
+
+        if (query) {
+          subs = subs.filter(sub => {
+            const periodStr = Utils.formatPeriodLabel(sub.period).toLowerCase();
+            const statusStr = (sub.status || '').toLowerCase();
+            const notesStr = (sub.analystNotes || sub.correctionNotes || '').toLowerCase();
+            return periodStr.includes(query) || statusStr.includes(query) || notesStr.includes(query);
+          });
         }
 
-        function renderHistory() {
-            const submissions = getScopedSubmissions();
-            entryCount.textContent = `${submissions.length} ${submissions.length === 1 ? 'Entry' : 'Entries'} Showing`;
+        return subs;
+      }
 
-            if (submissions.length === 0) {
-                shBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:32px; color:#64748b;">No recent submissions found for this department.</td></tr>';
-                return;
-            }
+      function renderHistory() {
+        const submissions = getScopedSubmissions();
+        entryCount.textContent = `${submissions.length} Submission${submissions.length === 1 ? '' : 's'}`;
 
-            shBody.innerHTML = '';
+        if (!submissions.length) {
+          shBody.innerHTML = Utils.renderEmptyTableRow(5, 'No Submissions Found', 'No activity submissions match your active department filter or search criteria.', 'inbox');
+          return;
+        }
 
-            submissions.forEach((sub) => {
-            // Month mapping
-            const monthMap = { "01": "January", "02": "February", "03": "March", "04": "April", "05": "May", "06": "June", "07": "July", "08": "August", "09": "September", "10": "October", "11": "November", "12": "December"};
-            let displayPeriod = sub.period;
-            if (sub.period && sub.period.includes(' ')) {
-                let [mId, yId] = sub.period.split(' ');
-                if (monthMap[mId]) displayPeriod = `${monthMap[mId]} ${yId}`;
-            }
+        shBody.innerHTML = '';
+        submissions.forEach(sub => {
+          const displayPeriod = Utils.formatPeriodLabel(sub.period);
 
-            const mainRow = document.createElement('tr');
-            mainRow.className = 'sh-main-row';
-            
-            let statusClass = 'status-badge--amber';
-            if((sub.status || '').toLowerCase() === 'approved') statusClass = 'status-badge--green';
-            if((sub.status || '').toLowerCase() === 'rejected') statusClass = 'status-badge--red';
+          // Submission Status Badge
+          const subStatus = sub.status || 'Submitted';
+          let statusBadgeClass = 'amber';
+          if (['Approved', 'Accepted'].includes(subStatus)) statusBadgeClass = 'green';
+          else if (['Correction Required', 'Rejected'].includes(subStatus)) statusBadgeClass = 'red';
+          else if (['Submitted', 'Under Review'].includes(subStatus)) statusBadgeClass = 'blue';
 
-            mainRow.innerHTML = `
-              <td class="sh-td--toggle">
-                <button class="sh-toggle-btn" type="button" aria-expanded="false" style="background:none; border:none; cursor:pointer;">
-                  <img src="../assets/icons/chevron-down-icon0.svg" class="toggle-icon" alt="Toggle Detail" />
-                </button>
-              </td>
-              <td class="td--bold">${displayPeriod}</td>
-              <td><span class="status-badge ${statusClass}">${sub.status || 'Pending'}</span></td>
-              <td><span class="status-badge status-badge--green sh-badge--score">${sub.score || 'Evaluating'}</span></td>
-              <td class="td--muted">${sub.submittedAt || '--'}</td>
-              <td class="td--muted">${formatNumber(sub.totalConsumption)} Units</td>
-              <td class="td--muted">${formatNumber(sub.totalCO2)} kg</td>
-            `;
+          const isCorrectionRequired = subStatus === 'Correction Required' || subStatus === 'Rejected';
 
-            const detailRow = document.createElement('tr');
-            detailRow.className = 'sh-detail-row';
-            detailRow.style.display = 'none';
+          const mainRow = document.createElement('tr');
+          mainRow.className = 'sh-main-row';
+          mainRow.style.cursor = 'pointer';
+          mainRow.innerHTML = `
+            <td class="sh-td--toggle">
+              <button class="sh-toggle-btn" type="button" aria-expanded="false" style="background:none; border:none; cursor:pointer; padding:0;">
+                <img src="../assets/icons/chevron-down-icon0.svg" class="toggle-icon" alt="Toggle Detail" style="width:14px;" />
+              </button>
+            </td>
+            <td class="td--bold">${displayPeriod}</td>
+            <td><span class="status-badge status-badge--${statusBadgeClass}">${subStatus}</span></td>
+            <td class="td--bold" style="color:#0f172a;">${formatNumber(sub.totalConsumption)} <span style="font-size:12px; color:#64748b; font-weight:400;">Units</span></td>
+            <td class="td--muted">${sub.submittedAt || '--'}</td>
+          `;
 
-            let resourcesHtml = '';
-            if (sub.resources && sub.resources.length > 0) {
-                resourcesHtml = sub.resources.map(r => `
-                    <div class="sh-breakdown-row" style="display:flex; justify-content:space-between; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:8px;">
-                        <div style="flex:1;"><strong>Resource:</strong> ${r.type}</div>
-                        <div style="flex:1;"><strong>Quantity:</strong> ${formatNumber(r.qty)} ${r.unit}</div>
-                        <div style="flex:1;"><strong>Calc CO2:</strong> ${formatNumber((Number(r.qty) || 0) * 2.5)} kg</div>
+          const resourcesList = Array.isArray(sub.resources) ? sub.resources : (Array.isArray(sub.items) ? sub.items : []);
+          const resourcesHtml = resourcesList.length
+            ? `
+              <table class="data-table" style="font-size:12px; margin-top:8px;">
+                <thead>
+                  <tr>
+                    <th>RESOURCE TYPE</th>
+                    <th>QUANTITY &amp; UNIT</th>
+                    <th>INGESTION METHOD</th>
+                    <th>EVIDENCE / NOTES</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${resourcesList.map(r => `
+                    <tr>
+                      <td class="td--bold">${r.type || r.resourceTypeName || 'Resource'}</td>
+                      <td class="td--bold">${formatNumber(r.qty || r.quantity)} <span style="font-size:11px; color:#64748b; font-weight:400;">${r.unit || ''}</span></td>
+                      <td><span class="status-badge status-badge--blue">${r.entryMode || 'Manual'}</span></td>
+                      <td class="td--muted">${r.evidenceFileName ? `📄 ${r.evidenceFileName}` : (r.evidenceNotes || '--')}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            `
+            : '<p style="color: #64748b; font-style: italic; margin:6px 0 0 0; font-size:13px;">No detailed records found for this submission batch.</p>';
+
+          const detailRow = document.createElement('tr');
+          detailRow.className = 'sh-detail-row';
+          detailRow.style.display = 'none';
+          detailRow.innerHTML = `
+            <td colspan="5" class="sh-detail-cell" style="padding: 18px 20px; background: #f8fafc;">
+              
+              ${isCorrectionRequired ? `
+                <div style="padding:14px 18px; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; margin-bottom:16px; color:#991b1b; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                  <div>
+                    <strong style="font-size:14px; display:block; margin-bottom:4px;">⚠️ Analyst Correction Notice</strong>
+                    <p style="margin:0; font-size:13px;">${sub.analystNotes || sub.correctionNotes || 'Incompatible units or consumption anomalies were flagged during analyst verification. Please review staged activity quantities and resubmit.'}</p>
+                  </div>
+                  <a href="dm-data-submission.html?resubmitId=${sub.id}" class="action-btn warn" onclick="event.stopPropagation();">
+                    ✏️ Correct &amp; Resubmit
+                  </a>
+                </div>
+              ` : ''}
+
+              <!-- Elegant 2-Card Summary Grid -->
+              <div class="detail-card-grid">
+                <!-- Card 1: Verified Carbon Impact -->
+                <div class="detail-card">
+                  <span style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; display:block; margin-bottom:6px;">Calculated Carbon CO2 Impact</span>
+                  <strong style="font-size:20px; color:${Number(sub.totalCO2 || 0) > 0 ? '#16a34a' : '#2563eb'}; margin-bottom:4px; display:block;">
+                    ${Number(sub.totalCO2 || 0) > 0 ? `${formatNumber(sub.totalCO2)} kgCO2e` : 'Awaiting Analyst Verification'}
+                  </strong>
+                  <span style="font-size:12px; color:#64748b;">
+                    ${Number(sub.totalCO2 || 0) > 0 ? 'Calculated from verified emission factors' : 'Emissions will be computed upon analyst approval'}
+                  </span>
+                </div>
+
+                <!-- Card 2: Submission Governance -->
+                <div class="detail-card">
+                  <span style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; display:block; margin-bottom:6px;">Submission Governance</span>
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                      <strong style="font-size:14px; color:#0f172a; display:block;">${sub.managerName || currentUser.name || 'Department Manager'}</strong>
+                      <span style="font-size:12px; color:#64748b;">Submitted ${sub.submittedAt || '--'}</span>
                     </div>
-                `).join('');
-            } else {
-                resourcesHtml = '<p style="color: #64748b; font-style: italic;">No detailed records found.</p>';
-            }
-
-            detailRow.innerHTML = `
-              <td colspan="7" class="sh-detail-cell" style="padding: 24px; background: #f8fafc;">
-                <div class="sh-section-label" style="font-weight:600; margin-bottom:12px;">Confidence Factors</div>
-                <div class="sh-confidence-grid" style="display:flex; gap:24px; margin-bottom:24px;">
-                  <div class="sh-confidence-item" style="display:flex; align-items:center; gap:8px;">
-                    <img src="../assets/icons/check-circle-20.svg" alt="" class="sh-check-icon" />
-                    <span>Invoice verified</span>
-                  </div>
-                  <div class="sh-confidence-item" style="display:flex; align-items:center; gap:8px;">
-                    <img src="../assets/icons/check-circle-20.svg" alt="" class="sh-check-icon" />
-                    <span>Submission on time</span>
-                  </div>
-                  <div class="sh-confidence-item" style="display:flex; align-items:center; gap:8px;">
-                    <img src="../assets/icons/check-circle-20.svg" alt="" class="sh-check-icon" />
-                    <span>Values match invoice</span>
+                    <span class="status-badge status-badge--${sub.validation?.state === 'threshold_breach' ? 'red' : 'green'}">
+                      ${sub.validation?.state === 'threshold_breach' ? 'Threshold Breach' : 'Valid'}
+                    </span>
                   </div>
                 </div>
+              </div>
 
-                <div class="sh-section-label" style="font-weight:600; margin-bottom:12px;">Resource Breakdown</div>
-                <div class="sh-breakdown-list">
-                  ${resourcesHtml}
+              <!-- Operational Threshold Deviation Card (if breach occurred) -->
+              ${sub.validation?.state === 'threshold_breach' || sub.validation?.deviationReason ? `
+                <div style="padding:12px 16px; border:1px solid #fed7aa; border-radius:10px; background:#fff7ed; margin-bottom:16px;">
+                  <strong style="font-size:13px; color:#c2410c; display:block; margin-bottom:4px;">⚠️ Operational Threshold Deviation Justification:</strong>
+                  <p style="margin:0; font-size:13px; color:#9a3412;">${sub.validation?.deviationReason || 'Consumption exceeded department threshold.'}</p>
                 </div>
-              </td>
-            `;
+              ` : ''}
 
-            // Setup Accordion Toggle Logic
+              <!-- Resource Breakdown Section -->
+              <div style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px;">Activity Resource Records (${resourcesList.length})</div>
+              ${resourcesHtml}
+            </td>
+          `;
+
+          const toggleRow = () => {
+            const isHidden = detailRow.style.display === 'none';
+            detailRow.style.display = isHidden ? 'table-row' : 'none';
             const toggleBtn = mainRow.querySelector('.sh-toggle-btn');
             const toggleIcon = mainRow.querySelector('.toggle-icon');
+            toggleIcon.classList.toggle('is-rotated', isHidden);
+            toggleBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+          };
 
-            toggleBtn.addEventListener('click', () => {
-                const isHidden = detailRow.style.display === 'none';
-                if (isHidden) {
-                    detailRow.style.display = 'table-row';
-                    toggleIcon.classList.add('is-rotated');
-                    toggleBtn.setAttribute('aria-expanded', 'true');
-                } else {
-                    detailRow.style.display = 'none';
-                    toggleIcon.classList.remove('is-rotated');
-                    toggleBtn.setAttribute('aria-expanded', 'false');
-                }
-            });
+          mainRow.addEventListener('click', toggleRow);
 
-            shBody.appendChild(mainRow);
-            shBody.appendChild(detailRow);
-            });
-        }
+          shBody.appendChild(mainRow);
+          shBody.appendChild(detailRow);
+        });
+      }
 
-        renderHistory();
-        window.addEventListener('rorizon-db-updated', renderHistory);
+      renderHistory();
+      window.addEventListener('rorizon-db-updated', renderHistory);
+      window.addEventListener('storage', renderHistory);
+      Utils.startPolling(15000);
     });
   </script>
 </body>

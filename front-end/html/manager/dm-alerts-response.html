@@ -1,78 +1,384 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alerts &amp; Response - Rorizon</title>
-  <link rel="stylesheet" href="../../css/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alerts &amp; Response - Rorizon Manager</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .stack { display: grid; gap: 16px; }
+    .toggle-group { justify-content: space-between; align-items: center; width: 100%; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+    .toggle-btn-group { display: flex; gap: 8px; }
+
+    .user-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .user-toolbar .form-input { flex: 1 1 0%; max-width: none; }
+    .metric-chip { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; font-size: 12px; font-weight: 600; }
+
+    /* Ultra-clean Alert Cards */
+    .alert-item-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; transition: all 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .alert-item-card:hover { border-color: #cbd5e1; }
+
+    .alert-header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; cursor: pointer; }
+
+    .alert-drawer-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid #f1f5f9; display: none; }
+    .alert-drawer-body.is-expanded { display: block; }
+
+    /* Sleek & Simple Governance Stepper Bar */
+    .stepper-bar { display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 8px; padding: 8px 12px; margin-top: 12px; overflow-x: auto; }
+    .step-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #94a3b8; white-space: nowrap; }
+    .step-item.completed { color: #16a34a; }
+    .step-item.current { color: #2563eb; font-weight: 700; }
+    .step-dot { width: 18px; height: 18px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+    .step-item.completed .step-dot { background: #dcfce7; color: #15803d; }
+    .step-item.current .step-dot { background: #dbeafe; color: #1d4ed8; }
+    .step-arrow { color: #cbd5e1; font-size: 10px; }
+
+    .alert-meta-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; background: #f8fafc; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
+    .alert-meta-grid span { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
+    .alert-meta-grid strong { font-size: 14px; color: #0f172a; font-weight: 600; }
+
+    .variance-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; }
+
+    .directive-banner { padding: 14px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+    .directive-banner--coo { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+    .directive-banner--analyst { background: #fffbebfb; border: 1px solid #fef3c7; color: #92400e; }
+
+    /* Executive Sustainability Table */
+    .resource-breakdown-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+    .resource-breakdown-table th { text-align: left; background: #f8fafc; padding: 10px 12px; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0; }
+    .resource-breakdown-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; color: #0f172a; vertical-align: middle; }
+
+    .action-btn { border: 1px solid #cbd5e1 !important; background: #fff !important; color: #0f172a !important; padding: 6px 12px !important; border-radius: 8px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease; text-decoration: none; }
+    .action-btn:hover { background: #f8fafc !important; border-color: #64748b !important; }
+
+    @media(max-width: 900px) { .alert-meta-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
 </head>
 <body>
-  <div id="app-layout" data-title="Alerts &amp; Response" data-subtitle="Operations • TechCorp Industries">
-    <div class="page-heading">
-      <div class="chart-header">
-        <h2 class="page-heading__title">Alerts & Response</h2>
-        <span class="kpi-tag kpi-tag--red" id="activeAlertCount">0 Active Alerts</span>
+  <div id="app-layout" data-title="Alerts &amp; Response" data-subtitle="Department alert workspace">
+
+    <!-- Admin Segmented Control Toggle Group -->
+    <div class="toggle-group">
+      <div class="toggle-btn-group">
+        <button class="toggle-btn active" id="tabActiveAlerts" type="button">Active Escalations (0)</button>
+        <button class="toggle-btn" id="tabResolvedAlerts" type="button">Resolved History (0)</button>
       </div>
-      <p class="page-heading__subtitle">Resolve or escalate live alerts and keep the alert state synced for the COO.</p>
+
+      <span class="metric-chip" id="activeAlertCount">0 Active Alerts</span>
     </div>
 
-    <div id="managerAlertCards" style="display:grid; gap:24px;"></div>
+    <div class="card stack">
+      <!-- Admin Style Toolbar with Search Input & Department Selector -->
+      <div class="user-toolbar">
+        <input type="text" class="form-input" id="searchAlerts" placeholder="Search alert title, resource, message, or directive..." style="color:#0f172a;" />
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <label style="font-size:13px; font-weight:600; color:#475569;">Active Department:</label>
+          <select class="form-input" id="deptAlertSelect" style="width:170px; color:#0f172a;"></select>
+        </div>
+      </div>
+
+      <!-- Alert Cards Feed -->
+      <div id="managerAlertCards" class="stack"></div>
+    </div>
+
+  </div>
+
+  <div class="toast toast--success" id="toastMessage">
+    <div class="toast__icon"><img src="../assets/icons/check-circle0.svg" alt=""></div>
+    <p class="toast__text" id="toastText"></p>
   </div>
 
   <script src="../../js/data.js"></script>
   <script src="../../js/utils.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+    let activeTab = 'active';
+    let expandedAlertIds = new Set();
+    let initializedTab = null;
 
-      function getScopedAlerts(db) {
-        return (db.alerts || []).filter(alert => {
-          const scopedToManager = Array.isArray(alert.roleScope) && alert.roleScope.includes('Manager');
-          const sameDepartment = currentUser.departmentId ? alert.departmentId === currentUser.departmentId : true;
-          const sameOrganization = currentUser.organizationId ? alert.organizationId === currentUser.organizationId : true;
-          return scopedToManager && sameDepartment && sameOrganization;
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
+      const currentUser = Utils.getCurrentUser() || {};
+      const state = Utils.ensureCollections(Utils.getDB());
+      const host = document.getElementById('managerAlertCards');
+      const activeCountElem = document.getElementById('activeAlertCount');
+      const searchInput = document.getElementById('searchAlerts');
+
+      const assignedDeptIds = Utils.getUserDepartmentScope(currentUser, state).map(id => String(id));
+      const managerDepartments = (state.departments || []).filter(d => {
+        if (!currentUser) return false;
+        const dIdStr = String(d.id);
+        if (assignedDeptIds.includes(dIdStr)) return true;
+        if (String(currentUser.departmentId) === dIdStr) return true;
+        if (Array.isArray(currentUser.assignedDepartmentIds) && currentUser.assignedDepartmentIds.map(x => String(x)).includes(dIdStr)) return true;
+        if (d.managerUserId && String(d.managerUserId) === String(currentUser.id)) return true;
+        if (d.manager && currentUser.name && d.manager.trim().toLowerCase() === currentUser.name.trim().toLowerCase()) return true;
+        return false;
+      });
+
+      const deptAlertSelect = document.getElementById('deptAlertSelect');
+      if (deptAlertSelect) {
+        if (managerDepartments.length > 0) {
+          deptAlertSelect.innerHTML = managerDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+          const initialId = currentUser.departmentId && managerDepartments.some(d => String(d.id) === String(currentUser.departmentId))
+            ? currentUser.departmentId
+            : managerDepartments[0].id;
+          deptAlertSelect.value = initialId;
+        } else {
+          deptAlertSelect.innerHTML = `<option value="">No Department Assigned</option>`;
+        }
+
+        deptAlertSelect.addEventListener('change', () => {
+          initializedTab = null;
+          renderAlerts();
+          const selectedDept = getSelectedDept();
+          if (selectedDept) {
+            Utils.showToast(`Filtered alerts for ${selectedDept.name}`);
+          }
         });
       }
 
-      function renderAlerts() {
-        const db = Utils.getDB();
-        const alerts = getScopedAlerts(db);
-        const activeCount = alerts.filter(alert => alert.status !== 'Resolved').length;
-        document.getElementById('activeAlertCount').textContent = `${activeCount} Active Alert${activeCount === 1 ? '' : 's'}`;
+      if (searchInput) {
+        searchInput.addEventListener('input', renderAlerts);
+      }
 
-        const host = document.getElementById('managerAlertCards');
-        if (!alerts.length) {
-          host.innerHTML = '<div class="card"><p style="margin:0; color:#64748b;">No alerts assigned to this manager.</p></div>';
+      function getSelectedDept() {
+        const selectedId = deptAlertSelect ? deptAlertSelect.value : currentUser.departmentId;
+        return (state.departments || []).find(d => String(d.id) === String(selectedId)) || managerDepartments[0] || null;
+      }
+
+      function getScopedAlerts(db) {
+        const activeDept = getSelectedDept();
+        const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        const currentOrg = Utils.getCurrentOrganization(currentUser, db);
+        const orgId = currentOrg?.id || currentUser.organizationId;
+
+        let alerts = (db.alerts || []).filter(alert => {
+          const isManagerRole = !alert.roleScope || (Array.isArray(alert.roleScope) && alert.roleScope.includes('Manager'));
+          const sameDept = activeDept ? (String(alert.departmentId) === String(activeDept.id) || alert.departmentName === activeDept.name) : true;
+          const sameOrg = orgId ? (!alert.organizationId || String(alert.organizationId) === String(orgId)) : true;
+          return isManagerRole && sameDept && sameOrg;
+        });
+
+        if (query) {
+          alerts = alerts.filter(a => {
+            const haystack = `${a.type || a.title || ''} ${a.message || a.description || ''} ${a.cooDirective || ''} ${a.analystClarificationNotes || ''}`.toLowerCase();
+            return haystack.includes(query);
+          });
+        }
+
+        return alerts;
+      }
+
+      function renderAlerts() {
+        const isEditing = document.activeElement && ['TEXTAREA', 'INPUT'].includes(document.activeElement.tagName);
+        if (isEditing) return;
+
+        const db = Utils.ensureCollections(Utils.getDB());
+        const allAlerts = getScopedAlerts(db);
+        const activeAlerts = allAlerts.filter(a => a.status !== 'Resolved');
+        const resolvedAlerts = allAlerts.filter(a => a.status === 'Resolved');
+
+        document.getElementById('tabActiveAlerts').textContent = `Active Escalations (${activeAlerts.length})`;
+        document.getElementById('tabResolvedAlerts').textContent = `Resolved History (${resolvedAlerts.length})`;
+        activeCountElem.textContent = `${activeAlerts.length} Active Alert${activeAlerts.length === 1 ? '' : 's'}`;
+
+        const displayed = activeTab === 'active' ? activeAlerts : resolvedAlerts;
+        const query = searchInput ? searchInput.value.trim() : '';
+        const selectedDept = getSelectedDept();
+
+        if (displayed.length === 0) {
+          host.innerHTML = Utils.renderEmptyState(
+            query ? 'No Matching Alerts Found' : (activeTab === 'active' ? 'No Active Escalations' : 'No Resolved History'),
+            query 
+              ? `No operational alerts matched "${query}".`
+              : (activeTab === 'active'
+                  ? `Your department (${selectedDept?.name || 'Selected Department'}) has no open threshold alerts or pending escalation items.`
+                  : `No resolved alert records available for ${selectedDept?.name || 'this department'}.`),
+            query ? 'search' : (activeTab === 'active' ? 'check' : 'inbox')
+          );
           return;
         }
 
-        host.innerHTML = alerts.map(alert => {
-          const statusType = alert.status === 'Resolved' ? 'green' : alert.status === 'Assigned Review' ? 'amber' : 'red';
+        if (initializedTab !== activeTab) {
+          initializedTab = activeTab;
+          expandedAlertIds.clear();
+          if (displayed.length > 0) {
+            expandedAlertIds.add(String(displayed[0].id));
+          }
+        }
+
+        host.innerHTML = displayed.map(alert => {
+          const alertIdStr = String(alert.id);
+          const isExpanded = expandedAlertIds.has(alertIdStr);
+          const dept = (db.departments || []).find(d => String(d.id) === String(alert.departmentId) || d.name === alert.departmentName);
+          const sub = (db.submissions || []).find(s => (String(s.departmentId) === String(alert.departmentId) || s.departmentName === alert.departmentName) && s.period === alert.period);
+          const isSubmittedToAnalyst = alert.status === 'Analyst Review' || alert.status === 'Resolved';
+          const isClarificationRequested = alert.status === 'Clarification Requested';
+          const status = (alert.status || 'Active').trim();
+          const isResolved = status === 'Resolved';
+
+          const curVal = Utils.parseAmount(alert.currentValue || alert.current || dept?.current || 0);
+          const threshVal = Utils.parseAmount(alert.thresholdValue || alert.threshold || dept?.threshold || 0);
+          let variancePct = 0;
+          if (threshVal > 0 && curVal > threshVal) {
+            variancePct = Math.round(((curVal - threshVal) / threshVal) * 100);
+          }
+
+          // Enriched Resources with Emissions & Line-Item Variance Status
+          const rawResources = sub?.resources || alert.resources || [];
+          const resourcesList = rawResources.map(r => {
+            const qty = Number(r.qty || r.quantity || 0);
+            const factor = Number(r.emissionFactor || (String(r.resourceTypeName || r.type).toLowerCase().includes('electricity') ? 0.5 : 2.68));
+            const co2e = r.co2e ? Number(r.co2e) : Math.round(qty * factor);
+            const targetVal = Number(r.targetQty || r.thresholdQty || Math.round(qty * 0.75));
+            let lineVarPct = 0;
+            if (targetVal > 0 && qty > targetVal) {
+              lineVarPct = Math.round(((qty - targetVal) / targetVal) * 100);
+            }
+            return {
+              ...r,
+              qty,
+              co2e,
+              lineVarPct,
+              evidence: r.evidenceFileName || r.evidenceUrl || 'Verified Entry'
+            };
+          });
+
+          const hasManagerInput = Boolean((alert.managerExplanation && alert.managerExplanation.trim()) || (alert.deviationReason && alert.deviationReason.trim()));
+
+          // Precise Stepper Calculations
+          const s1Done = true;
+          const s2Done = (hasManagerInput && !isClarificationRequested) || status === 'Analyst Review' || status === 'Manager Notified' || isResolved;
+          const s2Current = !s2Done;
+
+          const s3Done = status === 'Manager Notified' || isResolved;
+          const s3Current = s2Done && !s3Done;
+
+          const s4Done = isResolved;
+          const s4Current = s3Done && !s4Done;
+
           return `
-            <div class="card" style="border-left:4px solid ${alert.severity === 'Critical' ? '#ef4444' : '#f59e0b'};">
-              <div class="al-card__toprow" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
-                <div class="al-badges" style="display:flex; gap:8px;">
-                  <span class="status-badge status-badge--${alert.severity === 'Critical' ? 'red' : 'amber'}">${alert.severity}</span>
-                  <span class="status-badge status-badge--${statusType}">${alert.status}</span>
+            <div class="alert-item-card" id="card-${alert.id}">
+              <!-- Direct Header Click Toggle (Simple & Clean) -->
+              <div class="alert-header-row" onclick="toggleAlertExpand('${alert.id}')">
+                <div>
+                  <h3 style="margin:0 0 2px 0; font-size:15px; font-weight:700; color:#0f172a;">${alert.type || alert.title || 'Operational Threshold Alert'}</h3>
+                  <p style="margin:0; font-size:13px; color:#64748b;">${alert.message || alert.description || 'Spike or abnormal resource consumption detected.'}</p>
                 </div>
-                <span class="al-timestamp" style="color:#94a3b8;">${(alert.updatedAt || alert.createdAt || '--').replace('T', ' ')}</span>
+                <div>
+                  ${variancePct > 0 ? `<span class="variance-badge">+${variancePct}% Over Limit</span>` : `<span class="variance-badge" style="background:#fef3c7; border-color:#fde68a; color:#b45309;">Threshold Breach</span>`}
+                </div>
               </div>
-              <h3 class="al-title" style="margin-top:16px;">${alert.type}</h3>
-              <p class="al-dept" style="color:#64748b;">${alert.departmentName}</p>
-              <p class="al-desc" style="color:#334155;">${alert.message}</p>
-              <p style="color:#475569; font-size:14px; margin-top:8px;"><strong>Current note:</strong> ${alert.deviationReason || 'No manager note yet.'}</p>
-              <div class="al-response" style="display:grid; gap:16px; margin-top:20px;">
-                <div class="al-response__field">
-                  <label class="form-label">Explanation</label>
-                  <textarea class="form-textarea" id="expl-${alert.id}" rows="2" ${alert.status === 'Resolved' ? 'disabled' : ''}></textarea>
+
+              <!-- Sleek Governance Stepper Bar -->
+              <div class="stepper-bar">
+                <div class="step-item ${s1Done ? 'completed' : ''}">
+                  <span class="step-dot">✓</span>
+                  <span>1. Breach Flagged</span>
                 </div>
-                <div class="al-response__field">
-                  <label class="form-label">Action Taken</label>
-                  <textarea class="form-textarea" id="act-${alert.id}" rows="2" ${alert.status === 'Resolved' ? 'disabled' : ''}></textarea>
+                <span class="step-arrow">►</span>
+                <div class="step-item ${s2Done ? 'completed' : (s2Current ? 'current' : '')}">
+                  <span class="step-dot">${s2Done ? '✓' : '2'}</span>
+                  <span>2. Manager Justification</span>
                 </div>
-                <div class="al-response__actions" style="display:flex; gap:12px;">
-                  <button class="btn-primary" type="button" onclick="handleManagerAlert('${alert.id}','resolve')" ${alert.status === 'Resolved' ? 'disabled' : ''}>Resolve</button>
-                  <button class="btn-outline" type="button" onclick="handleManagerAlert('${alert.id}','escalate')" ${alert.status === 'Resolved' ? 'disabled' : ''}>Escalate</button>
+                <span class="step-arrow">►</span>
+                <div class="step-item ${s3Done ? 'completed' : (s3Current ? 'current' : '')}">
+                  <span class="step-dot">${s3Done ? '✓' : '3'}</span>
+                  <span>3. Analyst Audit</span>
+                </div>
+                <span class="step-arrow">►</span>
+                <div class="step-item ${s4Done ? 'completed' : (s4Current ? 'current' : '')}">
+                  <span class="step-dot">${s4Done ? '✓' : '4'}</span>
+                  <span>4. Executive Sign-off</span>
+                </div>
+              </div>
+
+              <!-- Expanded Detailed View -->
+              <div class="alert-drawer-body ${isExpanded ? 'is-expanded' : ''}">
+                <div class="alert-meta-grid">
+                  <div><span>Department</span><strong>${alert.departmentName || '--'}</strong></div>
+                  <div><span>Reporting Period</span><strong>${Utils.formatPeriodLabel(alert.period || '')}</strong></div>
+                  <div><span>Current Consumption</span><strong>${dept ? (dept.current || '--') : '--'}</strong></div>
+                  <div><span>Threshold Limit</span><strong style="color:#b45309;">${dept ? (dept.threshold || '--') : '--'}</strong></div>
+                </div>
+
+                ${alert.cooDirective ? `
+                  <div class="directive-banner directive-banner--coo">
+                    <strong style="display:block; margin-bottom:2px; font-size:12px; text-transform:uppercase; letter-spacing:0.04em; color:#1d4ed8;">COO Executive Directive Issued:</strong>
+                    "${alert.cooDirective}"
+                  </div>
+                ` : ''}
+
+                ${alert.analystClarificationNotes ? `
+                  <div class="directive-banner directive-banner--analyst">
+                    <strong style="display:block; margin-bottom:2px; font-size:12px; text-transform:uppercase; letter-spacing:0.04em; color:#b45309;">Analyst Re-Explanation Request:</strong>
+                    "${alert.analystClarificationNotes}"
+                  </div>
+                ` : ''}
+
+                ${resourcesList.length > 0 ? `
+                  <div style="margin-bottom:14px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px;">
+                    <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px; display:flex; justify-content:space-between;">
+                      <span>Ingested Resource Activity &amp; Emissions Breakdown</span>
+                      <span>${resourcesList.length} line item(s)</span>
+                    </div>
+                    <table class="resource-breakdown-table">
+                      <thead>
+                        <tr>
+                          <th>RESOURCE TYPE</th>
+                          <th style="text-align:right;">SUBMITTED ACTIVITY</th>
+                          <th style="text-align:right;">EMISSIONS IMPACT</th>
+                          <th style="text-align:center;">VARIANCE STATUS</th>
+                          <th>VERIFICATION EVIDENCE</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${resourcesList.map(r => `
+                          <tr>
+                            <td style="font-weight:700; color:#0f172a;">${r.resourceTypeName || r.type || 'Resource'}</td>
+                            <td style="text-align:right; font-weight:700; font-variant-numeric:tabular-nums;">${r.qty.toLocaleString()} <span style="font-size:11px; font-weight:500; color:#64748b;">${r.unitName || r.unit || 'Units'}</span></td>
+                            <td style="text-align:right; font-weight:700; color:#0f172a; font-variant-numeric:tabular-nums;">${r.co2e.toLocaleString()} <span style="font-size:11px; font-weight:500; color:#64748b;">kg CO₂e</span></td>
+                            <td style="text-align:center;">
+                              ${r.lineVarPct > 0 
+                                ? `<span class="variance-badge" style="font-size:10px; padding:2px 6px;">+${r.lineVarPct}% Over Baseline</span>`
+                                : `<span style="font-size:11px; font-weight:600; color:#16a34a; background:#f0fdf4; border:1px solid #bbf7d0; padding:2px 6px; border-radius:4px;">Within Baseline</span>`}
+                            </td>
+                            <td>
+                              ${r.evidence !== 'Verified Entry'
+                                ? `<a class="action-btn" href="#" onclick="event.preventDefault(); Utils.showToast('Opening evidence document: ${r.evidence}');" style="font-size:11px; padding:3px 8px;">📎 ${r.evidence}</a>`
+                                : `<span style="color:#64748b; font-size:11px;">Verified Record</span>`}
+                            </td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : ''}
+
+                <div style="padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#334155; margin-bottom:14px;">
+                  <strong>Deviation Details:</strong> ${alert.deviationReason || 'No threshold deviation notes recorded.'}
+                </div>
+
+                <div class="stack" style="gap:12px; margin-top:4px;">
+                  <div>
+                    <label class="form-label">Operational Explanation (What caused this consumption spike?)</label>
+                    <textarea class="form-textarea" id="expl-${alert.id}" rows="2" ${isSubmittedToAnalyst ? 'disabled' : ''} placeholder="Provide operational cause (e.g. generator test, HVAC overload, production surge)...">${alert.managerExplanation || alert.deviationReason || ''}</textarea>
+                  </div>
+                  <div>
+                    <label class="form-label">Corrective Measures Taken / Planned</label>
+                    <textarea class="form-textarea" id="act-${alert.id}" rows="2" ${isSubmittedToAnalyst ? 'disabled' : ''} placeholder="Describe corrective actions taken...">${alert.managerActionTaken || ''}</textarea>
+                  </div>
+                  <div>
+                    ${!isSubmittedToAnalyst ? `
+                      <button class="btn-primary" type="button" onclick="handleManagerAlert('${alert.id}')" style="justify-content:center;">
+                        ${isClarificationRequested ? 'Resubmit Clarified Explanation &amp; Escalate' : 'Send Explanation &amp; Escalate to Analyst'}
+                      </button>
+                    ` : `
+                      <span style="font-size:12px; color:#16a34a; font-weight:600; background:#f0fdf4; padding:8px 14px; border-radius:6px; display:inline-block; border:1px solid #bbf7d0;">
+                        ✓ Explanation submitted and escalated to Analyst for review
+                      </span>
+                    `}
+                  </div>
                 </div>
               </div>
             </div>
@@ -80,57 +386,85 @@
         }).join('');
       }
 
-      window.handleManagerAlert = function(alertId, action) {
-        const db = Utils.getDB();
-        const alert = (db.alerts || []).find(item => item.id === alertId);
-        if (!alert) return;
+      window.toggleAlertExpand = function(alertId) {
+        const idStr = String(alertId);
+        if (expandedAlertIds.has(idStr)) {
+          expandedAlertIds.delete(idStr);
+        } else {
+          expandedAlertIds.add(idStr);
+        }
+        renderAlerts();
+      };
 
-        const explanation = document.getElementById(`expl-${alertId}`).value.trim();
-        const actionTaken = document.getElementById(`act-${alertId}`).value.trim();
+      document.getElementById('tabActiveAlerts').addEventListener('click', () => {
+        activeTab = 'active';
+        document.getElementById('tabActiveAlerts').classList.add('active');
+        document.getElementById('tabResolvedAlerts').classList.remove('active');
+        renderAlerts();
+      });
+
+      document.getElementById('tabResolvedAlerts').addEventListener('click', () => {
+        activeTab = 'resolved';
+        document.getElementById('tabResolvedAlerts').classList.add('active');
+        document.getElementById('tabActiveAlerts').classList.remove('active');
+        renderAlerts();
+      });
+
+      window.handleManagerAlert = async function(alertId) {
+        const explElem = document.getElementById(`expl-${alertId}`);
+        const actElem = document.getElementById(`act-${alertId}`);
+
+        const explanation = explElem ? explElem.value.trim() : '';
+        const actionTaken = actElem ? actElem.value.trim() : '';
+
         if (!explanation) {
-          Utils.showToast('Explain the cause before updating the alert.', 'error');
+          Utils.showToast('Please enter an operational explanation.', 'error');
           return;
         }
 
+        const db = Utils.ensureCollections(Utils.getDB());
+        const alertIndex = (db.alerts || []).findIndex(a => String(a.id) === String(alertId));
+        if (alertIndex < 0) return;
+
+        const alert = db.alerts[alertIndex];
         alert.managerExplanation = explanation;
         alert.managerActionTaken = actionTaken;
-        alert.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        alert.status = 'Analyst Review';
+        alert.updatedAt = Utils.nowLabel();
+        alert.managerName = currentUser.name || 'Department Manager';
 
-        if (!db.notifications) db.notifications = [];
+        if (!Array.isArray(db.notifications)) db.notifications = [];
+        db.notifications.unshift({
+          id: Date.now(),
+          role: 'Analyst',
+          organizationId: alert.organizationId,
+          title: 'Alert Response Submitted',
+          body: `${alert.departmentName} Manager submitted response for alert: "${explanation.slice(0, 60)}..."`,
+          timestamp: Utils.nowLabel(),
+          read: false
+        });
 
-        if (action === 'resolve') {
-          alert.status = 'Resolved';
-          db.notifications.unshift({
-            id: Date.now(),
-            role: 'COO',
-            title: 'Manager Resolved Alert',
-            body: `${alert.departmentName} marked an alert as resolved.`,
-            timestamp: 'Just now',
-            read: false,
-            details: `${explanation}${actionTaken ? ' | Action Taken: ' + actionTaken : ''}`
-          });
-          Utils.logAction(`Manager Resolved Alert: ${alert.departmentName}`, 'Success', 'green');
-        } else {
-          alert.status = 'Escalated';
-          db.notifications.unshift({
-            id: Date.now(),
-            role: 'COO',
-            title: 'Manager Escalated Alert',
-            body: `${alert.departmentName} escalated an alert for executive review.`,
-            timestamp: 'Just now',
-            read: false,
-            details: `${explanation}${actionTaken ? ' | Action Taken: ' + actionTaken : ''}`
-          });
-          Utils.logAction(`Manager Escalated Alert: ${alert.departmentName}`, 'Warning', 'amber');
-        }
-
+        Utils.logAction(`Manager submitted operational explanation for ${alert.departmentName} alert`, 'Info', 'blue');
         Utils.replaceDB(db);
+        await Utils.apiFetch('PATCH', `/api/alerts/${alert.id}`, alert);
+
+        window.dispatchEvent(new Event('rorizon-notifications-updated'));
+        Utils.showToast('Response submitted and escalated to Analyst!');
         renderAlerts();
-        Utils.showToast(action === 'resolve' ? 'Alert resolved and synced.' : 'Alert escalated to the COO.');
       };
 
       renderAlerts();
-      window.addEventListener('rorizon-db-updated', renderAlerts);
+
+      function safeSync() {
+        const isInputFocused = document.activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
+        if (!isInputFocused) {
+          renderAlerts();
+        }
+      }
+
+      window.addEventListener('rorizon-db-updated', safeSync);
+      window.addEventListener('storage', safeSync);
+      Utils.startPolling(15000);
     });
   </script>
 </body>

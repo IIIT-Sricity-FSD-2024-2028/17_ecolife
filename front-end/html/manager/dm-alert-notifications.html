@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -44,17 +44,18 @@
   <script src="../../js/data.js"></script>
   <script src="../../js/utils.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Utils.loadDB();
       const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
 
       function getManagerAlerts() {
         const db = Utils.getDB();
         const alerts = Array.isArray(db.alerts) ? db.alerts : [];
         return alerts.filter(alert => {
-          const scopedToManager = Array.isArray(alert.roleScope) && alert.roleScope.includes('Manager');
-          const sameDepartment = currentUser.departmentId ? alert.departmentId === currentUser.departmentId : true;
-          const sameOrganization = currentUser.organizationId ? alert.organizationId === currentUser.organizationId : true;
-          return scopedToManager && sameDepartment && sameOrganization;
+          const isManagerRole = !alert.roleScope || (Array.isArray(alert.roleScope) && alert.roleScope.includes('Manager'));
+          const deptMatch = !alert.departmentId || !currentUser.departmentId || alert.departmentId === currentUser.departmentId || alert.departmentName === currentUser.department;
+          const orgMatch = !alert.organizationId || !currentUser.organizationId || alert.organizationId === currentUser.organizationId;
+          return isManagerRole && deptMatch && orgMatch;
         });
       }
 
@@ -65,7 +66,7 @@
         document.getElementById('managerAlertCount').textContent = `${activeCount} Active Alert${activeCount === 1 ? '' : 's'}`;
 
         if (!alerts.length) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No alerts assigned to this manager.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b; padding:24px;">No alerts that needed your attention.</td></tr>';
           return;
         }
 
