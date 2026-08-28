@@ -6,34 +6,43 @@
   <title>Access Denied - Rorizon Platform</title>
   <link rel="stylesheet" href="../../css/style.css">
   <style>
+    body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #f8fafc; color: #0f172a; }
     .auth-container {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--bg-body);
-        padding: 24px;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
     }
     .auth-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border-light);
-        border-radius: var(--radius-lg);
-        width: 100%;
-        max-width: 440px;
-        padding: 40px;
-        text-align: center;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 440px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
     }
     .auth-icon {
-        width: 64px; height: 64px;
-        background: rgba(239, 68, 68, 0.1);
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 24px auto;
+      width: 64px; height: 64px;
+      background: #fef2f2;
+      border: 1px solid #fee2e2;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px auto;
     }
-    .auth-icon img { filter: invert(34%) sepia(87%) saturate(2325%) hue-rotate(346deg) brightness(97%) contrast(92%); }
-    .auth-title { font-size: 24px; font-weight: 600; margin-bottom: 12px; color: var(--text-hero); }
-    .auth-subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5; }
+    .auth-icon img { filter: invert(27%) sepia(89%) saturate(3048%) hue-rotate(345deg) brightness(92%) contrast(92%); width: 28px; }
+    .auth-title { font-size: 24px; font-weight: 700; margin-bottom: 12px; color: #0f172a; }
+    .auth-subtitle { color: #64748b; font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
+    .btn-submit {
+      width: 100%; padding: 14px; background: #2563eb; color: #fff; border: none;
+      border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-submit:hover { background: #1d4ed8; }
+    .secondary-action { margin-top: 20px; font-size: 14px; }
+    .secondary-action a { color: #64748b; text-decoration: none; font-weight: 500; }
+    .secondary-action a:hover { color: #2563eb; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -41,12 +50,16 @@
   <div class="auth-container">
     <div class="auth-card">
       <div class="auth-icon">
-        <img src="../assets/icons/shield0.svg" alt="Security" width="32">
+        <img src="../assets/icons/shield0.svg" alt="Security" width="28">
       </div>
       <h1 class="auth-title">Access Denied</h1>
-      <p class="auth-subtitle">You do not have permission to access the requested page. Please return to your designated dashboard.</p>
+      <p class="auth-subtitle" id="authSub">You do not have permission to access the requested page. Please return using the option below.</p>
       
-      <button type="button" class="btn-primary" style="width: 100%;" id="btnReturn">Return to Dashboard</button>
+      <button type="button" class="btn-submit" id="btnReturn">Return to Home</button>
+      
+      <div class="secondary-action">
+        <a href="auth-login.html">Sign in with a different account &rarr;</a>
+      </div>
     </div>
   </div>
 
@@ -54,20 +67,36 @@
   <script src="../../js/utils.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('btnReturn').addEventListener('click', () => {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (!currentUser) {
-            window.location.href = 'auth-login.html';
-            return;
+      let currentUser = null;
+      try {
+        currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      } catch (e) {
+        currentUser = null;
+      }
+
+      let targetPath = '../../index.html';
+      let buttonText = 'Return to Home';
+
+      if (currentUser && currentUser.role) {
+        buttonText = 'Return to Dashboard';
+        if (currentUser.role === 'Super User') {
+          targetPath = '../admin/adm-dashboard.html';
+        } else if (currentUser.role === 'COO') {
+          targetPath = '../coo/coo-dashboard.html';
+        } else if (currentUser.role === 'Manager') {
+          targetPath = '../manager/dm-dashboard.html';
+        } else if (currentUser.role === 'Analyst') {
+          targetPath = '../analyst/sa-dashboard.html';
         }
-        let targetPath = 'auth-login.html';
-        if (currentUser.role === 'Super User') targetPath = '../admin/adm-dashboard.html';
-        else if (currentUser.role === 'COO') targetPath = '../coo/coo-dashboard.html';
-        else if (currentUser.role === 'Manager') targetPath = '../manager/dm-dashboard.html';
-        else if (currentUser.role === 'Analyst') targetPath = '../analyst/sa-dashboard.html';
-        
-        window.location.href = targetPath;
-      });
+      }
+
+      const btnReturn = document.getElementById('btnReturn');
+      if (btnReturn) {
+        btnReturn.textContent = buttonText;
+        btnReturn.addEventListener('click', () => {
+          window.location.href = targetPath;
+        });
+      }
     });
   </script>
 </body>

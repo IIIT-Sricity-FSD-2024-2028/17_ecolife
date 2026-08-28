@@ -9,7 +9,7 @@
     body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #fff; }
     .auth-split { display: flex; min-height: 100vh; }
     .auth-left {
-      flex: 1; background: linear-gradient(160deg, #0f172a 0%, #1e40af 55%, #22c55e 100%); color: #fff; padding: 64px;
+      flex: 1; background: linear-gradient(160deg, #0f172a 0%, #1d4ed8 55%, #38bdf8 100%); color: #fff; padding: 64px;
       display: flex; flex-direction: column; justify-content: center;
     }
     .auth-left .logo-row { display: flex; align-items: center; gap: 12px; margin-bottom: 48px; }
@@ -17,12 +17,19 @@
     .auth-left .logo-icon img { filter: brightness(0) invert(1); width: 24px; }
     .auth-left .logo-text { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
     .auth-left h1 { font-size: 36px; font-weight: 700; margin-bottom: 18px; line-height: 1.2; }
-    .auth-left p { font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.88); max-width: 500px; margin-bottom: 32px; }
-    .feature-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; }
-    .feature-item { display: flex; gap: 14px; align-items: flex-start; }
-    .feature-icon { width: 18px; height: 18px; margin-top: 3px; filter: brightness(0) invert(1); }
-    .feature-item h3 { margin: 0 0 4px 0; font-size: 16px; font-weight: 600; }
-    .feature-item p { margin: 0; font-size: 14px; opacity: 0.82; }
+    .auth-left p { font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.88); max-width: 500px; margin-bottom: 24px; }
+    .feature-list { display: grid; gap: 14px; }
+    .feature-item {
+      display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px;
+      border-radius: 14px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.18);
+      max-width: 520px;
+    }
+    .feature-icon {
+      width: 18px; height: 18px; margin-top: 2px; filter: brightness(0) invert(1);
+      flex: 0 0 auto;
+    }
+    .feature-copy strong { display: block; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .feature-copy span { display: block; font-size: 14px; line-height: 1.5; color: rgba(255,255,255,0.82); }
     .auth-right {
       flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 48px; background: #fff;
     }
@@ -30,7 +37,6 @@
     .auth-header { margin-bottom: 28px; }
     .auth-title { font-size: 28px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
     .auth-subtitle { color: #64748b; font-size: 15px; margin-bottom: 16px; }
-    .reg-note { margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: #f8fafc; color: #475569; font-size: 14px; line-height: 1.5; border: 1px solid #e2e8f0; }
     .step-bar { display: flex; gap: 8px; margin-bottom: 32px; }
     .step-segment { flex: 1; height: 4px; background: #e2e8f0; border-radius: 2px; }
     .step-segment.active { background: #2563eb; }
@@ -46,6 +52,13 @@
     .btn-submit { width: 100%; padding: 14px; background: #2563eb; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
     .btn-submit:hover { background: #1d4ed8; }
     .btn-outline { width: 100%; padding: 14px; background: transparent; color: #2563eb; border: 1px solid #2563eb; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .action-row { display: flex; gap: 12px; }
+    .action-row .btn-submit { flex: 1; }
+    .action-row .btn-outline {
+      width: auto; flex: 0 0 auto; min-width: 112px; padding: 14px 22px;
+      color: #64748b; border-color: #cbd5e1; background: #fff;
+    }
+    .action-row .btn-outline:hover { background: #f8fafc; }
     .auth-footer { margin-top: 28px; text-align: center; color: #64748b; font-size: 14px; }
     .auth-link { color: #2563eb; text-decoration: none; font-weight: 500; }
     .auth-link:hover { text-decoration: underline; }
@@ -62,31 +75,31 @@
           <div class="logo-icon"><img src="../assets/icons/leaf0.svg" alt=""></div>
           <div class="logo-text">Rorizon</div>
         </div>
-        <h1>Register an organization into the shared sustainability ledger.</h1>
-        <p>Your registration now writes directly into the platform data store so Super User review, COO activation, audit logging, and downstream role access all stay connected.</p>
-        <ul class="feature-list">
-          <li class="feature-item">
+        <h1>Register your organization.</h1>
+        <p>Create the organization record and the initial COO account in one flow.</p>
+        <div class="feature-list" id="featureList">
+          <div class="feature-item">
             <img src="../assets/icons/check-circle0.svg" class="feature-icon" alt="">
-            <div>
-              <h3>2-step onboarding</h3>
-              <p>Create the organization record and the initial COO account in one flow.</p>
+            <div class="feature-copy">
+              <strong>2-step onboarding</strong>
+              <span>Create the organization record and the initial COO account in one flow.</span>
             </div>
-          </li>
-          <li class="feature-item">
+          </div>
+          <div class="feature-item">
             <img src="../assets/icons/check-circle0.svg" class="feature-icon" alt="">
-            <div>
-              <h3>Super User approval</h3>
-              <p>New organizations stay pending until approved in system management.</p>
+            <div class="feature-copy">
+              <strong>Instant access</strong>
+              <span>New organizations and their COO account become active immediately after registration.</span>
             </div>
-          </li>
-          <li class="feature-item">
+          </div>
+          <div class="feature-item">
             <img src="../assets/icons/check-circle0.svg" class="feature-icon" alt="">
-            <div>
-              <h3>Traceable audit trail</h3>
-              <p>Registration events are logged immediately for governance review.</p>
+            <div class="feature-copy">
+              <strong>Connected records</strong>
+              <span>Departments, organization setup, and downstream role access stay linked from the first sign-in.</span>
             </div>
-          </li>
-        </ul>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -99,7 +112,6 @@
             <div class="step-segment active" id="seg1"></div>
             <div class="step-segment" id="seg2"></div>
           </div>
-          <div class="reg-note">The initial COO account is created in an inactive state and becomes sign-in eligible after Super User approval.</div>
         </div>
 
         <form id="regForm" novalidate>
@@ -131,24 +143,16 @@
               <input type="text" class="form-input" id="regCompany" required placeholder="Your organization name">
             </div>
             <div class="form-group">
-              <label class="form-label" for="regIndustry">Industry</label>
-              <input type="text" class="form-input" id="regIndustry" required placeholder="Manufacturing, Logistics, Healthcare...">
-            </div>
-            <div class="form-group">
               <label class="form-label" for="regName">COO Full Name</label>
               <input type="text" class="form-input" id="regName" required placeholder="Full name">
-            </div>
-            <div class="form-group" style="margin-bottom: 24px;">
-              <label class="form-label" for="regTarget">Initial monthly target limit</label>
-              <input type="text" class="form-input" id="regTarget" required placeholder="e.g. 5000 L">
             </div>
             <div class="form-group" style="margin-bottom: 24px;">
               <label class="form-label" for="regDepartments">Departments</label>
               <input type="text" class="form-input" id="regDepartments" placeholder="e.g. Operations, Manufacturing, Logistics">
             </div>
-            <div style="display: flex; gap: 12px;">
-              <button type="button" class="btn-outline" style="flex: 0 0 auto; min-width: 100px;" id="btnBack">&larr; Back</button>
-              <button type="submit" class="btn-submit" style="flex: 1;" id="btnSubmit">Create Account</button>
+            <div class="action-row">
+              <button type="button" class="btn-outline" id="btnBack">&larr; Back</button>
+              <button type="submit" class="btn-submit" id="btnSubmit">Create Account</button>
             </div>
           </div>
         </form>
@@ -176,20 +180,50 @@
       const seg2 = document.getElementById('seg2');
       const subtitle = document.getElementById('stepSubtitle');
       const form = document.getElementById('regForm');
+      const featureList = document.getElementById('featureList');
+
+      function renderFeatureMetrics() {
+        featureList.innerHTML = `
+          <div class="feature-item">
+            <img src="../assets/icons/check-circle0.svg" class="feature-icon" alt="">
+            <div class="feature-copy">
+              <strong>Department data collection</strong>
+              <span>Managers submit monthly resource usage for each department in one shared workspace.</span>
+            </div>
+          </div>
+          <div class="feature-item">
+            <img src="../assets/icons/check-circle0.svg" class="feature-icon" alt="">
+            <div class="feature-copy">
+              <strong>Analyst review flow</strong>
+              <span>Analysts validate submissions, compare trends, and prepare reports from the latest records.</span>
+            </div>
+          </div>
+          <div class="feature-item">
+            <img src="../assets/icons/check-circle0.svg" class="feature-icon" alt="">
+            <div class="feature-copy">
+              <strong>Executive approval and audit trail</strong>
+              <span>COO and Super User workflows stay connected with alerts, approvals, and tracked platform activity.</span>
+            </div>
+          </div>
+        `;
+      }
 
       function togglePassword(inputId) {
         const input = document.getElementById(inputId);
         input.type = input.type === 'password' ? 'text' : 'password';
       }
 
+      renderFeatureMetrics();
+      void Utils.loadDB();
+
       document.getElementById('togglePwd1').addEventListener('click', () => togglePassword('regPassword'));
       document.getElementById('togglePwd2').addEventListener('click', () => togglePassword('regPassword2'));
 
-      document.getElementById('btnNext').addEventListener('click', () => {
+      document.getElementById('btnNext').addEventListener('click', async () => {
         const email = document.getElementById('regEmail').value.trim().toLowerCase();
         const password = document.getElementById('regPassword').value;
         const confirmPassword = document.getElementById('regPassword2').value;
-        const db = Utils.getDB();
+        const db = await Utils.loadDB();
 
         if (!Utils.validateEmail(email)) {
           Utils.showToast('Please enter a valid COO email address.', 'error');
@@ -221,30 +255,28 @@
         subtitle.textContent = 'Step 1 of 2: COO account credentials';
       });
 
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const company = document.getElementById('regCompany').value.trim();
-        const industry = document.getElementById('regIndustry').value.trim();
         const cooName = document.getElementById('regName').value.trim();
-        const target = document.getElementById('regTarget').value.trim();
         const departmentsInput = document.getElementById('regDepartments').value.trim();
         const email = document.getElementById('regEmail').value.trim().toLowerCase();
         const password = document.getElementById('regPassword').value;
         const btn = document.getElementById('btnSubmit');
 
-        if (!company || !industry || !cooName || !target) {
+        if (!company || !cooName) {
           Utils.showToast('Please complete all organization details.', 'error');
           return;
         }
-        if (!Utils.parseAmount(target)) {
-          Utils.showToast('Please enter a valid numeric organization target.', 'error');
-          return;
-        }
 
-        const db = Utils.getDB();
+        const db = await Utils.loadDB();
         if ((db.organizations || []).some(org => org.name.toLowerCase() === company.toLowerCase())) {
           Utils.showToast('This organization is already registered.', 'error');
+          return;
+        }
+        if ((db.users || []).some(user => user.email.toLowerCase() === email)) {
+          Utils.showToast('An account with this email already exists.', 'error');
           return;
         }
 
@@ -253,9 +285,6 @@
 
         const orgId = `org-${Date.now()}`;
         const userId = Date.now() + 1;
-        const thresholdValue = target.match(/\d+/g);
-        const numericTarget = thresholdValue ? Number(thresholdValue.join('')) : 5000;
-        const threshold = Math.round(numericTarget * 1.1);
 
         db.organizations = db.organizations || [];
         db.departments = db.departments || [];
@@ -271,15 +300,15 @@
           cooName,
           cooUserId: userId,
           cooEmail: email,
-          industry,
-          target,
-          threshold: `${threshold} L`,
+          industry: company,
+          target: '0 L',
+          threshold: '0 L',
           current: '0 L',
           co2: '0',
           status: 'Within Target',
           statusType: 'green',
-          registrationStatus: 'Pending Approval',
-          registrationStatusType: 'amber',
+          registrationStatus: 'Approved',
+          registrationStatusType: 'green',
           departmentIds: [],
           requestedAt: new Date().toISOString()
         });
@@ -294,7 +323,7 @@
           departmentId: `${orgId}-exec`,
           organizationId: orgId,
           phone: '--',
-          status: 'Pending Approval',
+          status: 'Active',
           lastLogin: 'Never'
         });
 
@@ -321,8 +350,9 @@
         db.notifications.unshift({
           id: Date.now() + 2,
           role: 'Super User',
+          organizationId: orgId,
           title: 'New Organization Registration',
-          message: `${company} was registered and is awaiting approval for COO ${cooName}.`,
+          message: `${company} was registered and activated for COO ${cooName}.`,
           type: 'info',
           read: false,
           createdAt: new Date().toISOString()
@@ -333,7 +363,7 @@
         localStorage.removeItem('currentUser');
         localStorage.removeItem('loginTime');
         Utils.logAction(`Registered organization ${company}`, 'Success', 'green');
-        Utils.showToast('Registration submitted for approval.', 'success');
+        Utils.showToast('Organization registered successfully. You can sign in now.', 'success');
         setTimeout(() => { window.location.href = 'auth-login.html'; }, 1400);
       });
     });
