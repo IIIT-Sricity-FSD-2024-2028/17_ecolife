@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revenue Plans – Rorizon Super User</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .stack{display:grid;gap:16px}
+    .user-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+    .user-toolbar .form-input{flex:1 1 0%;max-width:none}
+    .metric-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#f8fafc;border:1px solid #e2e8f0;color:#0f172a;font-size:12px;font-weight:600}
+    .actions{display:flex;gap:6px;flex-wrap:wrap}
+    .action-btn{border:1px solid #cbd5e1!important;background:#fff!important;color:#0f172a!important;padding:5px 9px!important;border-radius:8px!important;font-size:12px!important;font-weight:700!important;cursor:pointer}
+    .action-btn:hover{background:#f8fafc!important;border-color:#64748b!important}
+    .action-btn.warn{color:#dc2626!important;border-color:#fca5a5!important}
+    .action-btn.success{color:#16a34a!important;border-color:#86efac!important}
+    .modal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+    .modal-card{max-width:860px;width:calc(100% - 32px)}
+    .modal-form-shell{display:grid;gap:20px}
+    .modal-section{padding:20px;border:1px solid var(--color-border);border-radius:14px;background:#fff}
+    .modal-section--muted{background:#f8fafc}
+    .modal-section__title{margin:0 0 6px 0;font-size:15px;font-weight:700;color:#0f172a}
+    .modal-section__copy{margin:0;color:#64748b;font-size:13px}
+    .data-table td,.data-table th{white-space:normal!important;word-break:break-word!important;overflow-wrap:break-word!important;line-height:1.45!important}
+  </style>
+</head>
+<body>
+  <div id="app-layout" data-title="Revenue Plans" data-subtitle="Subscription Tier Pricing, Quota Governance &amp; Status Controls">
+    <div class="card stack">
+      
+      <!-- PAGE HEADER -->
+      <div class="chart-header">
+        <div>
+          <h2 class="card__title">Manage Revenue Plans</h2>
+          <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">Configure subscription pricing tiers, feature caps, and active/inactive plan availability.</p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn-primary" id="openAddPlanBtn" type="button">+ Create Plan</button>
+        </div>
+      </div>
+
+      <!-- SEARCH TOOLBAR -->
+      <div class="user-toolbar">
+        <input class="form-input" id="planSearchInput" placeholder="Search plans by name, features, price, or status...">
+        <span class="metric-chip" id="planCountBadge">0 plans</span>
+      </div>
+
+      <!-- PLANS TABLE -->
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>PLAN NAME</th>
+              <th>MONTHLY PRICE</th>
+              <th>ANNUAL PRICE</th>
+              <th>RESOURCE QUOTAS</th>
+              <th>FEATURES</th>
+              <th>STATUS</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="plansTbody">
+            <tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b;">Loading plans...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CREATE / EDIT PLAN MODAL -->
+  <div class="modal-overlay" id="planModal">
+    <div class="modal modal-card">
+      <button class="modal__close" type="button" onclick="Utils.toggleModal('planModal', false)">
+        <img src="../assets/icons/x0.svg" alt="X">
+      </button>
+      <div class="modal__header">
+        <h2 class="modal__title" id="planModalTitle">Create Revenue Plan</h2>
+      </div>
+      <form id="planForm">
+        <div class="modal__body modal-form-shell">
+          <input type="hidden" id="planId">
+          
+          <section class="modal-section">
+            <h3 class="modal-section__title">Plan Information</h3>
+            <p class="modal-section__copy">Define tier name, description, and operational status.</p>
+          </section>
+
+          <section class="modal-section modal-section--muted">
+            <div class="modal-grid">
+              <div>
+                <label class="form-label">Plan Name</label>
+                <input class="form-input" id="planName" placeholder="e.g. Starter, Professional, Enterprise" required>
+              </div>
+              <div>
+                <label class="form-label">Status</label>
+                <select class="form-input" id="planStatus">
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                </select>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <label class="form-label">Description</label>
+                <input class="form-input" id="planDescription" placeholder="Brief summary of target customer tier..." required>
+              </div>
+              <div>
+                <label class="form-label">Price Monthly (INR)</label>
+                <input class="form-input" id="planPriceMonthly" type="number" min="0" placeholder="14999" required>
+              </div>
+              <div>
+                <label class="form-label">Price Annual (INR)</label>
+                <input class="form-input" id="planPriceAnnual" type="number" min="0" placeholder="149990" required>
+              </div>
+            </div>
+          </section>
+
+          <section class="modal-section">
+            <h3 class="modal-section__title">Quota Limits &amp; Features</h3>
+            <p class="modal-section__copy">Resource caps for users, departments, reports, and storage (GB).</p>
+          </section>
+
+          <section class="modal-section modal-section--muted">
+            <div class="modal-grid">
+              <div>
+                <label class="form-label">Max Users</label>
+                <input class="form-input" id="planMaxUsers" type="number" min="1" placeholder="10" required>
+              </div>
+              <div>
+                <label class="form-label">Max Departments</label>
+                <input class="form-input" id="planMaxDepartments" type="number" min="1" placeholder="3" required>
+              </div>
+              <div>
+                <label class="form-label">Max Reports / Mo</label>
+                <input class="form-input" id="planMaxReports" type="number" min="1" placeholder="50" required>
+              </div>
+              <div>
+                <label class="form-label">Max Storage (GB)</label>
+                <input class="form-input" id="planMaxStorage" type="number" min="1" placeholder="5" required>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <label class="form-label">Features List (Comma-separated)</label>
+                <input class="form-input" id="planFeatures" placeholder="e.g. Standard Telemetry, Basic Export, Email Support" required>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="modal__footer">
+          <button class="btn-outline" type="button" onclick="Utils.toggleModal('planModal', false)">Cancel</button>
+          <button class="btn-primary" type="submit">Save Plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script>
+    let allPlans = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      Utils.checkSession();
+      Utils.injectLayout();
+      Utils.initGlobalHeader();
+
+      document.getElementById('openAddPlanBtn').addEventListener('click', () => openPlanModal());
+      document.getElementById('planSearchInput').addEventListener('input', (e) => filterPlans(e.target.value));
+      document.getElementById('planForm').addEventListener('submit', handleSavePlan);
+
+      window.addEventListener('rorizon-db-updated', () => fetchPlans());
+      await fetchPlans();
+    });
+
+    async function fetchPlans() {
+      const res = await Utils.apiFetch('GET', '/api/revenue/plans');
+      if (Array.isArray(res)) {
+        allPlans = res;
+      } else {
+        const db = Utils.getDB() || {};
+        allPlans = Array.isArray(db.plans) ? db.plans : [];
+      }
+      renderPlans(allPlans);
+    }
+
+    function filterPlans(query) {
+      const q = (query || '').toLowerCase().trim();
+      if (!q) {
+        renderPlans(allPlans);
+        return;
+      }
+      const filtered = allPlans.filter(p => 
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q) ||
+        (p.status || '').toLowerCase().includes(q) ||
+        (p.features || []).join(' ').toLowerCase().includes(q)
+      );
+      renderPlans(filtered);
+    }
+
+    function renderPlans(plans) {
+      const tbody = document.getElementById('plansTbody');
+      document.getElementById('planCountBadge').textContent = `${plans.length} plans`;
+
+      if (!plans || plans.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px; color: #64748b;">No plans found.</td></tr>`;
+        return;
+      }
+
+      const formatCurr = (n) => 'INR ' + Number(n || 0).toLocaleString('en-IN');
+
+      tbody.innerHTML = plans.map(plan => {
+        const isInactive = plan.status === 'INACTIVE';
+        const statusBadge = isInactive ? 'badge--red' : 'badge--green';
+        const featuresHtml = (plan.features || []).slice(0, 3).map(f => `<span class="badge" style="background:#f1f5f9; color:#475569; font-size:11px; margin-right:4px;">${f}</span>`).join('');
+
+        return `
+          <tr>
+            <td style="font-weight: 700; color: #0f172a;">
+              <div>${plan.name}</div>
+              <div style="font-size: 12px; color: #64748b; font-weight: normal; margin-top:2px;">${plan.description || ''}</div>
+            </td>
+            <td style="font-weight:600; color:#0f172a;">${formatCurr(plan.priceMonthly)} <span style="font-size:12px; color:#64748b; font-weight:500;">/ mo</span></td>
+            <td style="font-weight:600; color:#0f172a;">${formatCurr(plan.priceAnnual)} <span style="font-size:12px; color:#64748b; font-weight:500;">/ yr</span></td>
+            <td>
+              <div style="font-size: 12px; color: #334155; line-height: 1.4;">
+                <strong>${plan.maxUsers}</strong> users • <strong>${plan.maxDepartments}</strong> depts<br>
+                <strong>${plan.maxReports}</strong> reports • <strong>${plan.maxStorage} GB</strong> storage
+              </div>
+            </td>
+            <td>${featuresHtml}</td>
+            <td><span class="badge ${statusBadge}">${plan.status}</span></td>
+            <td>
+              <div class="actions">
+                <button class="action-btn" type="button" onclick="openPlanModal('${plan.id}')">Edit</button>
+                ${isInactive 
+                  ? `<button class="action-btn success" type="button" onclick="togglePlanStatus('${plan.id}', 'ACTIVE')">Activate</button>`
+                  : `<button class="action-btn warn" type="button" onclick="togglePlanStatus('${plan.id}', 'INACTIVE')">Deactivate</button>`
+                }
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openPlanModal(planId = null) {
+      const modalTitle = document.getElementById('planModalTitle');
+      const form = document.getElementById('planForm');
+      form.reset();
+
+      if (planId) {
+        const plan = allPlans.find(p => p.id === planId);
+        if (!plan) return;
+        modalTitle.textContent = 'Edit Revenue Plan';
+        document.getElementById('planId').value = plan.id;
+        document.getElementById('planName').value = plan.name;
+        document.getElementById('planDescription').value = plan.description || '';
+        document.getElementById('planStatus').value = plan.status;
+        document.getElementById('planPriceMonthly').value = plan.priceMonthly;
+        document.getElementById('planPriceAnnual').value = plan.priceAnnual;
+        document.getElementById('planMaxUsers').value = plan.maxUsers;
+        document.getElementById('planMaxDepartments').value = plan.maxDepartments;
+        document.getElementById('planMaxReports').value = plan.maxReports;
+        document.getElementById('planMaxStorage').value = plan.maxStorage;
+        document.getElementById('planFeatures').value = (plan.features || []).join(', ');
+      } else {
+        modalTitle.textContent = 'Create Revenue Plan';
+        document.getElementById('planId').value = '';
+        document.getElementById('planStatus').value = 'ACTIVE';
+      }
+
+      Utils.toggleModal('planModal', true);
+    }
+
+    async function handleSavePlan(e) {
+      e.preventDefault();
+      const planId = document.getElementById('planId').value;
+      const featuresStr = document.getElementById('planFeatures').value;
+      const features = featuresStr.split(',').map(s => s.trim()).filter(Boolean);
+
+      const payload = {
+        name: document.getElementById('planName').value.trim(),
+        description: document.getElementById('planDescription').value.trim(),
+        status: document.getElementById('planStatus').value,
+        priceMonthly: Number(document.getElementById('planPriceMonthly').value),
+        priceAnnual: Number(document.getElementById('planPriceAnnual').value),
+        maxUsers: Number(document.getElementById('planMaxUsers').value),
+        maxDepartments: Number(document.getElementById('planMaxDepartments').value),
+        maxReports: Number(document.getElementById('planMaxReports').value),
+        maxStorage: Number(document.getElementById('planMaxStorage').value),
+        features,
+      };
+
+      let res;
+      if (planId) {
+        res = await Utils.apiFetch('PATCH', `/api/revenue/plans/${planId}`, payload);
+      } else {
+        res = await Utils.apiFetch('POST', '/api/revenue/plans', payload);
+      }
+
+      if (res) {
+        Utils.showToast(planId ? 'Plan updated successfully.' : 'Plan created successfully.', 'success');
+        Utils.toggleModal('planModal', false);
+        await fetchPlans();
+      } else {
+        Utils.showToast('Failed to save plan.', 'error');
+      }
+    }
+
+    async function togglePlanStatus(planId, newStatus) {
+      const res = await Utils.apiFetch('PATCH', `/api/revenue/plans/${planId}`, { status: newStatus });
+      if (res) {
+        Utils.showToast(`Plan status changed to ${newStatus}.`, 'success');
+        await fetchPlans();
+      } else {
+        Utils.showToast('Failed to change plan status.', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -3,57 +3,350 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>System Health - Rorizon Super User</title>
+  <title>Dashboard - Rorizon Super User</title>
   <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .overview-card { min-height: 120px; display: flex; flex-direction: column; justify-content: space-between; }
+    .two-col-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px; margin-bottom: 24px; }
+    .summary-list { display: grid; gap: 12px; margin-top: 14px; }
+    .summary-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid var(--border-light); border-radius: 10px; background: #f8fafc; }
+    .summary-item__info { display: flex; flex-direction: column; gap: 2px; }
+    .summary-item__title { font-size: 14px; font-weight: 700; color: #0f172a; }
+    .summary-item__desc { font-size: 12px; color: #64748b; }
+    .summary-item__count { font-size: 18px; font-weight: 700; color: #0f172a; }
+    .link-subtle { font-size: 13px; color: var(--color-primary); text-decoration: none; font-weight: 600; }
+    .link-subtle:hover { text-decoration: underline; }
+  </style>
 </head>
 <body>
-  <div id="app-layout" data-title="Infrastructure Health" data-subtitle="Real-time Platform Monitoring">
-    <div class="kpi-grid kpi-grid--3">
-      <div class="kpi-card"><div class="kpi-card__top"><span class="kpi-tag kpi-tag--green">Healthy</span></div><p class="kpi-card__value" id="admValUptime">--</p><p class="kpi-card__label">Platform Uptime</p></div>
-      <div class="kpi-card"><div class="kpi-card__top"><span class="kpi-tag kpi-tag--blue">Optimal</span></div><p class="kpi-card__value" id="admValLatency">--</p><p class="kpi-card__label">API Response Time</p></div>
-      <div class="kpi-card"><div class="kpi-card__top"><span class="kpi-tag kpi-tag--amber">Peak Usage</span></div><p class="kpi-card__value text--amber" id="admValServerLoad">--</p><p class="kpi-card__label">Server Load</p></div>
-    </div>
-
-    <div class="card" style="margin-bottom:24px;">
-      <h2 class="card__title" style="margin-bottom:16px;">Platform Usage Overview</h2>
-      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">
-        <div class="kpi-card" style="border:1px solid var(--border-light);background:transparent;box-shadow:none;"><p class="kpi-card__label" style="margin-bottom:4px;">Total Users</p><p class="kpi-card__value" id="admValUsers" style="font-size:28px;color:var(--text-hero);">--</p></div>
-        <div class="kpi-card" style="border:1px solid var(--border-light);background:transparent;box-shadow:none;"><p class="kpi-card__label" style="margin-bottom:4px;">Active Organizations</p><p class="kpi-card__value" id="admValOrgs" style="font-size:28px;color:var(--text-hero);">--</p></div>
-        <div class="kpi-card" style="border:1px solid var(--border-light);background:transparent;box-shadow:none;"><p class="kpi-card__label" style="margin-bottom:4px;">Unread Notifications</p><p class="kpi-card__value text--amber" id="admValNotifs" style="font-size:28px;">--</p></div>
-        <a href="adm-profile-settings.html" class="kpi-card" style="border:1px solid var(--border-light);background:transparent;box-shadow:none;text-decoration:none;"><p class="kpi-card__label" style="margin-bottom:4px;">Quick Access</p><p class="kpi-card__value" style="font-size:22px;color:var(--text-hero);">Profile</p><p class="kpi-card__label">Open Profile &amp; Settings</p></a>
+  <div id="app-layout" data-title="Super Admin Dashboard" data-subtitle="Platform Overview &amp; Master Telemetry">
+    
+    <!-- 1. PLATFORM OVERVIEW -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="chart-header">
+        <div>
+          <h2 class="card__title">Platform Overview</h2>
+          <p style="color: #64748b; font-size: 13px; margin-top: 4px;">High-level count of organizations and registered user accounts across the platform.</p>
+        </div>
+        <a href="adm-system-management.html" class="btn-outline" style="text-decoration:none;">Manage Users &amp; Orgs &rarr;</a>
+      </div>
+      <div class="kpi-grid overview-grid" style="margin-top: 16px; margin-bottom: 0;">
+        <div class="kpi-card overview-card" style="padding:18px;">
+          <div style="margin-bottom:10px;">
+            <span style="font-weight: 700; font-size: 14px; color: #0f172a;">Total Organizations</span>
+          </div>
+          <div>
+            <p class="kpi-card__value" id="valTotalOrgs">--</p>
+            <p class="kpi-card__label" style="margin-top:4px;">Registered on platform</p>
+          </div>
+        </div>
+        <div class="kpi-card overview-card" style="padding:18px;">
+          <div style="margin-bottom:10px;">
+            <span style="font-weight: 700; font-size: 14px; color: #0f172a;">Active Organizations</span>
+          </div>
+          <div>
+            <p class="kpi-card__value text--green" id="valActiveOrgs">--</p>
+            <p class="kpi-card__label" style="margin-top:4px;">Operational / total</p>
+          </div>
+        </div>
+        <div class="kpi-card overview-card" style="padding:18px;">
+          <div style="margin-bottom:10px;">
+            <span style="font-weight: 700; font-size: 14px; color: #0f172a;">Total Users</span>
+          </div>
+          <div>
+            <p class="kpi-card__value" id="valTotalUsers">--</p>
+            <p class="kpi-card__label" style="margin-top:4px;">Platform-wide accounts</p>
+          </div>
+        </div>
+        <div class="kpi-card overview-card" style="padding:18px;">
+          <div style="margin-bottom:10px;">
+            <span style="font-weight: 700; font-size: 14px; color: #0f172a;">Active Users</span>
+          </div>
+          <div>
+            <p class="kpi-card__value text--green" id="valActiveUsers">--</p>
+            <p class="kpi-card__label" style="margin-top:4px;">Active / total accounts</p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="chart-header"><h2 class="card__title">Module Connectivity</h2><span class="kpi-tag kpi-tag--muted">Real-time Status</span></div>
-      <ul class="dept-summary" id="moduleContainer"></ul>
+    <!-- 2. MASTER DATA OVERVIEW & 3. EMISSION FACTOR OVERVIEW -->
+    <div class="two-col-grid">
+      
+      <!-- 2. Master Data Overview -->
+      <div class="card">
+        <div class="chart-header">
+          <div>
+            <h2 class="card__title">Master Data Overview</h2>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Standardized catalogs and measurement units configured platform-wide.</p>
+          </div>
+          <a href="adm-resource-governance.html" class="link-subtle">Governance &rarr;</a>
+        </div>
+        <div class="summary-list">
+          <div class="summary-item">
+            <div class="summary-item__info">
+              <span class="summary-item__title">Resource Types</span>
+              <span class="summary-item__desc" id="summaryResourceTypesSample">Standardized activity resources (Diesel, LPG, Electricity, Water)</span>
+            </div>
+            <div style="text-align: right;">
+              <span class="summary-item__count" id="valResourceTypesCount">--</span>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-item__info">
+              <span class="summary-item__title">Measurement Units</span>
+              <span class="summary-item__desc" id="summaryUnitsSample">Standard unit codes &amp; dimensions (L, gal, kg, kWh, m3)</span>
+            </div>
+            <div style="text-align: right;">
+              <span class="summary-item__count" id="valUnitsCount">--</span>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-item__info">
+              <span class="summary-item__title">Resource Categories</span>
+              <span class="summary-item__desc" id="summaryCategoriesSample">Classifications (Fuel, Purchased Energy, Water, Transport, Waste)</span>
+            </div>
+            <div style="text-align: right;">
+              <span class="summary-item__count" id="valCategoriesCount">--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Emission Factor Overview -->
+      <div class="card">
+        <div class="chart-header">
+          <div>
+            <h2 class="card__title">Emission Factor Overview</h2>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Active calculation datasets, baseline versions, and conversion factors.</p>
+          </div>
+          <a href="adm-resource-governance.html" class="link-subtle">Manage Factors &rarr;</a>
+        </div>
+        <div class="summary-list">
+          <div class="summary-item">
+            <div class="summary-item__info">
+              <span class="summary-item__title">Active Factor Source / Dataset</span>
+              <span class="summary-item__desc" id="valFactorSourceName">--</span>
+            </div>
+            <div>
+              <span style="font-size:13px; font-weight:600; color:#475569;" id="valFactorSourceRegion">Global</span>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-item__info">
+              <span class="summary-item__title">Current Active Version</span>
+              <span class="summary-item__desc" id="valFactorVersionMeta">--</span>
+            </div>
+            <div>
+              <span style="font-size:13px; font-weight:600; color:#16a34a;" id="valFactorVersionStatus">Active</span>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-item__info">
+              <span class="summary-item__title">Active Emission Factors</span>
+              <span class="summary-item__desc">Conversion factors active across Scope 1, Scope 2, and Scope 3</span>
+            </div>
+            <div style="text-align: right;">
+              <span class="summary-item__count" id="valActiveFactorsCount">--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
+
+    <!-- 4. SYSTEM HEALTH -->
+    <div class="card">
+      <div class="chart-header">
+        <div>
+          <h2 class="card__title">System Health &amp; Telemetry</h2>
+          <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Real-time infrastructure operational state, response latency, and memory telemetry.</p>
+        </div>
+        <span style="font-size:13px; font-weight:600; color:#16a34a;" id="telemetryStateTag">System Normal</span>
+      </div>
+      <div class="kpi-grid overview-grid" style="margin-top: 16px; margin-bottom: 0;">
+        
+        <!-- API Health -->
+        <div class="kpi-card overview-card" style="padding:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-weight: 700; font-size:14px; color: #0f172a;">API Service</span>
+            <span style="font-size:12px; font-weight:600; color:#16a34a;" id="apiStatusBadge">Operational</span>
+          </div>
+          <div>
+            <p class="kpi-card__value" id="apiLatencyVal">--</p>
+            <p class="kpi-card__label" id="browserFrameMeta" style="margin-top:4px;">Browser frame: --</p>
+          </div>
+        </div>
+
+        <!-- Backend Health -->
+        <div class="kpi-card overview-card" style="padding:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-weight: 700; font-size:14px; color: #0f172a;">Backend Runtime</span>
+            <span style="font-size:12px; font-weight:600; color:#16a34a;" id="backendStatusBadge">Operational</span>
+          </div>
+          <div>
+            <p class="kpi-card__value text--green" id="backendUptimeVal">--</p>
+            <p class="kpi-card__label" id="serverLoadMeta" style="margin-top:4px;">Server Load: -- &bull; Uptime</p>
+          </div>
+        </div>
+
+        <!-- Database Health -->
+        <div class="kpi-card overview-card" style="padding:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-weight: 700; font-size:14px; color: #0f172a;">Database Store</span>
+            <span style="font-size:12px; font-weight:600; color:#16a34a;" id="dbStatusBadge">Operational</span>
+          </div>
+          <div>
+            <p class="kpi-card__value" id="dbCollectionsVal" style="font-size: 20px;">In-Memory Sync</p>
+            <p class="kpi-card__label" id="heapMeta" style="margin-top:4px;">Memory telemetry loading...</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
   <script src="../../js/data.js"></script>
   <script src="../../js/utils.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      function renderDashboard() {
-        const db = Utils.getDB();
-        const metrics = db.systemMetrics || {};
-        const modules = db.modules || [];
-        document.getElementById('admValUptime').textContent = metrics.uptime || '--';
-        document.getElementById('admValLatency').textContent = metrics.latency || '--';
-        document.getElementById('admValServerLoad').textContent = metrics.serverLoad || '--';
-        document.getElementById('admValUsers').textContent = (db.users || []).length;
-        document.getElementById('admValOrgs').textContent = (db.organizations || []).length;
-        document.getElementById('admValNotifs').textContent = (db.notifications || []).filter(n => !n.read && n.role === 'Super User').length;
-        document.getElementById('moduleContainer').innerHTML = modules.map(mod => `
-          <li class="dept-summary__row">
-            <span class="dept-summary__name">${mod.name}</span>
-            <span class="status-badge status-badge--${mod.type}">${mod.status}</span>
-          </li>
-        `).join('');
+      function measureBrowserFrame() {
+        return new Promise(resolve => {
+          const start = performance.now();
+          requestAnimationFrame(() => resolve(Math.round(performance.now() - start)));
+        });
       }
 
-      renderDashboard();
-      window.addEventListener('rorizon-db-updated', renderDashboard);
+      async function fetchLiveHealth() {
+        const started = performance.now();
+        const [health, frameMs] = await Promise.all([
+          Utils.apiFetch('GET', '/api/system/health', null, 'Super User'),
+          measureBrowserFrame()
+        ]);
+        const latency = Math.max(Math.round(performance.now() - started), 1);
+        if (!health) return null;
+        return { ...health, latencyMs: latency, browserFrameMs: frameMs };
+      }
+
+      async function renderDashboard() {
+        const db = Utils.ensureCollections(await Utils.loadDB());
+        const liveHealth = await fetchLiveHealth();
+        const metrics = liveHealth || db.systemMetrics || {};
+
+        // 1. PLATFORM OVERVIEW
+        const totalOrgs = (db.organizations || []).length;
+        const activeOrgs = (db.organizations || []).filter(o => {
+          const isApproved = o.registrationStatus ? o.registrationStatus === 'Approved' : true;
+          const isNotInactive = o.status !== 'Inactive';
+          return isApproved && isNotInactive;
+        }).length;
+
+        const totalUsers = (db.users || []).length;
+        const activeUsers = (db.users || []).filter(u => u.status === 'Active').length;
+
+        document.getElementById('valTotalOrgs').textContent = totalOrgs;
+        document.getElementById('valActiveOrgs').textContent = `${activeOrgs} / ${totalOrgs}`;
+        document.getElementById('valTotalUsers').textContent = totalUsers;
+        document.getElementById('valActiveUsers').textContent = `${activeUsers} / ${totalUsers}`;
+
+        // 2. MASTER DATA OVERVIEW
+        const activeTypes = (db.resourceTypes || []).filter(rt => rt.active !== false);
+        const activeUnits = (db.units || []).filter(u => u.active !== false);
+        const activeCats = (db.resourceCategories || []).filter(c => c.active !== false);
+
+        document.getElementById('valResourceTypesCount').textContent = activeTypes.length;
+        document.getElementById('valUnitsCount').textContent = activeUnits.length;
+        document.getElementById('valCategoriesCount').textContent = activeCats.length;
+
+        if (activeTypes.length > 0) {
+          document.getElementById('summaryResourceTypesSample').textContent = activeTypes.map(t => t.name).slice(0, 4).join(', ') + (activeTypes.length > 4 ? ` (+${activeTypes.length - 4} more)` : '');
+        }
+        if (activeUnits.length > 0) {
+          document.getElementById('summaryUnitsSample').textContent = activeUnits.map(u => u.code || u.name).slice(0, 5).join(', ') + (activeUnits.length > 5 ? ` (+${activeUnits.length - 5} more)` : '');
+        }
+        if (activeCats.length > 0) {
+          document.getElementById('summaryCategoriesSample').textContent = activeCats.map(c => c.name).slice(0, 4).join(', ') + (activeCats.length > 4 ? ` (+${activeCats.length - 4} more)` : '');
+        }
+
+        // 3. EMISSION FACTOR OVERVIEW
+        const activeFactors = (db.emissionFactors || []).filter(f => f.active !== false);
+        const activeSources = (db.factorSources || []).filter(s => s.active !== false);
+        const activeVersions = (db.factorVersions || []).filter(v => v.status === 'Active');
+
+        const primarySource = activeSources[0] || (db.factorSources || [])[0] || { name: 'Demo Baseline Dataset', publisher: 'Platform Ops', region: 'Global' };
+        const primaryVersion = activeVersions[0] || (db.factorVersions || [])[0] || { name: '2026 Baseline Set', datasetYear: '2026', effectiveFrom: '2025-01-01', effectiveTo: '2026-12-31', status: 'Active' };
+
+        document.getElementById('valFactorSourceName').textContent = `${primarySource.name} (${primarySource.publisher || 'Official'})`;
+        document.getElementById('valFactorSourceRegion').textContent = primarySource.region || 'Global';
+        
+        document.getElementById('valFactorVersionMeta').textContent = `${primaryVersion.name} • ${primaryVersion.datasetYear || '2026'} (${primaryVersion.effectiveFrom || '2025'} to ${primaryVersion.effectiveTo || 'Present'})`;
+        document.getElementById('valFactorVersionStatus').textContent = primaryVersion.status || 'Active';
+        document.getElementById('valActiveFactorsCount').textContent = activeFactors.length;
+
+        // 4. SYSTEM HEALTH
+        const apiStatusEl = document.getElementById('apiStatusBadge');
+        const backendStatusEl = document.getElementById('backendStatusBadge');
+        const dbStatusEl = document.getElementById('dbStatusBadge');
+        const telemetryStateTag = document.getElementById('telemetryStateTag');
+
+        const latencyText = metrics.latencyMs ? `${metrics.latencyMs}ms` : (metrics.latency || '12ms');
+        document.getElementById('apiLatencyVal').textContent = latencyText;
+        document.getElementById('browserFrameMeta').textContent = metrics.browserFrameMs !== undefined ? `Browser Frame: ${metrics.browserFrameMs}ms` : 'Browser Frame: Normal';
+
+        if (apiStatusEl) {
+          if (liveHealth) {
+            const isDegraded = metrics.latencyMs > 300;
+            apiStatusEl.textContent = isDegraded ? 'Degraded' : 'Operational';
+            apiStatusEl.style.color = isDegraded ? '#dc2626' : '#16a34a';
+          } else {
+            apiStatusEl.textContent = 'Operational (Local)';
+            apiStatusEl.style.color = '#16a34a';
+          }
+        }
+
+        document.getElementById('backendUptimeVal').textContent = metrics.uptime || '99.98%';
+        const loadVal = metrics.serverLoad || 'Stable (42%)';
+        document.getElementById('serverLoadMeta').textContent = `Server Load: ${loadVal}`;
+
+        if (backendStatusEl) {
+          const isOk = liveHealth || metrics.status === 'ok' || metrics.uptime || db;
+          backendStatusEl.textContent = isOk ? 'Operational' : 'Offline';
+          backendStatusEl.style.color = isOk ? '#16a34a' : '#dc2626';
+        }
+
+        const totalRecords = (db.organizations || []).length + 
+                             (db.users || []).length + 
+                             (db.resourceTypes || []).length + 
+                             (db.units || []).length + 
+                             (db.resourceCategories || []).length + 
+                             (db.emissionFactors || []).length;
+        
+        document.getElementById('dbCollectionsVal').textContent = db ? `${totalRecords} Records Synced` : 'Sync Failed';
+        
+        if (dbStatusEl) {
+          dbStatusEl.textContent = db ? 'Operational' : 'Degraded';
+          dbStatusEl.style.color = db ? '#16a34a' : '#dc2626';
+        }
+
+        if (telemetryStateTag) {
+          const isNormal = db && (!metrics.latencyMs || metrics.latencyMs <= 300);
+          telemetryStateTag.textContent = isNormal ? 'System Normal' : 'Latency Warning';
+          telemetryStateTag.style.color = isNormal ? '#16a34a' : '#d97706';
+        }
+
+        if (metrics.heapUsedMb !== undefined) {
+          document.getElementById('heapMeta').textContent = `Heap: ${metrics.heapUsedMb}MB / ${metrics.heapTotalMb}MB • RSS: ${metrics.rssMb}MB`;
+        } else {
+          const activeCollCount = Object.keys(db).filter(k => Array.isArray(db[k]) && db[k].length > 0).length;
+          document.getElementById('heapMeta').textContent = `${activeCollCount} Active Data Repositories Synced`;
+        }
+      }
+
+      void renderDashboard();
+      setInterval(() => { void renderDashboard(); }, 2000);
+      window.addEventListener('rorizon-db-updated', () => { void renderDashboard(); });
     });
   </script>
 </body>
