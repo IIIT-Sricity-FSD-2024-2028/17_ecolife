@@ -165,7 +165,7 @@
       Utils.showToast('Changes discarded');
     }
 
-    function saveSettings() {
+    async function saveSettings() {
       const lockout = parseInt(document.getElementById('setLockout').value, 10);
       const session = parseInt(document.getElementById('setSession').value, 10);
       const otpExp = parseInt(document.getElementById('setOtp').value, 10);
@@ -176,8 +176,7 @@
       if (!otpExp || otpExp < 1) { Utils.showToast('OTP expiry must be at least 1 minute.', 'error'); return; }
       if (!maxUsers || maxUsers < 1) { Utils.showToast('Maximum users must be at least 1.', 'error'); return; }
 
-      const db = Utils.getDB();
-      db.globalSettings = {
+      const payload = {
         lockout: String(lockout),
         session: String(session),
         otpExp: String(otpExp),
@@ -186,6 +185,15 @@
         flagEmail: document.getElementById('flagEmail').checked,
         flag2fa: document.getElementById('flag2fa').checked
       };
+
+      try {
+        await Utils.apiFetch('PATCH', '/api/system/settings', payload, 'Super User');
+      } catch (e) {
+        // Fall back to snapshot sync if needed
+      }
+
+      const db = Utils.getDB();
+      db.globalSettings = payload;
 
       Utils.replaceDB(db);
       Utils.logAction('Updated System Settings', 'Success', 'green');

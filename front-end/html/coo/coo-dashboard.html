@@ -149,7 +149,7 @@
         const alerts = (db.alerts || []).filter(a => (!orgId || a.organizationId === orgId) && a.status !== 'Resolved');
 
         const totalCO2 = submissions.reduce((sum, s) => sum + Number(s.totalCO2 || 0), 0);
-        const pendingReports = reports.filter(r => r.status === 'Pending Review');
+        const pendingReports = reports.filter(r => r.status === 'Under COO Review');
         const actionCount = pendingReports.length + alerts.length;
 
         // Calculate Target Adherence across departments

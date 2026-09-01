@@ -87,38 +87,17 @@
 
       const orgLogs = state.auditLogs.filter(l => l.organizationId === org?.id);
       if (orgLogs.length === 0 && org) {
-        state.auditLogs.push(
-          {
-            id: `log-${Date.now()}-1`,
-            organizationId: org.id,
-            timestamp: Utils.nowLabel(),
-            actor: 'Elena Rostova',
-            action: 'Published 2026 Organization Emission Target & Threshold Policies',
-            ip: '192.168.1.42',
-            status: 'Success',
-            statusType: 'green'
-          },
-          {
-            id: `log-${Date.now()}-2`,
-            organizationId: org.id,
-            timestamp: Utils.nowLabel(),
-            actor: 'Mark Davis',
-            action: 'Submitted Q2 2026 Facility Data Report for Operations Dept',
-            ip: '192.168.1.55',
-            status: 'Success',
-            statusType: 'green'
-          },
-          {
-            id: `log-${Date.now()}-3`,
-            organizationId: org.id,
-            timestamp: Utils.nowLabel(),
-            actor: 'Sarah Jenkins',
-            action: 'Requested data correction for Logistics Dept submission',
-            ip: '192.168.1.88',
-            status: 'Warning',
-            statusType: 'amber'
-          }
-        );
+        const cooName = org.cooName || 'Organization COO';
+        state.auditLogs.unshift({
+          id: `log-${Date.now()}-1`,
+          organizationId: org.id,
+          timestamp: Utils.nowLabel(),
+          actor: `${cooName} (COO)`,
+          action: `Registered organization ${org.name} and initialized environment monitoring workspace`,
+          ip: '127.0.0.1',
+          status: 'Success',
+          statusType: 'green'
+        });
         Utils.replaceDB(state);
       }
     }

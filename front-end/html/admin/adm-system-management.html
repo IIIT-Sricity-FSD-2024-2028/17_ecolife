@@ -434,13 +434,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (role === 'Manager' && dept) {
       payload.departmentId = dept.id;
       payload.department = dept.name;
-      dept.manager = payload.name;
-      dept.managerUserId = payload.id;
+      payload.organizationId = dept.orgId;
     }
     Utils.prepareUserForRole(state, payload, role);
     if (role === 'Analyst') payload.assignedDepartmentIds = assignedDepartmentIds;
 
+    // Unassign previous department if manager moved or changed role/org
+    state.departments.forEach(d => {
+      if (String(d.managerUserId) === String(payload.id) && (role !== 'Manager' || String(d.id) !== String(payload.departmentId) || d.orgId !== payload.organizationId)) {
+        d.manager = 'Unassigned';
+        d.managerUserId = null;
+      }
+    });
+
     if (id) {
+      state.departments.forEach(d => {
+        if (d.id === payload.departmentId && role === 'Manager') {
+          d.manager = payload.name;
+          d.managerUserId = payload.id;
+        }
+      });
       state.users = state.users.map(u => String(u.id) === id ? payload : u);
       Utils.logAction(`Updated user ${payload.name}`, 'Success', 'green');
     } else {
@@ -521,9 +534,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cooIndex = state.users.findIndex(u => u.id === cooId);
     if (cooIndex > -1) state.users[cooIndex] = cooPayload; else state.users.unshift(cooPayload);
 
-    state.departments = state.departments.filter(d => d.orgId !== id || uniqueDeptNames.includes(d.name));
     uniqueDeptNames.forEach((name, index) => {
-      const existing = state.departments.find(d => d.orgId === id && d.name === name);
+      const existing = state.departments.find(d => d.orgId === id && d.name.toLowerCase() === name.toLowerCase());
       if (existing) existing.orgName = orgName;
       else {
         state.departments.push({
@@ -564,8 +576,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const name = $('deptName').value.trim();
     if (!name) { Utils.showToast('Department name is required.', 'error'); return; }
 
+    const existingDept = id ? state.departments.find(d => d.id === id) : null;
+    const oldOrgId = existingDept ? existingDept.orgId : null;
+
     const selectedManagerId = $('deptManagerSelect').value;
     const selectedManager = selectedManagerId ? state.users.find(u => String(u.id) === String(selectedManagerId)) : null;
+
+    if (state.departments.some(dept => dept.id !== id && dept.orgId === orgId && dept.name.toLowerCase() === name.toLowerCase())) {
+      Utils.showToast('That organization already has a department with this name.', 'error');
+      return;
+    }
 
     const payload = {
       id: id || Utils.generateId('dept'),
@@ -574,15 +594,34 @@ document.addEventListener('DOMContentLoaded', async () => {
       name,
       manager: selectedManager ? selectedManager.name : 'Unassigned',
       managerUserId: selectedManager ? selectedManager.id : null,
-      status: 'Active',
-      statusType: 'green'
+      status: existingDept?.status || 'Active',
+      statusType: existingDept?.statusType || 'green',
+      target: existingDept?.target || '0 L',
+      threshold: existingDept?.threshold || '0 L',
+      current: existingDept?.current || '0 L',
+      co2: existingDept?.co2 || '0',
+      resourceTargets: existingDept?.resourceTargets || []
     };
 
-    if (state.departments.some(dept => dept.id !== id && dept.orgId === orgId && dept.name.toLowerCase() === name.toLowerCase())) {
-      Utils.showToast('That organization already has a department with this name.', 'error');
-      return;
+    // 1. Unassign previous manager if changed
+    state.users.forEach(u => {
+      if (u.role === 'Manager' && (String(u.departmentId) === String(payload.id) || (existingDept && String(u.id) === String(existingDept.managerUserId)))) {
+        if (!selectedManager || String(u.id) !== String(selectedManager.id)) {
+          u.departmentId = '';
+          u.department = 'Unassigned';
+        }
+      }
+    });
+
+    // 2. Assign new selected manager
+    if (selectedManager) {
+      selectedManager.departmentId = payload.id;
+      selectedManager.department = payload.name;
+      selectedManager.organizationId = orgId;
+      Utils.syncUserDerivedFields(state, selectedManager.id);
     }
 
+    // 3. Update department in state.departments
     if (id) {
       state.departments = state.departments.map(dept => dept.id === id ? { ...dept, ...payload } : dept);
       Utils.logAction(`Updated department ${name}`, 'Success', 'green');
@@ -591,14 +630,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       Utils.logAction(`Added department ${name}`, 'Success', 'green');
     }
 
-    if (selectedManager) {
-      selectedManager.departmentId = payload.id;
-      selectedManager.department = payload.name;
-      selectedManager.organizationId = orgId;
-      Utils.syncUserDerivedFields(state, selectedManager.id);
+    // 4. Update linked user department names & submission department names if department was renamed
+    if (id && existingDept && existingDept.name !== name) {
+      state.users.forEach(u => {
+        if (String(u.departmentId) === String(id)) {
+          u.department = name;
+        }
+      });
+      state.submissions.forEach(s => {
+        if (String(s.departmentId) === String(id)) {
+          s.departmentName = name;
+        }
+      });
+      state.alerts.forEach(a => {
+        if (String(a.departmentId) === String(id)) {
+          a.departmentName = name;
+        }
+      });
     }
 
+    // 5. Recalculate totals
     Utils.recalculateOrganizationTotals(state, orgId);
+    if (oldOrgId && oldOrgId !== orgId) {
+      Utils.recalculateOrganizationTotals(state, oldOrgId);
+    }
+
     Utils.replaceDB(state);
     selectedOrgId = orgId;
     Utils.toggleModal('deptModal', false);
