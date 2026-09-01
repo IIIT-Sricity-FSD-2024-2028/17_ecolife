@@ -96,16 +96,16 @@
           <div class="summary-item">
             <div class="summary-item__info">
               <span class="summary-item__title">Measurement Units</span>
-              <span class="summary-item__desc" id="summaryUnitsSample">Standard unit codes &amp; dimensions (L, gal, kg, kWh, m3)</span>
+              <span class="summary-item__desc" id="summaryUnitsSample">Standardized activity measurement units (Liters, Kg, Cubic Meters)</span>
             </div>
             <div style="text-align: right;">
               <span class="summary-item__count" id="valUnitsCount">--</span>
             </div>
           </div>
           <div class="summary-item">
-            <div class="summary-item__info">
-              <span class="summary-item__title">Resource Categories</span>
-              <span class="summary-item__desc" id="summaryCategoriesSample">Classifications (Fuel, Purchased Energy, Water, Transport, Waste)</span>
+            <div class="summary-item__body">
+              <div class="summary-item__title" id="summaryCategoriesLabel">Resource Categories</div>
+              <span class="summary-item__desc" id="summaryCategoriesSample">Classifications (Combustion Fuel, Natural & Process Gas)</span>
             </div>
             <div style="text-align: right;">
               <span class="summary-item__count" id="valCategoriesCount">--</span>
@@ -235,6 +235,8 @@
         const liveHealth = await fetchLiveHealth();
         const metrics = liveHealth || db.systemMetrics || {};
 
+        const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+
         // 1. PLATFORM OVERVIEW
         const totalOrgs = (db.organizations || []).length;
         const activeOrgs = (db.organizations || []).filter(o => {
@@ -246,28 +248,28 @@
         const totalUsers = (db.users || []).length;
         const activeUsers = (db.users || []).filter(u => u.status === 'Active').length;
 
-        document.getElementById('valTotalOrgs').textContent = totalOrgs;
-        document.getElementById('valActiveOrgs').textContent = `${activeOrgs} / ${totalOrgs}`;
-        document.getElementById('valTotalUsers').textContent = totalUsers;
-        document.getElementById('valActiveUsers').textContent = `${activeUsers} / ${totalUsers}`;
+        setText('valTotalOrgs', totalOrgs);
+        setText('valActiveOrgs', `${activeOrgs} / ${totalOrgs}`);
+        setText('valTotalUsers', totalUsers);
+        setText('valActiveUsers', `${activeUsers} / ${totalUsers}`);
 
         // 2. MASTER DATA OVERVIEW
         const activeTypes = (db.resourceTypes || []).filter(rt => rt.active !== false);
         const activeUnits = (db.units || []).filter(u => u.active !== false);
         const activeCats = (db.resourceCategories || []).filter(c => c.active !== false);
 
-        document.getElementById('valResourceTypesCount').textContent = activeTypes.length;
-        document.getElementById('valUnitsCount').textContent = activeUnits.length;
-        document.getElementById('valCategoriesCount').textContent = activeCats.length;
+        setText('valResourceTypesCount', activeTypes.length);
+        setText('valUnitsCount', activeUnits.length);
+        setText('valCategoriesCount', activeCats.length);
 
         if (activeTypes.length > 0) {
-          document.getElementById('summaryResourceTypesSample').textContent = activeTypes.map(t => t.name).slice(0, 4).join(', ') + (activeTypes.length > 4 ? ` (+${activeTypes.length - 4} more)` : '');
+          setText('summaryResourceTypesSample', activeTypes.map(t => t.name).slice(0, 4).join(', ') + (activeTypes.length > 4 ? ` (+${activeTypes.length - 4} more)` : ''));
         }
         if (activeUnits.length > 0) {
-          document.getElementById('summaryUnitsSample').textContent = activeUnits.map(u => u.code || u.name).slice(0, 5).join(', ') + (activeUnits.length > 5 ? ` (+${activeUnits.length - 5} more)` : '');
+          setText('summaryUnitsSample', activeUnits.map(u => u.code || u.name).slice(0, 5).join(', ') + (activeUnits.length > 5 ? ` (+${activeUnits.length - 5} more)` : ''));
         }
         if (activeCats.length > 0) {
-          document.getElementById('summaryCategoriesSample').textContent = activeCats.map(c => c.name).slice(0, 4).join(', ') + (activeCats.length > 4 ? ` (+${activeCats.length - 4} more)` : '');
+          setText('summaryCategoriesSample', activeCats.map(c => c.name).slice(0, 4).join(', ') + (activeCats.length > 4 ? ` (+${activeCats.length - 4} more)` : ''));
         }
 
         // 3. EMISSION FACTOR OVERVIEW
@@ -278,12 +280,11 @@
         const primarySource = activeSources[0] || (db.factorSources || [])[0] || { name: 'Demo Baseline Dataset', publisher: 'Platform Ops', region: 'Global' };
         const primaryVersion = activeVersions[0] || (db.factorVersions || [])[0] || { name: '2026 Baseline Set', datasetYear: '2026', effectiveFrom: '2025-01-01', effectiveTo: '2026-12-31', status: 'Active' };
 
-        document.getElementById('valFactorSourceName').textContent = `${primarySource.name} (${primarySource.publisher || 'Official'})`;
-        document.getElementById('valFactorSourceRegion').textContent = primarySource.region || 'Global';
-        
-        document.getElementById('valFactorVersionMeta').textContent = `${primaryVersion.name} • ${primaryVersion.datasetYear || '2026'} (${primaryVersion.effectiveFrom || '2025'} to ${primaryVersion.effectiveTo || 'Present'})`;
-        document.getElementById('valFactorVersionStatus').textContent = primaryVersion.status || 'Active';
-        document.getElementById('valActiveFactorsCount').textContent = activeFactors.length;
+        setText('valFactorSourceName', `${primarySource.name} (${primarySource.publisher || 'Official'})`);
+        setText('valFactorSourceRegion', primarySource.region || 'Global');
+        setText('valFactorVersionMeta', `${primaryVersion.name} • ${primaryVersion.datasetYear || '2026'} (${primaryVersion.effectiveFrom || '2025'} to ${primaryVersion.effectiveTo || 'Present'})`);
+        setText('valFactorVersionStatus', primaryVersion.status || 'Active');
+        setText('valActiveFactorsCount', activeFactors.length);
 
         // 4. SYSTEM HEALTH
         const apiStatusEl = document.getElementById('apiStatusBadge');
@@ -292,8 +293,8 @@
         const telemetryStateTag = document.getElementById('telemetryStateTag');
 
         const latencyText = metrics.latencyMs ? `${metrics.latencyMs}ms` : (metrics.latency || '12ms');
-        document.getElementById('apiLatencyVal').textContent = latencyText;
-        document.getElementById('browserFrameMeta').textContent = metrics.browserFrameMs !== undefined ? `Browser Frame: ${metrics.browserFrameMs}ms` : 'Browser Frame: Normal';
+        setText('apiLatencyVal', latencyText);
+        setText('browserFrameMeta', metrics.browserFrameMs !== undefined ? `Browser Frame: ${metrics.browserFrameMs}ms` : 'Browser Frame: Normal');
 
         if (apiStatusEl) {
           if (liveHealth) {
@@ -306,9 +307,9 @@
           }
         }
 
-        document.getElementById('backendUptimeVal').textContent = metrics.uptime || '99.98%';
+        setText('backendUptimeVal', metrics.uptime || '99.98%');
         const loadVal = metrics.serverLoad || 'Stable (42%)';
-        document.getElementById('serverLoadMeta').textContent = `Server Load: ${loadVal}`;
+        setText('serverLoadMeta', `Server Load: ${loadVal}`);
 
         if (backendStatusEl) {
           const isOk = liveHealth || metrics.status === 'ok' || metrics.uptime || db;
@@ -323,7 +324,7 @@
                              (db.resourceCategories || []).length + 
                              (db.emissionFactors || []).length;
         
-        document.getElementById('dbCollectionsVal').textContent = db ? `${totalRecords} Records Synced` : 'Sync Failed';
+        setText('dbCollectionsVal', db ? `${totalRecords} Records Synced` : 'Sync Failed');
         
         if (dbStatusEl) {
           dbStatusEl.textContent = db ? 'Operational' : 'Degraded';
@@ -337,15 +338,15 @@
         }
 
         if (metrics.heapUsedMb !== undefined) {
-          document.getElementById('heapMeta').textContent = `Heap: ${metrics.heapUsedMb}MB / ${metrics.heapTotalMb}MB • RSS: ${metrics.rssMb}MB`;
+          setText('heapMeta', `Heap: ${metrics.heapUsedMb}MB / ${metrics.heapTotalMb}MB • RSS: ${metrics.rssMb}MB`);
         } else {
           const activeCollCount = Object.keys(db).filter(k => Array.isArray(db[k]) && db[k].length > 0).length;
-          document.getElementById('heapMeta').textContent = `${activeCollCount} Active Data Repositories Synced`;
+          setText('heapMeta', `${activeCollCount} Active Data Repositories Synced`);
         }
       }
 
       void renderDashboard();
-      setInterval(() => { void renderDashboard(); }, 2000);
+      setInterval(() => { void renderDashboard(); }, 10000);
       window.addEventListener('rorizon-db-updated', () => { void renderDashboard(); });
     });
   </script>

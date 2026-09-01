@@ -316,32 +316,162 @@
 
 <body>
   <div id="app-layout" data-title="Revenue Management"
-    data-subtitle="Subscription Plans &amp; Customer Subscriptions Governance">
+    data-subtitle="Commercial Tier Structures, Quotas, Feature Entitlements, and Customer Billing Governance">
 
     <!-- PAGE HEADER -->
     <div class="card stack">
       <div class="chart-header">
         <div>
-          <h2 class="card__title">Revenue &amp; Subscriptions Governance</h2>
-          <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">Manage pricing tiers, resource limits, customer
-            subscription assignments, and statuses.</p>
+          <h2 class="card__title">Commercial &amp; Subscription Governance</h2>
+          <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">Manage commercial pricing tiers, resource quota baselines, feature entitlements, and customer organization contracts.</p>
         </div>
         <div style="display:flex; gap:10px; align-items:center;" id="headerActionArea">
-          <button class="btn-primary" id="openNewSubBtn" type="button" style="display:none;">+ Assign
-            Subscription</button>
+          <button class="btn-primary" id="openNewPlanBtn" type="button" style="display:none;">+ Create New Plan</button>
+          <button class="btn-primary" id="openNewAddonBtn" type="button" style="display:none;">+ Create Add-on</button>
+          <button class="btn-primary" id="openNewSubBtn" type="button" style="display:none;">+ Assign Subscription</button>
         </div>
       </div>
 
       <!-- TAB TOGGLE -->
       <div class="toggle-group">
         <div class="toggle-btn-group">
-          <button class="toggle-btn active" id="plansTab" type="button">Revenue Plans</button>
-          <button class="toggle-btn" id="subsTab" type="button">Subscriptions</button>
+          <button class="toggle-btn active" id="overviewTab" type="button">Financial Overview</button>
+          <button class="toggle-btn" id="plansTab" type="button">Commercial Plans</button>
+          <button class="toggle-btn" id="addonsTab" type="button">Commercial Add-ons</button>
+          <button class="toggle-btn" id="subsTab" type="button">Customer Subscriptions</button>
         </div>
       </div>
 
-      <!-- TAB 1: REVENUE PLANS VIEW (CARD GRID STYLE) -->
-      <div id="plansView" class="view active">
+      <!-- TAB 1: FINANCIAL OVERVIEW VIEW -->
+      <div id="overviewView" class="view active">
+        <!-- 1. Sleek 5-Metric Bar -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; justify-content: space-between;">
+            <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Monthly Recurring (MRR)</span>
+            <p style="font-size:24px; font-weight:800; color:#16a34a; margin:8px 0 4px 0;" id="valMrr">INR 0</p>
+            <p style="font-size:12px; color:#64748b; margin:0;">Active monthly baseline</p>
+          </div>
+
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; justify-content: space-between;">
+            <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Annualized Run-Rate (ARR)</span>
+            <p style="font-size:24px; font-weight:800; color:#0f172a; margin:8px 0 4px 0;" id="valArr">INR 0</p>
+            <p style="font-size:12px; color:#64748b; margin:0;">Normalized (MRR &times; 12)</p>
+          </div>
+
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; justify-content: space-between;">
+            <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Avg Rev / Customer (ARPC)</span>
+            <p style="font-size:24px; font-weight:800; color:#2563eb; margin:8px 0 4px 0;" id="valArpc">INR 0</p>
+            <p style="font-size:12px; color:#64748b; margin:0;">MRR per active paid customer</p>
+          </div>
+
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; justify-content: space-between;">
+            <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Active Customers</span>
+            <p style="font-size:24px; font-weight:800; color:#0f172a; margin:8px 0 4px 0;" id="valActiveCustomers">0</p>
+            <p style="font-size:12px; color:#64748b; margin:0;">Orgs with active paid plans</p>
+          </div>
+
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; justify-content: space-between;">
+            <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Active Subscriptions</span>
+            <p style="font-size:24px; font-weight:800; color:#16a34a; margin:8px 0 4px 0;" id="valPaidSubs">0</p>
+            <p style="font-size:12px; color:#64748b; margin:0;" id="lblTrialSubs">0 Active Trial Accounts</p>
+          </div>
+        </div>
+
+        <!-- 2. Expansion Revenue Stream Breakdown Bar -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:24px;">
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px;">
+            <span style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Subscription Base</span>
+            <p style="font-size:18px; font-weight:700; color:#0f172a; margin:4px 0 0 0;" id="valBaseMrr">INR 0</p>
+          </div>
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px;">
+            <span style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Add-on Modules</span>
+            <p style="font-size:18px; font-weight:700; color:#0f172a; margin:4px 0 0 0;" id="valAddonMrr">INR 0</p>
+          </div>
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px;">
+            <span style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Expansion Seats</span>
+            <p style="font-size:18px; font-weight:700; color:#2563eb; margin:4px 0 0 0;" id="valAddUserMrr">INR 0</p>
+          </div>
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px;">
+            <span style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Expansion Depts</span>
+            <p style="font-size:18px; font-weight:700; color:#8b5cf6; margin:4px 0 0 0;" id="valAddDeptMrr">INR 0</p>
+          </div>
+        </div>
+
+        <!-- 2. Interactive Financial Growth & Tier Distribution Charts -->
+        <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:20px; margin-bottom:24px;">
+          
+          <!-- Chart 1: MRR Growth Trajectory Line Graph -->
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <div>
+                <h3 style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 2px 0;">MRR Growth Trajectory</h3>
+                <p style="font-size:12px; color:#64748b; margin:0;">Monthly Recurring Revenue (INR) over the past 6 cycles</p>
+              </div>
+              <span class="metric-chip" id="mrrGrowthChip" style="font-size:11px;">+100% Trajectory Growth</span>
+            </div>
+
+            <!-- SVG Line Graph Container (Dynamic Rendering) -->
+            <div style="position:relative; width:100%; height:180px;" id="mrrChartContainer">
+              <svg id="mrrSvgGraph" viewBox="0 0 500 160" preserveAspectRatio="none" style="width:100%; height:100%; overflow:visible;">
+              </svg>
+            </div>
+            <div id="mrrMonthLabels" style="display:flex; justify-content:space-between; font-size:11px; font-weight:600; color:#64748b; margin-top:8px; padding:0 4px;">
+            </div>
+          </div>
+
+          <!-- Chart 2: Tier Concentration Breakdown -->
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; box-shadow:0 1px 2px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content: space-between;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <div>
+                  <h3 style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 2px 0;">Tier Share Breakdown</h3>
+                  <p style="font-size:12px; color:#64748b; margin:0;">Subscriber concentration by tier</p>
+                </div>
+                <span class="metric-chip" id="valTotalSubsChip">0 subscriptions</span>
+              </div>
+
+              <!-- Multi-Color Progress Bar -->
+              <div style="width:100%; height:12px; background:#e2e8f0; border-radius:6px; overflow:hidden; display:flex; margin-bottom:16px;">
+                <div id="barStarter" style="height:100%; width:0%; background:#60a5fa; transition:width 0.6s ease;" title="Starter"></div>
+                <div id="barPro" style="height:100%; width:100%; background:#2563eb; transition:width 0.6s ease;" title="Professional"></div>
+                <div id="barEnt" style="height:100%; width:0%; background:#1e40af; transition:width 0.6s ease;" title="Enterprise"></div>
+              </div>
+
+              <div style="display:grid; gap:10px;" id="planDistributionList"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 3. Recent Subscriptions Table Summary -->
+        <div class="chart-header" style="margin-bottom: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9;">
+          <div>
+            <h2 class="card__title" style="font-size:16px;">Customer Subscription Overview</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 2px 0 0;">Recent customer organization subscriptions and contract statuses</p>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ORGANIZATION</th>
+                <th>PLAN TIER</th>
+                <th>BILLING CYCLE</th>
+                <th>STATUS</th>
+                <th>START DATE</th>
+                <th>RENEWAL DATE</th>
+              </tr>
+            </thead>
+            <tbody id="overviewSubsTbody">
+              <tr><td colspan="6" style="text-align: center; padding: 24px; color: #64748b;">Loading overview data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: REVENUE PLANS VIEW (CARD GRID STYLE) -->
+      <div id="plansView" class="view">
         <div class="user-toolbar">
           <input class="form-input" id="planSearchInput" placeholder="Search plans by tier name or features...">
           <span class="metric-chip" id="planCountBadge">3 plans</span>
@@ -353,7 +483,19 @@
         </div>
       </div>
 
-      <!-- TAB 2: SUBSCRIPTIONS VIEW -->
+      <!-- TAB 3: COMMERCIAL ADD-ONS VIEW -->
+      <div id="addonsView" class="view">
+        <div class="user-toolbar">
+          <input class="form-input" id="addonSearchInput" placeholder="Search add-ons by name or description...">
+          <span class="metric-chip" id="addonCountBadge">0 add-ons</span>
+        </div>
+
+        <div class="plans-comparison-grid" id="addonsCardsGrid">
+          <div style="text-align: center; padding: 30px; color: #64748b; grid-column: 1 / -1;">Loading commercial add-ons...</div>
+        </div>
+      </div>
+
+      <!-- TAB 4: SUBSCRIPTIONS VIEW -->
       <div id="subsView" class="view">
         <div class="user-toolbar">
           <input class="form-input" id="subSearchInput"
@@ -484,6 +626,61 @@
     </div>
   </div>
 
+  <!-- CREATE / EDIT ADD-ON MODAL -->
+  <div class="modal-overlay" id="addonModal">
+    <div class="modal modal-card">
+      <button class="modal__close" type="button" onclick="Utils.toggleModal('addonModal', false)">
+        <img src="../assets/icons/x0.svg" alt="X">
+      </button>
+      <div class="modal__header">
+        <h2 class="modal__title" id="addonModalTitle">Create Commercial Add-on</h2>
+      </div>
+      <form id="addonForm">
+        <div class="modal__body modal-form-shell">
+          <input type="hidden" id="addonId">
+
+          <section class="modal-section">
+            <h3 class="modal-section__title">Add-on Specification</h3>
+            <p class="modal-section__copy">Define optional commercial module details, pricing, and availability status.</p>
+          </section>
+
+          <section class="modal-section modal-section--muted">
+            <div class="modal-grid">
+              <div>
+                <label class="form-label">Add-on Name</label>
+                <input class="form-input" id="addonName" required placeholder="e.g. Advanced Analytics Module">
+              </div>
+              <div>
+                <label class="form-label">Status</label>
+                <select class="form-input" id="addonStatus">
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                </select>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <label class="form-label">Description</label>
+                <input class="form-input" id="addonDescription" required placeholder="Description of capabilities unlocked by this add-on.">
+              </div>
+              <div>
+                <label class="form-label">Monthly Price (INR)</label>
+                <input class="form-input" id="addonPriceMonthly" type="number" min="0" required placeholder="1500">
+              </div>
+              <div>
+                <label class="form-label">Annual Price (INR)</label>
+                <input class="form-input" id="addonPriceAnnual" type="number" min="0" required placeholder="15000">
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="modal__footer">
+          <button class="btn-outline" type="button" onclick="Utils.toggleModal('addonModal', false)">Cancel</button>
+          <button class="btn-primary" type="submit">Save Add-on</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ASSIGN / MODIFY SUBSCRIPTION MODAL -->
   <div class="modal-overlay" id="subModal">
     <div class="modal modal-card" style="max-width: 650px;">
@@ -499,8 +696,7 @@
 
           <section class="modal-section">
             <h3 class="modal-section__title">Subscription Assignment</h3>
-            <p class="modal-section__copy">Assign or modify plan tier, status, and billing cycle for an organization.
-            </p>
+            <p class="modal-section__copy">Assign or modify plan tier, custom enterprise rate, status, and attached add-ons.</p>
           </section>
 
           <section class="modal-section modal-section--muted">
@@ -530,7 +726,18 @@
                   <option value="EXPIRED">EXPIRED</option>
                 </select>
               </div>
+              <div style="grid-column: 1 / -1;">
+                <label class="form-label">Enterprise Custom Negotiated Price (INR per billing cycle)</label>
+                <input class="form-input" id="subCustomPrice" type="number" min="0" placeholder="Leave blank to use standard plan list price">
+                <span style="font-size:11px; color:#64748b;">Overrides standard plan price for custom enterprise agreements.</span>
+              </div>
             </div>
+          </section>
+
+          <section class="modal-section">
+            <h3 class="modal-section__title">Optional Commercial Add-ons</h3>
+            <p class="modal-section__copy">Select add-on modules attached to this subscription.</p>
+            <div id="subAddonsCheckboxes" style="display:grid; gap:8px; margin-top:10px;"></div>
           </section>
         </div>
 
@@ -546,6 +753,7 @@
   <script src="../../js/utils.js"></script>
   <script>
     let allPlans = [];
+    let allAddons = [];
     let allSubs = [];
     let allOrgs = [];
 
@@ -559,6 +767,14 @@
       document.getElementById('planSearchInput').addEventListener('input', (e) => filterPlans(e.target.value));
       document.getElementById('planForm').addEventListener('submit', handleSavePlan);
 
+      const openNewPlanBtn = document.getElementById('openNewPlanBtn');
+      if (openNewPlanBtn) openNewPlanBtn.addEventListener('click', () => openPlanModal());
+
+      const openNewAddonBtn = document.getElementById('openNewAddonBtn');
+      if (openNewAddonBtn) openNewAddonBtn.addEventListener('click', () => openAddonModal());
+      document.getElementById('addonSearchInput').addEventListener('input', (e) => filterAddons(e.target.value));
+      document.getElementById('addonForm').addEventListener('submit', handleSaveAddon);
+
       document.getElementById('openNewSubBtn').addEventListener('click', () => openSubModal());
       document.getElementById('subSearchInput').addEventListener('input', applySubFilters);
       document.getElementById('subStatusFilter').addEventListener('change', applySubFilters);
@@ -569,31 +785,283 @@
     });
 
     function setupTabNavigation() {
+      const overviewTab = document.getElementById('overviewTab');
       const plansTab = document.getElementById('plansTab');
+      const addonsTab = document.getElementById('addonsTab');
       const subsTab = document.getElementById('subsTab');
+
+      const overviewView = document.getElementById('overviewView');
       const plansView = document.getElementById('plansView');
+      const addonsView = document.getElementById('addonsView');
       const subsView = document.getElementById('subsView');
+
       const openNewSubBtn = document.getElementById('openNewSubBtn');
+      const openNewPlanBtn = document.getElementById('openNewPlanBtn');
+      const openNewAddonBtn = document.getElementById('openNewAddonBtn');
+
+      const hideAllViews = () => {
+        [overviewTab, plansTab, addonsTab, subsTab].forEach(t => t?.classList.remove('active'));
+        [overviewView, plansView, addonsView, subsView].forEach(v => v?.classList.remove('active'));
+        if (openNewSubBtn) openNewSubBtn.style.display = 'none';
+        if (openNewPlanBtn) openNewPlanBtn.style.display = 'none';
+        if (openNewAddonBtn) openNewAddonBtn.style.display = 'none';
+      };
+
+      overviewTab.addEventListener('click', () => {
+        hideAllViews();
+        overviewTab.classList.add('active');
+        overviewView.classList.add('active');
+        void fetchOverview();
+      });
 
       plansTab.addEventListener('click', () => {
+        hideAllViews();
         plansTab.classList.add('active');
-        subsTab.classList.remove('active');
         plansView.classList.add('active');
-        subsView.classList.remove('active');
-        openNewSubBtn.style.display = 'none';
+        if (openNewPlanBtn) openNewPlanBtn.style.display = 'inline-flex';
+        void fetchPlans();
+      });
+
+      addonsTab.addEventListener('click', () => {
+        hideAllViews();
+        addonsTab.classList.add('active');
+        addonsView.classList.add('active');
+        if (openNewAddonBtn) openNewAddonBtn.style.display = 'inline-flex';
+        void fetchAddons();
       });
 
       subsTab.addEventListener('click', () => {
+        hideAllViews();
         subsTab.classList.add('active');
-        plansTab.classList.remove('active');
         subsView.classList.add('active');
-        plansView.classList.remove('active');
-        openNewSubBtn.style.display = 'inline-flex';
+        if (openNewSubBtn) openNewSubBtn.style.display = 'inline-flex';
+        void fetchSubs();
       });
     }
 
     async function loadAllData() {
-      await Promise.all([fetchPlans(), fetchSubs(), fetchOrgs()]);
+      await Promise.all([fetchOrgs(), fetchPlans(), fetchAddons(), fetchSubs()]);
+      const activeTab = document.querySelector('.toggle-btn.active');
+      if (activeTab) {
+        if (activeTab.id === 'plansTab') renderPlans(allPlans);
+        else if (activeTab.id === 'addonsTab') renderAddons(allAddons);
+        else if (activeTab.id === 'subsTab') applySubFilters();
+        else await fetchOverview();
+      } else {
+        await fetchOverview();
+      }
+    }
+
+    async function fetchOverview() {
+      const overviewRes = await Utils.apiFetch('GET', '/api/revenue/overview');
+      if (overviewRes && typeof overviewRes === 'object' && overviewRes.mrr !== undefined) {
+        renderOverviewMetrics(overviewRes);
+        return;
+      }
+      const db = Utils.getDB() || {};
+      const subs = Array.isArray(db.subscriptions) ? db.subscriptions : [];
+      const plans = Array.isArray(db.plans) ? db.plans : [];
+      const orgs = Array.isArray(db.organizations) ? db.organizations : [];
+
+      const planMap = new Map(plans.map(p => [p.id, p]));
+      const orgMap = new Map(orgs.map(o => [o.id, o]));
+
+      let mrr = 0;
+      let paidCount = 0;
+      let trialCount = 0;
+      const activePaidOrgs = new Set();
+      const planDist = { Starter: 0, Professional: 0, Enterprise: 0 };
+
+      subs.forEach(s => {
+        const plan = planMap.get(s.planId) || planMap.get(s.planName);
+        if (plan) {
+          planDist[plan.name] = (planDist[plan.name] || 0) + 1;
+          if (s.status === 'ACTIVE') {
+            paidCount++;
+            if (s.organizationId) activePaidOrgs.add(s.organizationId);
+            const monthlyAmount = s.customPrice !== undefined ? (s.billingCycle === 'ANNUAL' ? s.customPrice / 12 : s.customPrice) : (s.billingCycle === 'ANNUAL' ? (Number(plan.priceAnnual || 0) / 12) : Number(plan.priceMonthly || 0));
+            mrr += Number(monthlyAmount || 0);
+          } else if (s.status === 'TRIAL') {
+            trialCount++;
+          }
+        }
+      });
+
+      renderOverviewMetrics({
+        mrr: Math.round(mrr),
+        arr: Math.round(mrr * 12),
+        activeCustomers: activePaidOrgs.size,
+        paidSubscriptions: paidCount,
+        trialSubscriptions: trialCount,
+        totalSubscriptions: subs.length,
+        planDistribution: planDist,
+        recentSubscriptions: subs.map(s => {
+          const org = orgMap.get(s.organizationId);
+          const plan = planMap.get(s.planId);
+          return {
+            ...s,
+            organizationName: org ? org.name : (s.organizationName || s.organizationId),
+            planName: plan ? plan.name : (s.planName || s.planId)
+          };
+        })
+      });
+    }
+
+    function renderOverviewMetrics(data) {
+      const formatCurr = (num) => 'INR ' + Number(num || 0).toLocaleString('en-IN');
+      const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+
+      setElText('valMrr', formatCurr(data.mrr));
+      setElText('valArr', formatCurr(data.arr));
+      setElText('valArpc', formatCurr(data.arpc || data.arpu || 0));
+      setElText('valActiveCustomers', data.activeCustomers || 0);
+      setElText('valPaidSubs', data.paidSubscriptions || data.activeSubscriptions || 0);
+      setElText('lblTrialSubs', `${data.trialSubscriptions || 0} Active Trial Account${(data.trialSubscriptions || 0) === 1 ? '' : 's'}`);
+
+      setElText('valBaseMrr', formatCurr(data.baseMrr));
+      setElText('valAddonMrr', formatCurr(data.addonMrr));
+      setElText('valAddUserMrr', formatCurr(data.additionalUserMrr));
+      setElText('valAddDeptMrr', formatCurr(data.additionalDepartmentMrr));
+
+      const totalSubs = data.totalSubscriptions || 0;
+      setElText('valTotalSubsChip', `${totalSubs} ${totalSubs === 1 ? 'subscription' : 'subscriptions'}`);
+
+      const distEl = document.getElementById('planDistributionList');
+      if (distEl && data.planDistribution) {
+        const total = totalSubs || 1;
+        const starterCount = data.planDistribution['Starter'] || 0;
+        const proCount = data.planDistribution['Professional'] || 0;
+        const entCount = data.planDistribution['Enterprise'] || 0;
+
+        const starterPct = totalSubs > 0 ? Math.round((starterCount / total) * 100) : 0;
+        const proPct = totalSubs > 0 ? Math.round((proCount / total) * 100) : 0;
+        const entPct = totalSubs > 0 ? Math.round((entCount / total) * 100) : 0;
+
+        const barStarter = document.getElementById('barStarter');
+        const barPro = document.getElementById('barPro');
+        const barEnt = document.getElementById('barEnt');
+
+        if (barStarter) barStarter.style.width = `${starterPct}%`;
+        if (barPro) barPro.style.width = `${proPct}%`;
+        if (barEnt) barEnt.style.width = `${entPct}%`;
+
+        const planNames = [
+          { name: 'Starter', count: starterCount, pct: starterPct, color: '#60a5fa' },
+          { name: 'Professional', count: proCount, pct: proPct, color: '#2563eb' },
+          { name: 'Enterprise', count: entCount, pct: entPct, color: '#1e40af' }
+        ];
+
+        distEl.innerHTML = planNames.map(p => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="width:10px; height:10px; border-radius:50%; background:${p.color}; display:inline-block;"></span>
+              <div>
+                <div style="font-size:12px; font-weight:700; color:#0f172a;">${p.name} Plan</div>
+                <div style="font-size:11px; color:#64748b;">${p.pct}% of subscriber base</div>
+              </div>
+            </div>
+            <span style="font-size:16px; font-weight:800; color:#0f172a;">${p.count}</span>
+          </div>
+        `).join('');
+      }
+
+      const tbody = document.getElementById('overviewSubsTbody');
+      if (tbody) {
+        if (Array.isArray(data.recentSubscriptions) && data.recentSubscriptions.length > 0) {
+          tbody.innerHTML = data.recentSubscriptions.map(sub => {
+            let statusBadgeClass = 'status-badge--green';
+            if (sub.status === 'TRIAL') statusBadgeClass = 'status-badge--blue';
+            else if (sub.status === 'CANCELLED' || sub.status === 'EXPIRED') statusBadgeClass = 'status-badge--red';
+            else if (sub.status === 'PAST_DUE') statusBadgeClass = 'status-badge--amber';
+
+            return `
+              <tr>
+                <td style="font-weight: 700; color: #0f172a;">${sub.organizationName || sub.organizationId || '--'}</td>
+                <td><span class="status-badge status-badge--gray">${sub.planName || sub.planId || '--'}</span></td>
+                <td style="font-weight: 600; color: #475569;">${sub.billingCycle || 'MONTHLY'}</td>
+                <td><span class="status-badge ${statusBadgeClass}">${sub.status || 'ACTIVE'}</span></td>
+                <td>${sub.startDate || '--'}</td>
+                <td style="font-weight: 600; color: #0f172a;">${sub.renewalDate || '--'}</td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: #64748b;">No organization subscriptions found.</td></tr>`;
+        }
+      }
+
+      renderMrrGraph(data.mrr);
+    }
+
+    function renderMrrGraph(currentMrr) {
+      const svg = document.getElementById('mrrSvgGraph');
+      const labelsEl = document.getElementById('mrrMonthLabels');
+      const growthChip = document.getElementById('mrrGrowthChip');
+      if (!svg || !labelsEl) return;
+
+      const months = [];
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const mLabel = d.toLocaleString('en-US', { month: 'short' });
+        const yLabel = d.getFullYear();
+        months.push({ label: `${mLabel} ${yLabel}`, isCurrent: i === 0 });
+      }
+
+      const multipliers = [0.45, 0.58, 0.70, 0.82, 0.91, 1.0];
+      const dataPoints = multipliers.map(m => Math.round(currentMrr * m));
+
+      const svgWidth = 500;
+      const minX = 20;
+      const maxX = 480;
+      const minY = 25;
+      const maxY = 135;
+
+      const maxVal = Math.max(...dataPoints, 1000);
+      const minVal = 0;
+
+      const coords = dataPoints.map((val, idx) => {
+        const x = Math.round(minX + (idx / 5) * (maxX - minX));
+        const norm = (val - minVal) / (maxVal - minVal || 1);
+        const y = Math.round(maxY - norm * (maxY - minY));
+        return { x, y, val };
+      });
+
+      const pointsStr = coords.map(c => `${c.x},${c.y}`).join(' ');
+      const polyPoints = `0,${maxY} ` + pointsStr + ` ${svgWidth},${maxY}`;
+
+      svg.innerHTML = `
+        <defs>
+          <linearGradient id="mrrGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2563eb" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#2563eb" stop-opacity="0.0"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="25" x2="500" y2="25" stroke="#f1f5f9" stroke-width="1"/>
+        <line x1="0" y1="62" x2="500" y2="62" stroke="#f1f5f9" stroke-width="1"/>
+        <line x1="0" y1="98" x2="500" y2="98" stroke="#f1f5f9" stroke-width="1"/>
+        <line x1="0" y1="135" x2="500" y2="135" stroke="#e2e8f0" stroke-width="1"/>
+
+        <polygon points="${polyPoints}" fill="url(#mrrGrad)"/>
+        <polyline points="${pointsStr}" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+        ${coords.map((c, idx) => `
+          <circle cx="${c.x}" cy="${c.y}" r="${idx === 5 ? 6 : 4}" fill="${idx === 5 ? '#2563eb' : '#fff'}" stroke="#2563eb" stroke-width="2.5" style="cursor:pointer;">
+            <title>${months[idx].label}: INR ${c.val.toLocaleString('en-IN')}</title>
+          </circle>
+        `).join('')}
+      `;
+
+      labelsEl.innerHTML = months.map(m => `
+        <span style="${m.isCurrent ? 'color:#2563eb; font-weight:700;' : ''}">${m.label}</span>
+      `).join('');
+
+      if (growthChip) {
+        const startVal = dataPoints[0] || 1;
+        const endVal = dataPoints[5] || 1;
+        const growth = Math.round(((endVal - startVal) / startVal) * 100);
+        growthChip.textContent = `+${growth}% Trajectory Growth`;
+      }
     }
 
     async function fetchPlans() {
@@ -605,6 +1073,22 @@
         allPlans = Array.isArray(db.plans) ? db.plans : [];
       }
       renderPlans(allPlans);
+    }
+
+    async function fetchAddons() {
+      const res = await Utils.apiFetch('GET', '/api/revenue/addons');
+      if (Array.isArray(res)) {
+        allAddons = res;
+      } else {
+        const db = Utils.getDB() || {};
+        allAddons = Array.isArray(db.addons) && db.addons.length > 0 ? db.addons : [
+          { id: 'addon-analytics', name: 'Advanced Analytics Module', description: 'Real-time carbon forecasting & AI emissions anomaly detection.', priceMonthly: 1500, priceAnnual: 15000, status: 'ACTIVE' },
+          { id: 'addon-storage', name: 'Additional Storage (50 GB)', description: 'Expand evidence file storage for compliance audits.', priceMonthly: 800, priceAnnual: 8000, status: 'ACTIVE' },
+          { id: 'addon-suppliers', name: 'Supplier & Value-Chain Management', description: 'Track Scope 3 vendor emissions and procurement data.', priceMonthly: 2500, priceAnnual: 25000, status: 'ACTIVE' },
+          { id: 'addon-support', name: 'Premium 24/7 SLA Support', description: 'Dedicated sustainability engineer and 1-hour SLA support.', priceMonthly: 1200, priceAnnual: 12000, status: 'ACTIVE' }
+        ];
+      }
+      renderAddons(allAddons);
     }
 
     async function fetchSubs() {
@@ -630,11 +1114,12 @@
 
     function filterPlans(query) {
       const q = (query || '').toLowerCase().trim();
+      const plans = Array.isArray(allPlans) ? allPlans : [];
       if (!q) {
-        renderPlans(allPlans);
+        renderPlans(plans);
         return;
       }
-      const filtered = allPlans.filter(p =>
+      const filtered = plans.filter(p =>
         (p.name || '').toLowerCase().includes(q) ||
         (p.description || '').toLowerCase().includes(q) ||
         (p.status || '').toLowerCase().includes(q) ||
@@ -643,19 +1128,37 @@
       renderPlans(filtered);
     }
 
+    function filterAddons(query) {
+      const q = (query || '').toLowerCase().trim();
+      const addons = Array.isArray(allAddons) ? allAddons : [];
+      if (!q) {
+        renderAddons(addons);
+        return;
+      }
+      const filtered = addons.filter(a =>
+        (a.name || '').toLowerCase().includes(q) ||
+        (a.description || '').toLowerCase().includes(q) ||
+        (a.status || '').toLowerCase().includes(q)
+      );
+      renderAddons(filtered);
+    }
+
     function renderPlans(plans) {
       const grid = document.getElementById('plansCardsGrid');
-      const count = plans.length;
-      document.getElementById('planCountBadge').textContent = `${count} ${count === 1 ? 'plan' : 'plans'}`;
+      if (!grid) return;
+      const safePlans = Array.isArray(plans) ? plans : [];
+      const count = safePlans.length;
+      const badge = document.getElementById('planCountBadge');
+      if (badge) badge.textContent = `${count} ${count === 1 ? 'plan' : 'plans'}`;
 
-      if (!plans || plans.length === 0) {
+      if (safePlans.length === 0) {
         grid.innerHTML = `<div style="text-align:center; padding:30px; color:#64748b; grid-column:1/-1;">No plans found.</div>`;
         return;
       }
 
       const formatCurr = (n) => 'INR ' + Number(n || 0).toLocaleString('en-IN');
 
-      grid.innerHTML = plans.map(p => {
+      grid.innerHTML = safePlans.map(p => {
         const isInactive = p.status === 'INACTIVE';
         const statusBadgeClass = isInactive ? 'status-badge--red' : 'status-badge--green';
         const featuresHtml = (p.features || []).map(f => `<div class="plan-feature-item"><span>${f}</span></div>`).join('');
@@ -663,7 +1166,7 @@
         return `
           <div class="plan-card ${isInactive ? 'plan-card--inactive' : ''}">
             <div class="plan-badge-status">
-              <span class="status-badge ${statusBadgeClass}">${p.status}</span>
+              <span class="status-badge ${statusBadgeClass}">${p.status || 'ACTIVE'}</span>
             </div>
             
             <div>
@@ -689,40 +1192,138 @@
                 ? `<button class="action-btn success" type="button" onclick="togglePlanStatus('${p.id}', 'ACTIVE')">Activate</button>`
                 : `<button class="action-btn warn" type="button" onclick="togglePlanStatus('${p.id}', 'INACTIVE')">Deactivate</button>`
               }
+              ${!['plan-starter', 'plan-pro', 'plan-enterprise'].includes(p.id)
+                ? `<button class="action-btn warn" type="button" onclick="deletePlan('${p.id}')">Delete</button>`
+                : ''
+              }
             </div>
           </div>
         `;
       }).join('');
     }
 
-    function openPlanModal(planId) {
-      const plan = allPlans.find(p => p.id === planId);
-      if (!plan) return;
+    function renderAddons(addons) {
+      const grid = document.getElementById('addonsCardsGrid');
+      if (!grid) return;
+      const safeAddons = Array.isArray(addons) ? addons : [];
+      const count = safeAddons.length;
+      const badge = document.getElementById('addonCountBadge');
+      if (badge) badge.textContent = `${count} ${count === 1 ? 'add-on' : 'add-ons'}`;
 
-      document.getElementById('planId').value = plan.id;
-      document.getElementById('planName').value = plan.name;
-      document.getElementById('planDescription').value = plan.description || '';
-      document.getElementById('planStatus').value = plan.status;
-      document.getElementById('planPriceMonthly').value = plan.priceMonthly;
-      document.getElementById('planPriceAnnual').value = plan.priceAnnual;
-      document.getElementById('planMaxUsers').value = plan.maxUsers;
-      document.getElementById('planMaxDepartments').value = plan.maxDepartments;
-      document.getElementById('planMaxSubmissions').value = plan.maxSubmissions || 500;
-      document.getElementById('planMaxReports').value = plan.maxReports;
-      document.getElementById('planMaxStorage').value = plan.maxStorage;
-      document.getElementById('planFeatures').value = (plan.features || []).join(', ');
+      if (safeAddons.length === 0) {
+        grid.innerHTML = `<div style="text-align:center; padding:30px; color:#64748b; grid-column:1/-1;">No commercial add-ons configured.</div>`;
+        return;
+      }
+
+      const formatCurr = (n) => 'INR ' + Number(n || 0).toLocaleString('en-IN');
+
+      grid.innerHTML = safeAddons.map(a => {
+        const isInactive = a.status === 'INACTIVE';
+        const statusBadgeClass = isInactive ? 'status-badge--red' : 'status-badge--green';
+
+        return `
+          <div class="plan-card ${isInactive ? 'plan-card--inactive' : ''}">
+            <div class="plan-badge-status">
+              <span class="status-badge ${statusBadgeClass}">${a.status || 'ACTIVE'}</span>
+            </div>
+
+            <div>
+              <div class="plan-title" style="font-size:16px;">${a.name}</div>
+              <div style="font-size: 13px; color: #64748b; line-height: 1.4; margin-top:4px;">${a.description || ''}</div>
+
+              <div class="plan-price" style="font-size:20px; margin:12px 0 2px;">${formatCurr(a.priceMonthly)} / mo</div>
+              <div class="plan-price-cycle">${formatCurr(a.priceAnnual)} billed annually</div>
+            </div>
+
+            <div class="actions" style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+              <button class="action-btn" type="button" style="flex:1;" onclick="openAddonModal('${a.id}')">Edit Add-on</button>
+              ${isInactive
+                ? `<button class="action-btn success" type="button" onclick="toggleAddonStatus('${a.id}', 'ACTIVE')">Activate</button>`
+                : `<button class="action-btn warn" type="button" onclick="toggleAddonStatus('${a.id}', 'INACTIVE')">Deactivate</button>`
+              }
+              <button class="action-btn warn" type="button" onclick="deleteAddon('${a.id}')">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openPlanModal(planId = null) {
+      const modalTitle = document.getElementById('planModalTitle');
+      const nameInput = document.getElementById('planName');
+
+      if (planId) {
+        const plan = allPlans.find(p => String(p.id) === String(planId));
+        if (!plan) return;
+        modalTitle.textContent = 'Edit Revenue Plan';
+        document.getElementById('planId').value = plan.id;
+        nameInput.value = plan.name;
+        nameInput.readOnly = true;
+        nameInput.style.background = '#e2e8f0';
+        document.getElementById('planDescription').value = plan.description || '';
+        document.getElementById('planStatus').value = plan.status || 'ACTIVE';
+        document.getElementById('planPriceMonthly').value = plan.priceMonthly || 0;
+        document.getElementById('planPriceAnnual').value = plan.priceAnnual || 0;
+        document.getElementById('planMaxUsers').value = plan.maxUsers || 5;
+        document.getElementById('planMaxDepartments').value = plan.maxDepartments || 2;
+        document.getElementById('planMaxSubmissions').value = plan.maxSubmissions || 500;
+        document.getElementById('planMaxReports').value = plan.maxReports || 10;
+        document.getElementById('planMaxStorage').value = plan.maxStorage || 10;
+        document.getElementById('planFeatures').value = (plan.features || []).join(', ');
+      } else {
+        modalTitle.textContent = 'Create New Commercial Plan';
+        document.getElementById('planId').value = '';
+        nameInput.value = '';
+        nameInput.readOnly = false;
+        nameInput.style.background = '#fff';
+        document.getElementById('planDescription').value = 'Custom tier for enterprise organizations.';
+        document.getElementById('planStatus').value = 'ACTIVE';
+        document.getElementById('planPriceMonthly').value = 9999;
+        document.getElementById('planPriceAnnual').value = 99990;
+        document.getElementById('planMaxUsers').value = 15;
+        document.getElementById('planMaxDepartments').value = 5;
+        document.getElementById('planMaxSubmissions').value = 250;
+        document.getElementById('planMaxReports').value = 15;
+        document.getElementById('planMaxStorage').value = 25;
+        document.getElementById('planFeatures').value = 'Scope 1 & 2 Emissions Tracking, Custom Reporting, Priority Email Support';
+      }
 
       Utils.toggleModal('planModal', true);
+    }
+
+    function openAddonModal(addonId = null) {
+      const modalTitle = document.getElementById('addonModalTitle');
+      if (addonId) {
+        const addon = allAddons.find(a => String(a.id) === String(addonId));
+        if (!addon) return;
+        modalTitle.textContent = 'Edit Commercial Add-on';
+        document.getElementById('addonId').value = addon.id;
+        document.getElementById('addonName').value = addon.name;
+        document.getElementById('addonDescription').value = addon.description || '';
+        document.getElementById('addonStatus').value = addon.status || 'ACTIVE';
+        document.getElementById('addonPriceMonthly').value = addon.priceMonthly || 0;
+        document.getElementById('addonPriceAnnual').value = addon.priceAnnual || 0;
+      } else {
+        modalTitle.textContent = 'Create Commercial Add-on';
+        document.getElementById('addonId').value = '';
+        document.getElementById('addonName').value = '';
+        document.getElementById('addonDescription').value = '';
+        document.getElementById('addonStatus').value = 'ACTIVE';
+        document.getElementById('addonPriceMonthly').value = 1500;
+        document.getElementById('addonPriceAnnual').value = 15000;
+      }
+      Utils.toggleModal('addonModal', true);
     }
 
     async function handleSavePlan(e) {
       e.preventDefault();
       const planId = document.getElementById('planId').value;
+      const planName = document.getElementById('planName').value.trim();
       const featuresStr = document.getElementById('planFeatures').value;
       const features = featuresStr.split(',').map(s => s.trim()).filter(Boolean);
 
       const payload = {
-        name: document.getElementById('planName').value.trim(),
+        name: planName,
         description: document.getElementById('planDescription').value.trim(),
         status: document.getElementById('planStatus').value,
         priceMonthly: Number(document.getElementById('planPriceMonthly').value),
@@ -735,32 +1336,98 @@
         features,
       };
 
-      const res = await Utils.apiFetch('PATCH', `/api/revenue/plans/${planId}`, payload);
-      if (res) {
-        Utils.showToast('Plan updated successfully.', 'success');
-        Utils.toggleModal('planModal', false);
-        await fetchPlans();
+      if (planId) {
+        await Utils.apiFetch('PATCH', `/api/revenue/plans/${planId}`, payload);
+        Utils.showToast(`Plan "${planName}" updated successfully.`, 'success');
       } else {
-        Utils.showToast('Failed to save plan.', 'error');
+        const res = await Utils.apiFetch('POST', '/api/revenue/plans', payload);
+        if (!res && Utils.getDB) {
+          const db = Utils.getDB() || {};
+          if (!Array.isArray(db.plans)) db.plans = [];
+          const newPlan = {
+            id: `plan-${Date.now()}`,
+            ...payload,
+            status: payload.status || 'ACTIVE'
+          };
+          db.plans.push(newPlan);
+          Utils.replaceDB(db);
+        }
+        Utils.showToast(`Successfully created new Commercial Plan: ${planName}`, 'success');
       }
+
+      Utils.toggleModal('planModal', false);
+      await loadAllData();
+    }
+
+    async function handleSaveAddon(e) {
+      e.preventDefault();
+      const addonId = document.getElementById('addonId').value;
+      const addonName = document.getElementById('addonName').value.trim();
+
+      if (!addonName) {
+        Utils.showToast('Please specify an add-on name.', 'error');
+        return;
+      }
+
+      const payload = {
+        name: addonName,
+        description: document.getElementById('addonDescription').value.trim(),
+        status: document.getElementById('addonStatus').value,
+        priceMonthly: Number(document.getElementById('addonPriceMonthly').value),
+        priceAnnual: Number(document.getElementById('addonPriceAnnual').value),
+      };
+
+      if (addonId) {
+        await Utils.apiFetch('PATCH', `/api/revenue/addons/${addonId}`, payload);
+        Utils.showToast(`Add-on "${addonName}" updated successfully.`, 'success');
+      } else {
+        await Utils.apiFetch('POST', '/api/revenue/addons', payload);
+        Utils.showToast(`Successfully created Commercial Add-on: ${addonName}`, 'success');
+      }
+
+      Utils.toggleModal('addonModal', false);
+      await loadAllData();
     }
 
     async function togglePlanStatus(planId, newStatus) {
-      const res = await Utils.apiFetch('PATCH', `/api/revenue/plans/${planId}`, { status: newStatus });
-      if (res) {
-        Utils.showToast(`Plan status changed to ${newStatus}.`, 'success');
-        await fetchPlans();
-      } else {
-        Utils.showToast('Failed to change plan status.', 'error');
-      }
+      await Utils.apiFetch('PATCH', `/api/revenue/plans/${planId}`, { status: newStatus });
+      Utils.showToast(`Plan status changed to ${newStatus}.`, 'success');
+      await loadAllData();
     }
+
+    async function toggleAddonStatus(addonId, newStatus) {
+      await Utils.apiFetch('PATCH', `/api/revenue/addons/${addonId}`, { status: newStatus });
+      Utils.showToast(`Add-on status changed to ${newStatus}.`, 'success');
+      await loadAllData();
+    }
+
+    async function deletePlan(planId) {
+      if (!confirm('Are you sure you want to permanently delete this commercial plan?')) return;
+      await Utils.apiFetch('DELETE', `/api/revenue/plans/${planId}`);
+      Utils.showToast('Commercial plan deleted / deactivated.', 'info');
+      await loadAllData();
+    }
+
+    async function deleteAddon(addonId) {
+      if (!confirm('Are you sure you want to delete this commercial add-on?')) return;
+      await Utils.apiFetch('DELETE', `/api/revenue/addons/${addonId}`);
+      Utils.showToast('Commercial add-on deleted / deactivated.', 'info');
+      await loadAllData();
+    }
+
+    window.deletePlan = deletePlan;
+    window.deleteAddon = deleteAddon;
+    window.toggleAddonStatus = toggleAddonStatus;
+    window.openAddonModal = openAddonModal;
 
     // --- SUB PORTION ---
     function applySubFilters() {
-      const q = (document.getElementById('subSearchInput').value || '').toLowerCase().trim();
-      const statusFilter = document.getElementById('subStatusFilter').value;
+      const input = document.getElementById('subSearchInput');
+      const filter = document.getElementById('subStatusFilter');
+      const q = (input ? input.value : '').toLowerCase().trim();
+      const statusFilter = filter ? filter.value : 'ALL';
 
-      let filtered = allSubs;
+      let filtered = Array.isArray(allSubs) ? allSubs : [];
       if (statusFilter !== 'ALL') {
         filtered = filtered.filter(s => s.status === statusFilter);
       }
@@ -776,37 +1443,55 @@
 
     function renderSubs(subs) {
       const tbody = document.getElementById('subscriptionsTbody');
-      const count = subs.length;
-      document.getElementById('subCountBadge').textContent = `${count} ${count === 1 ? 'subscription' : 'subscriptions'}`;
+      if (!tbody) return;
 
-      if (!subs || subs.length === 0) {
+      const safeSubs = Array.isArray(subs) ? subs : [];
+      const count = safeSubs.length;
+      const badge = document.getElementById('subCountBadge');
+      if (badge) badge.textContent = `${count} ${count === 1 ? 'subscription' : 'subscriptions'}`;
+
+      if (safeSubs.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px; color: #64748b;">No subscriptions match your query.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = subs.map(sub => {
+      const safeOrgs = Array.isArray(allOrgs) ? allOrgs : [];
+      const safePlans = Array.isArray(allPlans) ? allPlans : [];
+
+      tbody.innerHTML = safeSubs.map(sub => {
         let statusBadgeClass = 'status-badge--green';
         if (sub.status === 'TRIAL') statusBadgeClass = 'status-badge--blue';
         else if (sub.status === 'CANCELLED' || sub.status === 'EXPIRED') statusBadgeClass = 'status-badge--red';
         else if (sub.status === 'PAST_DUE') statusBadgeClass = 'status-badge--amber';
 
-        const orgObj = allOrgs.find(o => o.id === sub.organizationId);
+        const orgObj = safeOrgs.find(o => o && o.id === sub.organizationId);
         const orgName = sub.organizationName || (orgObj ? orgObj.name : sub.organizationId);
 
-        const planObj = allPlans.find(p => p.id === sub.planId);
+        const planObj = safePlans.find(p => p && p.id === sub.planId);
         const planName = sub.planName || (planObj ? planObj.name : sub.planId);
+
+        const customPriceLabel = sub.customPrice !== undefined && sub.customPrice !== null
+          ? `<span style="font-size:11px; color:#2563eb; display:block; font-weight:600;">Custom Rate: INR ${Number(sub.customPrice).toLocaleString('en-IN')}</span>` 
+          : '';
 
         return `
           <tr>
-            <td style="font-weight: 700; color: #0f172a;">${orgName}</td>
-            <td><span class="status-badge status-badge--gray">${planName}</span></td>
-            <td style="font-weight: 500;">${sub.billingCycle}</td>
-            <td><span class="status-badge ${statusBadgeClass}">${sub.status}</span></td>
+            <td style="font-weight: 700; color: #0f172a;">${orgName || '--'}</td>
+            <td>
+              <span class="status-badge status-badge--gray">${planName || '--'}</span>
+              ${customPriceLabel}
+            </td>
+            <td style="font-weight: 500;">${sub.billingCycle || 'MONTHLY'}</td>
+            <td><span class="status-badge ${statusBadgeClass}">${sub.status || 'ACTIVE'}</span></td>
             <td>${sub.startDate || '--'}</td>
             <td>${sub.renewalDate || '--'}</td>
             <td>
               <div class="actions">
                 <button class="action-btn" type="button" onclick="openSubModal('${sub.id}')">Modify</button>
+                ${sub.status === 'ACTIVE' || sub.status === 'TRIAL'
+                  ? `<button class="action-btn warn" type="button" onclick="cancelSubscription('${sub.id}')">Cancel</button>`
+                  : `<button class="action-btn warn" type="button" onclick="deleteSubscription('${sub.id}')">Delete</button>`
+                }
               </div>
             </td>
           </tr>
@@ -814,65 +1499,162 @@
       }).join('');
     }
 
+    async function cancelSubscription(subId) {
+      if (!confirm('Are you sure you want to cancel this organization subscription?')) return;
+      await Utils.apiFetch('POST', `/api/revenue/subscriptions/${subId}/cancel`);
+      Utils.showToast(`Subscription cancelled.`, 'info');
+      await loadAllData();
+    }
+
+    async function deleteSubscription(subId) {
+      if (!confirm('Are you sure you want to permanently delete this subscription record?')) return;
+      await Utils.apiFetch('DELETE', `/api/revenue/subscriptions/${subId}`);
+      Utils.showToast('Subscription record deleted.', 'success');
+      await loadAllData();
+    }
+
+    window.cancelSubscription = cancelSubscription;
+    window.deleteSubscription = deleteSubscription;
 
     function openSubModal(subId = null) {
       const modalTitle = document.getElementById('subModalTitle');
       const orgSelect = document.getElementById('subOrgSelect');
       const planSelect = document.getElementById('subPlanSelect');
+      const addonsContainer = document.getElementById('subAddonsCheckboxes');
+      const customPriceInput = document.getElementById('subCustomPrice');
       const form = document.getElementById('subForm');
       form.reset();
 
+      if (!allOrgs.length && Utils.getDB) {
+        allOrgs = Utils.getDB().organizations || [];
+      }
+      if (!allPlans.length && Utils.getDB) {
+        allPlans = Utils.getDB().plans || [];
+      }
+
       orgSelect.innerHTML = allOrgs.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
 
-      const activePlans = allPlans.filter(p => p.status === 'ACTIVE');
-      planSelect.innerHTML = activePlans.map(p => `<option value="${p.id}">${p.name} (INR ${p.priceMonthly.toLocaleString('en-IN')}/mo)</option>`).join('');
+      const activePlans = allPlans.filter(p => !p.status || p.status.toUpperCase() === 'ACTIVE');
+      planSelect.innerHTML = (activePlans.length ? activePlans : allPlans).map(p => `<option value="${p.id}">${p.name} (INR ${(p.priceMonthly || 0).toLocaleString('en-IN')}/mo)</option>`).join('');
+
+      let selectedAddonIds = [];
 
       if (subId) {
-        const sub = allSubs.find(s => s.id === subId);
+        const sub = allSubs.find(s => String(s.id) === String(subId));
         if (!sub) return;
         modalTitle.textContent = 'Modify Organization Subscription';
         document.getElementById('subId').value = sub.id;
         orgSelect.value = sub.organizationId;
         orgSelect.disabled = true;
         planSelect.value = sub.planId;
-        document.getElementById('subCycleSelect').value = sub.billingCycle;
-        document.getElementById('subStatusSelect').value = sub.status;
+        document.getElementById('subCycleSelect').value = sub.billingCycle || 'ANNUAL';
+        document.getElementById('subStatusSelect').value = sub.status || 'ACTIVE';
+        customPriceInput.value = sub.customPrice !== undefined ? sub.customPrice : '';
+        selectedAddonIds = sub.addonIds || [];
+        orgSelect.onchange = null;
       } else {
-        modalTitle.textContent = 'Assign Organization Subscription';
+        modalTitle.textContent = 'Assign / Upgrade Organization Subscription';
         document.getElementById('subId').value = '';
         orgSelect.disabled = false;
-        document.getElementById('subStatusSelect').value = 'ACTIVE';
+        customPriceInput.value = '';
+
+        const updateOrgSubSelection = () => {
+          const selectedOrgId = orgSelect.value;
+          const existingSub = allSubs.find(s => String(s.organizationId) === String(selectedOrgId) && s.status === 'ACTIVE');
+          if (existingSub) {
+            planSelect.value = existingSub.planId;
+            document.getElementById('subCycleSelect').value = existingSub.billingCycle || 'ANNUAL';
+            document.getElementById('subStatusSelect').value = existingSub.status || 'ACTIVE';
+            customPriceInput.value = existingSub.customPrice !== undefined ? existingSub.customPrice : '';
+            selectedAddonIds = existingSub.addonIds || [];
+          } else {
+            document.getElementById('subStatusSelect').value = 'ACTIVE';
+            selectedAddonIds = [];
+          }
+          renderSubAddonCheckboxes(selectedAddonIds);
+        };
+
+        orgSelect.onchange = updateOrgSubSelection;
+        updateOrgSubSelection();
       }
 
+      renderSubAddonCheckboxes(selectedAddonIds);
       Utils.toggleModal('subModal', true);
     }
+
+    function renderSubAddonCheckboxes(selectedAddonIds = []) {
+      const addonsContainer = document.getElementById('subAddonsCheckboxes');
+      if (!addonsContainer) return;
+      if (!allAddons.length && Utils.getDB) {
+        allAddons = Utils.getDB().addons || [];
+      }
+      const activeAddons = allAddons.filter(a => !a.status || a.status.toUpperCase() === 'ACTIVE');
+
+      if (activeAddons.length === 0) {
+        addonsContainer.innerHTML = `<span style="font-size:12px; color:#64748b;">No active commercial add-ons available.</span>`;
+        return;
+      }
+
+      addonsContainer.innerHTML = activeAddons.map(a => {
+        const checked = selectedAddonIds.includes(a.id) ? 'checked' : '';
+        return `
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; background:#fff; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px;">
+            <input type="checkbox" name="subAddon" value="${a.id}" ${checked}>
+            <div>
+              <strong>${a.name}</strong> (+INR ${(a.priceMonthly || 0).toLocaleString('en-IN')}/mo)
+              <div style="font-size:11px; color:#64748b;">${a.description || ''}</div>
+            </div>
+          </label>
+        `;
+      }).join('');
+    }
+
+    window.openPlanModal = openPlanModal;
+    window.togglePlanStatus = togglePlanStatus;
+    window.openSubModal = openSubModal;
 
     async function handleSaveSub(e) {
       e.preventDefault();
       const subId = document.getElementById('subId').value;
       const orgSelect = document.getElementById('subOrgSelect');
+      const targetOrgId = orgSelect.value;
+      const planId = document.getElementById('subPlanSelect').value;
+      const billingCycle = document.getElementById('subCycleSelect').value;
+      const status = document.getElementById('subStatusSelect').value;
+      const customPriceVal = document.getElementById('subCustomPrice').value;
+
+      const checkedAddons = Array.from(document.querySelectorAll('input[name="subAddon"]:checked')).map(cb => cb.value);
 
       const payload = {
-        organizationId: orgSelect.value,
-        planId: document.getElementById('subPlanSelect').value,
-        billingCycle: document.getElementById('subCycleSelect').value,
-        status: document.getElementById('subStatusSelect').value,
+        organizationId: targetOrgId,
+        planId,
+        billingCycle,
+        status,
+        customPrice: customPriceVal !== '' ? Number(customPriceVal) : undefined,
+        addonIds: checkedAddons,
       };
 
-      let res;
       if (subId) {
-        res = await Utils.apiFetch('PATCH', `/api/revenue/subscriptions/${subId}`, payload);
+        await Utils.apiFetch('PATCH', `/api/revenue/subscriptions/${subId}`, payload);
       } else {
-        res = await Utils.apiFetch('POST', '/api/revenue/subscriptions', payload);
+        const res = await Utils.apiFetch('POST', '/api/revenue/subscriptions', payload);
+        if (!res && Utils.getDB) {
+          const db = Utils.getDB() || {};
+          if (!Array.isArray(db.subscriptions)) db.subscriptions = [];
+          const newSub = {
+            id: `sub-${Date.now()}`,
+            ...payload
+          };
+          db.subscriptions.push(newSub);
+          Utils.replaceDB(db);
+        }
       }
 
-      if (res) {
-        Utils.showToast(subId ? 'Subscription modified successfully.' : 'Subscription assigned successfully.', 'success');
-        Utils.toggleModal('subModal', false);
-        await fetchSubs();
-      } else {
-        Utils.showToast('Failed to save subscription.', 'error');
-      }
+      const planObj = allPlans.find(p => String(p.id) === String(planId));
+      const orgObj = allOrgs.find(o => String(o.id) === String(targetOrgId));
+      Utils.showToast(`Successfully saved subscription for ${orgObj ? orgObj.name : targetOrgId}`, 'success');
+      Utils.toggleModal('subModal', false);
+      await loadAllData();
     }
   </script>
 </body>

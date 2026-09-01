@@ -161,11 +161,11 @@
         <div class="user-toolbar">
           <input class="form-input" id="ledgerSearchInput" placeholder="Search report ledger by title, period, analyst, or reviewer..." style="color:#0f172a;" />
           <div style="display:flex; gap:8px; align-items:center;">
-            <select class="form-input" id="ledgerStatusFilter" style="width:170px; color:#0f172a;">
+            <select class="form-input" id="ledgerStatusFilter" style="width:180px; color:#0f172a;">
               <option value="all">All Statuses</option>
-              <option value="Approved">Approved</option>
-              <option value="Revision Required">Revision Required</option>
-              <option value="Pending Review">Pending Review</option>
+              <option value="Executive Approved">Executive Approved</option>
+              <option value="Revision Requested">Revision Requested</option>
+              <option value="Under COO Review">Under COO Review</option>
             </select>
             <span class="metric-chip" id="archiveCountBadge">0 Total Reports</span>
           </div>
@@ -184,7 +184,7 @@
               </tr>
             </thead>
             <tbody id="reportLedgerBody">
-              <tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">No historical report decisions recorded.</td></tr>
+              <tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">No report decisions recorded yet.</td></tr>
             </tbody>
           </table>
         </div>
@@ -204,15 +204,20 @@
     let activeReportId = null;
 
     window.switchSection = function(paneId) {
-      document.getElementById('queuePane').style.display = paneId === 'queuePane' ? 'block' : 'none';
-      document.getElementById('ledgerPane').style.display = paneId === 'ledgerPane' ? 'block' : 'none';
-      document.getElementById('queueTabBtn').classList.toggle('active', paneId === 'queuePane');
-      document.getElementById('ledgerTabBtn').classList.toggle('active', paneId === 'ledgerPane');
+      const queuePane = document.getElementById('queuePane');
+      const ledgerPane = document.getElementById('ledgerPane');
+      const queueBtn = document.getElementById('queueTabBtn');
+      const ledgerBtn = document.getElementById('ledgerTabBtn');
+
+      if (queuePane) queuePane.style.display = paneId === 'queuePane' ? 'block' : 'none';
+      if (ledgerPane) ledgerPane.style.display = paneId === 'ledgerPane' ? 'block' : 'none';
+      if (queueBtn) queueBtn.classList.toggle('active', paneId === 'queuePane');
+      if (ledgerBtn) ledgerBtn.classList.toggle('active', paneId === 'ledgerPane');
     };
 
     document.addEventListener('DOMContentLoaded', async () => {
       await Utils.loadDB();
-      const currentUser = Utils.getCurrentUser() || {};
+      const currentUser = Utils.getCurrentUser() || { name: 'COO', role: 'COO' };
       const select = document.getElementById('reportSelect');
 
       function getOrgReports() {
@@ -223,12 +228,12 @@
       }
 
       function getPendingReports() {
-        return getOrgReports().filter(r => r.status === 'Pending Review');
+        return getOrgReports().filter(r => r.status === 'Under COO Review');
       }
 
       function populateQueue(preserveActive = true) {
         const pending = getPendingReports();
-        document.getElementById('queueCountBadge').textContent = `${pending.length} Pending Review`;
+        document.getElementById('queueCountBadge').textContent = `${pending.length} Under COO Review`;
 
         select.innerHTML = pending.length
           ? pending.map(r => `<option value="${r.id}">${r.title} (${Utils.formatPeriodLabel(r.period)})</option>`).join('')
@@ -279,12 +284,14 @@
           return;
         }
 
-        const isPending = report.status === 'Pending Review';
+        const isPending = report.status === 'Under COO Review';
         decisionBox.style.display = isPending ? 'block' : 'none';
         decidedNoteBox.style.display = isPending ? 'none' : 'block';
 
-        const displayStatus = report.status === 'Approved' ? 'Approved' : (report.status === 'Revision Required' ? 'Revision Required' : 'Pending Review');
-        const badgeClass = displayStatus === 'Approved' ? 'green' : (displayStatus === 'Revision Required' ? 'red' : 'blue');
+        const isApproved = report.status === 'Approved' || report.status === 'Executive Approved';
+        const isRevision = report.status === 'Revision Required' || report.status === 'Revision Requested';
+        const displayStatus = isApproved ? 'Approved' : (isRevision ? 'Revision Required' : 'Under COO Review');
+        const badgeClass = isApproved ? 'green' : (isRevision ? 'red' : 'blue');
 
         document.getElementById('docTitle').textContent = report.title;
         document.getElementById('docMeta').textContent = `Organization: ${Utils.getCurrentOrganization()?.name || '--'}`;
@@ -293,7 +300,7 @@
 
         document.getElementById('refPeriod').textContent = Utils.formatPeriodLabel(report.period);
         document.getElementById('refAuthor').textContent = report.analystName || report.submittedBy || 'Analyst';
-        document.getElementById('refDate').textContent = report.date || report.submittedAt || '--';
+        document.getElementById('refDate').textContent = Utils.formatDateOnly(report.date || report.submittedAt);
         document.getElementById('refSources').textContent = `${Array.isArray(report.sourceSubmissionIds) ? report.sourceSubmissionIds.length : 0} linked submission(s)`;
 
         const c = report.content || report.sections || report;
@@ -310,18 +317,23 @@
           }
         } else {
           document.getElementById('decidedNoteTitle').textContent = `Executive Decision Note (${displayStatus})`;
-          document.getElementById('decidedNoteDate').textContent = `Reviewed ${report.decisionDate || report.approvedAt || report.submittedAt || '--'}`;
+          document.getElementById('decidedNoteDate').textContent = `Reviewed ${Utils.formatDateOnly(report.decisionDate || report.approvedAt || report.submittedAt)}`;
           document.getElementById('decidedNoteText').textContent = report.revision?.comment || report.details || 'Report approved for publication.';
         }
       }
 
       function renderLedger() {
         const reports = getOrgReports();
-        const searchVal = document.getElementById('ledgerSearchInput').value.trim().toLowerCase();
-        const statusVal = document.getElementById('ledgerStatusFilter').value;
+        const searchVal = (document.getElementById('ledgerSearchInput')?.value || '').toLowerCase().trim();
+        const statusVal = document.getElementById('ledgerStatusFilter')?.value || 'all';
 
         const filtered = reports.filter(r => {
-          if (statusVal !== 'all' && r.status !== statusVal) return false;
+          if (statusVal !== 'all') {
+            const isApproved = r.status === 'Executive Approved' || r.status === 'Approved';
+            const isRevision = r.status === 'Revision Requested' || r.status === 'Revision Required';
+            const normStatus = isApproved ? 'Executive Approved' : (isRevision ? 'Revision Requested' : 'Under COO Review');
+            if (normStatus !== statusVal) return false;
+          }
           if (searchVal && !`${r.title} ${r.period} ${r.submittedBy || ''} ${r.approvedBy || ''}`.toLowerCase().includes(searchVal)) return false;
           return true;
         });
@@ -330,14 +342,16 @@
         const tbody = document.getElementById('reportLedgerBody');
 
         tbody.innerHTML = filtered.length ? filtered.map(r => {
-          const displayStatus = r.status === 'Approved' ? 'Approved' : (r.status === 'Revision Required' ? 'Revision Required' : 'Pending Review');
-          const badgeClass = displayStatus === 'Approved' ? 'green' : (displayStatus === 'Revision Required' ? 'red' : 'blue');
+          const isApproved = r.status === 'Executive Approved' || r.status === 'Approved';
+          const isRevision = r.status === 'Revision Requested' || r.status === 'Revision Required';
+          const displayStatus = isApproved ? 'Executive Approved' : (isRevision ? 'Revision Requested' : 'Under COO Review');
+          const badgeClass = isApproved ? 'green' : (isRevision ? 'red' : 'blue');
 
           return `
             <tr>
               <td class="td--bold">${r.title}</td>
               <td class="td--bold">${Utils.formatPeriodLabel(r.period)}</td>
-              <td class="td--muted">${r.decisionDate || r.submittedAt || '--'}</td>
+              <td class="td--muted">${Utils.formatDateOnly(r.decisionDate || r.submittedAt)}</td>
               <td><span class="status-badge status-badge--${badgeClass}">${displayStatus}</span></td>
               <td class="td--muted">${r.approvedBy || r.reviewedBy || '--'}</td>
               <td>
@@ -363,62 +377,21 @@
           return;
         }
 
-        const db = Utils.ensureCollections(Utils.getDB());
-        const reportIndex = (db.reports || []).findIndex(r => String(r.id) === String(activeReportId));
-        if (reportIndex < 0) return;
-
-        const report = db.reports[reportIndex];
-        report.decisionDate = new Date().toLocaleDateString();
-        report.reviewedBy = currentUser.name || 'COO';
-
         if (decisionType === 'approve') {
-          report.status = 'Approved';
-          report.approvedBy = currentUser.name || 'COO';
-          report.approvedAt = new Date().toISOString();
-          report.revision = { required: false, comment: feedback || 'Approved for executive publication.', requestedBy: '', requestedAt: '' };
-
-          if (!Array.isArray(db.notifications)) db.notifications = [];
-          db.notifications.unshift({
-            id: Date.now(),
-            role: 'Analyst',
-            userId: report.analystUserId || null,
-            organizationId: report.organizationId,
-            title: 'Sustainability Report Approved',
-            body: `${report.title} was approved by the COO.`,
-            timestamp: Utils.nowLabel(),
-            read: false,
-            details: feedback || 'Approved for executive publication.'
-          });
-
-          Utils.replaceDB(db);
-          await Utils.apiFetch('POST', `/api/reports/${activeReportId}/approve`, { approvedBy: currentUser.name || 'COO' });
-          Utils.logAction(`COO approved ${report.title}`, 'Success', 'green');
+          const result = await Utils.apiFetch('POST', `/api/reports/${activeReportId}/approve`, { approvedBy: currentUser.name || 'COO' });
+          if (!result) {
+            Utils.showToast('Failed to approve report.', 'error');
+            return;
+          }
+          await Utils.refreshFromBackend();
           Utils.showToast('Report successfully approved!');
         } else {
-          report.status = 'Revision Required';
-          report.revision = {
-            required: true,
-            comment: feedback,
-            requestedBy: currentUser.name || 'COO',
-            requestedAt: new Date().toISOString()
-          };
-
-          if (!Array.isArray(db.notifications)) db.notifications = [];
-          db.notifications.unshift({
-            id: Date.now(),
-            role: 'Analyst',
-            userId: report.analystUserId || null,
-            organizationId: report.organizationId,
-            title: 'Report Revision Requested',
-            body: `COO requested modifications for ${report.title}.`,
-            timestamp: Utils.nowLabel(),
-            read: false,
-            details: feedback
-          });
-
-          Utils.replaceDB(db);
-          await Utils.apiFetch('POST', `/api/reports/${activeReportId}/revision`, { comment: feedback, requestedBy: currentUser.name || 'COO' });
-          Utils.logAction(`COO requested revision for ${report.title}`, 'Warning', 'amber');
+          const result = await Utils.apiFetch('POST', `/api/reports/${activeReportId}/revision`, { comment: feedback, requestedBy: currentUser.name || 'COO' });
+          if (!result) {
+            Utils.showToast('Failed to request revision.', 'error');
+            return;
+          }
+          await Utils.refreshFromBackend();
           Utils.showToast('Revision request sent to Analyst.');
         }
 
