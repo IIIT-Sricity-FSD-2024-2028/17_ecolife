@@ -356,8 +356,82 @@ const Utils = {
         db.alerts = Array.isArray(db.alerts) ? db.alerts : [];
         db.notifications = Array.isArray(db.notifications) ? db.notifications : [];
         db.auditLogs = Array.isArray(db.auditLogs) ? db.auditLogs : [];
-        db.plans = Array.isArray(db.plans) ? db.plans : [];
-        db.subscriptions = Array.isArray(db.subscriptions) ? db.subscriptions : [];
+        if (!Array.isArray(db.plans) || db.plans.length === 0) {
+            db.plans = [
+                {
+                    id: 'plan-starter',
+                    name: 'Starter',
+                    description: 'Essential GHG emissions accounting and baseline tracking for growing organizations.',
+                    status: 'ACTIVE',
+                    priceMonthly: 4999,
+                    priceAnnual: 49990,
+                    maxUsers: 5,
+                    maxDepartments: 2,
+                    maxSubmissions: 100,
+                    maxReports: 5,
+                    maxStorage: 10,
+                    features: ['Scope 1 & 2 Emissions Tracking', 'Basic Evidence Upload', 'Monthly Submissions', 'Standard Email Support']
+                },
+                {
+                    id: 'plan-pro',
+                    name: 'Professional',
+                    description: 'Comprehensive carbon accounting with automated audit trails, factor management, and COO alerts.',
+                    status: 'ACTIVE',
+                    priceMonthly: 14999,
+                    priceAnnual: 149990,
+                    maxUsers: 25,
+                    maxDepartments: 10,
+                    maxSubmissions: 500,
+                    maxReports: 25,
+                    maxStorage: 50,
+                    features: ['Scope 1, 2 & 3 Emissions Tracking', 'Document & Invoice Extraction', 'Custom Emission Factor Datasets', 'Analyst Audit Workflow & Governance', 'COO Dashboard & Alerting']
+                },
+                {
+                    id: 'plan-enterprise',
+                    name: 'Enterprise',
+                    description: 'Multi-organization enterprise ESG suite with custom factor engines, dedicated compliance support, and API integrations.',
+                    status: 'ACTIVE',
+                    priceMonthly: 39999,
+                    priceAnnual: 399990,
+                    maxUsers: 100,
+                    maxDepartments: 50,
+                    maxSubmissions: 5000,
+                    maxReports: 100,
+                    maxStorage: 500,
+                    features: ['Full ESG Scope 1-3 Suite', 'Unlimited Custom Emission Datasets', 'Dedicated Sustainability Analyst', 'Custom System Integrations', '24/7 SLA & Priority Support']
+                }
+            ];
+        }
+
+        if (!Array.isArray(db.subscriptions) || db.subscriptions.length === 0) {
+            const orgs = Array.isArray(db.organizations) && db.organizations.length > 0 ? db.organizations : [{ id: 'org-01', name: 'Rorizon Global Enterprises' }];
+            db.subscriptions = [
+                {
+                    id: 'sub-01',
+                    organizationId: orgs[0]?.id || 'org-01',
+                    organizationName: orgs[0]?.name || 'Rorizon Global Enterprises',
+                    planId: 'plan-pro',
+                    planName: 'Professional',
+                    billingCycle: 'ANNUAL',
+                    status: 'ACTIVE',
+                    startDate: '2025-01-01',
+                    renewalDate: '2026-12-31'
+                }
+            ];
+            if (orgs[1]) {
+                db.subscriptions.push({
+                    id: 'sub-02',
+                    organizationId: orgs[1].id,
+                    organizationName: orgs[1].name,
+                    planId: 'plan-starter',
+                    planName: 'Starter',
+                    billingCycle: 'MONTHLY',
+                    status: 'TRIAL',
+                    startDate: '2026-02-01',
+                    renewalDate: '2026-03-01'
+                });
+            }
+        }
 
         db.globalSettings = db.globalSettings && typeof db.globalSettings === 'object'
             ? db.globalSettings
@@ -400,6 +474,54 @@ const Utils = {
             hour: '2-digit',
             minute: '2-digit',
         });
+    },
+    /** Centralized Date & Time Utilities */
+    formatTimestamp: (isoStr, options = {}) => {
+        if (!isoStr || isoStr === 'null' || isoStr === 'undefined' || isoStr === '--' || isoStr === 'Invalid Date') return '—';
+        try {
+            const d = new Date(isoStr);
+            if (isNaN(d.getTime())) return '—';
+            const defaultOpts = { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+            return d.toLocaleString('en-US', { ...defaultOpts, ...options });
+        } catch (_) {
+            return '—';
+        }
+    },
+    formatDateOnly: (dateStr) => {
+        if (!dateStr || dateStr === 'null' || dateStr === 'undefined' || dateStr === '--' || dateStr === 'Invalid Date') return '—';
+        if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+            const [year, month, day] = dateStr.substring(0, 10).split('-');
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthIdx = parseInt(month, 10) - 1;
+            if (monthIdx >= 0 && monthIdx < 12) {
+                return `${monthNames[monthIdx]} ${parseInt(day, 10)}, ${year}`;
+            }
+            return dateStr.substring(0, 10);
+        }
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return '—';
+            return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+        } catch (_) {
+            return '—';
+        }
+    },
+    formatPeriod: (periodStr) => {
+        if (!periodStr || periodStr === 'null' || periodStr === 'undefined' || periodStr === '--' || periodStr === 'Invalid Date') return '—';
+        if (typeof periodStr === 'string' && /^\d{2}\s\d{4}$/.test(periodStr)) {
+            const [month, year] = periodStr.split(' ');
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthIdx = parseInt(month, 10) - 1;
+            if (monthIdx >= 0 && monthIdx < 12) {
+                return `${monthNames[monthIdx]} ${year}`;
+            }
+        }
+        return String(periodStr);
+    },
+    parseIsoSafe: (str) => {
+        if (!str) return null;
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? null : d;
     },
     getUserDepartmentScope: (user, db) => {
         const state = Utils.ensureCollections(db || Utils.getDB());
@@ -458,7 +580,7 @@ const Utils = {
         });
 
         (db.departments || []).forEach((department) => {
-            if (String(department.managerUserId) === String(user.id) && user.role !== 'Manager') {
+            if (String(department.managerUserId) === String(user.id) && (user.role !== 'Manager' || String(user.departmentId) !== String(department.id) || department.orgId !== user.organizationId)) {
                 department.manager = 'Unassigned';
                 department.managerUserId = null;
             }
@@ -477,13 +599,16 @@ const Utils = {
         }
 
         if (user.role === 'Manager') {
-            const department = (db.departments || []).find(dept => dept.id === user.departmentId);
+            const department = (db.departments || []).find(dept => dept.id === user.departmentId && dept.orgId === user.organizationId);
             if (department) {
                 user.department = department.name;
                 user.assignedDepartmentIds = [];
                 user.organizationId = department.orgId;
                 department.manager = user.name;
                 department.managerUserId = user.id;
+            } else {
+                user.department = 'Unassigned';
+                user.departmentId = '';
             }
         }
 
@@ -955,13 +1080,9 @@ const Utils = {
                 <a href="adm-dashboard.html" class="nav-item temp-nav" data-path="adm-dashboard.html">
                   <img src="${iconPrefix}icon0.svg" class="nav-item__icon" /><span>System Health</span>
                 </a>
-                <a href="adm-revenue-overview.html" class="nav-item temp-nav" data-path="adm-revenue-overview.html">
-                  <img src="${iconPrefix}bar-chart-30.svg" class="nav-item__icon" /><span>Revenue Overview</span>
-                </a>
                 <a href="adm-revenue-management.html" class="nav-item temp-nav" data-path="adm-revenue-management.html">
-                  <img src="${iconPrefix}building-20.svg" class="nav-item__icon" /><span>Revenue Management</span>
+                  <img src="${iconPrefix}bar-chart-30.svg" class="nav-item__icon" /><span>Revenue Management</span>
                 </a>
-
                 <a href="adm-system-management.html" class="nav-item temp-nav" data-path="adm-system-management.html">
                   <img src="${iconPrefix}icon4.svg" class="nav-item__icon" /><span>System Management</span>
                 </a>
@@ -1390,5 +1511,5 @@ document.addEventListener('DOMContentLoaded', () => {
         Utils.checkSession();
         Utils.syncSessionUser();
     });
-    Utils.startPolling(4000);
+    Utils.startPolling(15000);
 });
