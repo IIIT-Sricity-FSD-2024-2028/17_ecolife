@@ -153,20 +153,21 @@
         const scopedDepartmentIds = Utils.getUserDepartmentScope(currentUser, db);
         const departments = (db.departments || []).filter(dept => scopedDepartmentIds.includes(dept.id));
         const submissions = (db.submissions || []).filter(sub => scopedDepartmentIds.includes(sub.departmentId));
+
         const reports = (db.reports || []).filter(report => String(report.analystUserId) === String(currentUser?.id));
         const alerts = (db.alerts || []).filter(alert => scopedDepartmentIds.includes(alert.departmentId) && alert.status !== 'Resolved');
 
         const totalDepts = departments.length;
         const totalCO2 = submissions.reduce((sum, s) => sum + Number(s.totalCO2 || 0), 0);
         
-        const submittedDepts = departments.filter(d => submissions.some(s => s.departmentId === d.id && ['Submitted', 'Under Review', 'Approved'].includes(s.status))).length;
+        const submittedDepts = departments.filter(d => submissions.some(s => s.departmentId === d.id && ['Submitted', 'Pending Review', 'Under Review', 'Approved'].includes(s.status))).length;
         const collectionPct = totalDepts > 0 ? Math.round((submittedDepts / totalDepts) * 100) : 0;
 
-        const pendingReviewSubs = submissions.filter(s => ['Submitted', 'Under Review', 'Correction Required'].includes(s.status));
-        const revisionReports = reports.filter(r => r.status === 'Revision Required');
+        const pendingReviewSubs = submissions.filter(s => ['Submitted', 'Pending Review', 'Under Review', 'Correction Required'].includes(s.status));
+        const revisionReports = reports.filter(r => r.status === 'Revision Requested' || r.status === 'Revision Required');
         const attentionCount = pendingReviewSubs.length + revisionReports.length + alerts.length;
 
-        // Metric Tag & Top 3 Cards (Clean Text Subtext, No Pills)
+        // Metric Tag & Top 3 Cards
         document.getElementById('dashAssignedDeptsCount').textContent = `${totalDepts} Assigned Department${totalDepts === 1 ? '' : 's'}`;
 
         document.getElementById('dashProgressVal').textContent = `${submittedDepts} / ${totalDepts} Submitted`;
@@ -183,8 +184,22 @@
         tbody.innerHTML = departments.map(d => {
           const deptSubs = submissions.filter(s => s.departmentId === d.id);
           const latestSub = Utils.latestByPeriod(deptSubs);
-          const status = latestSub ? (latestSub.status || 'Submitted') : 'Pending Data';
-          const statusClass = status === 'Approved' ? 'green' : (status === 'Correction Required' || status === 'Rejected' ? 'red' : (['Submitted', 'Under Review'].includes(status) ? 'blue' : 'amber'));
+          const rawStatus = latestSub ? (latestSub.status || 'Submitted') : 'No Submission';
+          
+          let statusText = 'Submitted';
+          let statusClass = 'blue';
+
+          if (rawStatus === 'Approved') {
+            statusText = 'Approved';
+            statusClass = 'green';
+          } else if (rawStatus === 'Correction Required' || rawStatus === 'Rejected') {
+            statusText = 'Correction Required';
+            statusClass = 'amber';
+          } else if (rawStatus === 'No Submission' || !latestSub) {
+            statusText = 'No Submission';
+            statusClass = 'grey';
+          }
+
           const periodLabel = latestSub ? Utils.formatPeriodLabel(latestSub.period) : '--';
           const qtyText = latestSub ? `${Number(latestSub.totalConsumption || 0).toLocaleString()} Units` : '--';
           const co2Text = latestSub ? `${Number(latestSub.totalCO2 || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} kgCO2e` : '--';
@@ -196,7 +211,7 @@
                 <div class="td--muted" style="font-size:12px; margin-top:2px;">Manager: ${d.manager || 'Unassigned'}</div>
               </td>
               <td class="td--bold" style="font-size:12px;">${periodLabel}</td>
-              <td><span class="status-badge status-badge--${statusClass}">${status}</span></td>
+              <td><span class="status-badge status-badge--${statusClass}">${statusText}</span></td>
               <td class="td--bold" style="color:#0f172a;">${qtyText}</td>
               <td class="td--bold" style="color:#16a34a;">${co2Text}</td>
             </tr>

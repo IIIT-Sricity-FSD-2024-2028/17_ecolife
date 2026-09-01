@@ -58,7 +58,7 @@
 
       <div class="kpi-strip" style="margin-top: 4px;">
         <div class="kpi-card">
-          <div class="kpi-card__title">Submitted / Review</div>
+          <div class="kpi-card__title">Submitted</div>
           <div class="kpi-card__val" style="color:#2563eb;" id="countSubmitted">0</div>
         </div>
         <div class="kpi-card">
@@ -70,8 +70,8 @@
           <div class="kpi-card__val" style="color:#16a34a;" id="countApproved">0</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-card__title">Pending Data</div>
-          <div class="kpi-card__val" style="color:#94a3b8;" id="countPending">0</div>
+          <div class="kpi-card__title">No Submission</div>
+          <div class="kpi-card__val" style="color:#64748b;" id="countPending">0</div>
         </div>
       </div>
     </div>
@@ -90,7 +90,22 @@
         <input type="text" class="form-input" id="subSearchInput" placeholder="Search by department, manager, or status..." style="color:#0f172a;" />
         <div style="display:flex; align-items:center; gap:8px;">
           <label style="font-size:13px; font-weight:600; color:#475569;">Period:</label>
-          <select class="form-input" id="periodFilterSelect" style="min-width:160px; color:#0f172a; max-width:220px;"></select>
+          <select class="form-input" id="monthFilterSelect" style="width:130px; color:#0f172a;">
+            <option value="all">All Months</option>
+            <option value="01">January</option>
+            <option value="02">February</option>
+            <option value="03" selected>March</option>
+            <option value="04">April</option>
+            <option value="05">May</option>
+            <option value="06">June</option>
+            <option value="07">July</option>
+            <option value="08">August</option>
+            <option value="09">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+          <input type="number" class="form-input" id="yearFilterInput" value="2026" min="2000" max="2100" style="width: 85px; color:#0f172a;" />
         </div>
       </div>
 
@@ -136,48 +151,120 @@
     document.addEventListener('DOMContentLoaded', async () => {
       await Utils.loadDB();
       const currentUser = Utils.getCurrentUser() || {};
-      const periodSelect = document.getElementById('periodFilterSelect');
+      const monthSelect = document.getElementById('monthFilterSelect');
+      const yearInput = document.getElementById('yearFilterInput');
       const searchInput = document.getElementById('subSearchInput');
 
       function getScopedData() {
         const db = Utils.ensureCollections(Utils.getDB());
         const ids = Utils.getUserDepartmentScope(currentUser, db);
+        const scopedSubmissions = (db.submissions || []).filter(s => ids.includes(s.departmentId));
+
+        scopedSubmissions.forEach(s => {
+          s.totalCO2 = Number(s.totalCO2 || 0);
+        });
+
         return {
           departments: (db.departments || []).filter(d => ids.includes(d.id)),
-          submissions: (db.submissions || []).filter(s => ids.includes(s.departmentId))
+          submissions: scopedSubmissions
         };
       }
 
-      function populatePeriodFilter() {
-        const { submissions } = getScopedData();
-        const periods = Array.from(new Set(submissions.map(s => s.period))).sort((a, b) => Utils.periodKey(b) - Utils.periodKey(a));
-        const cur = periodSelect.value;
-        periodSelect.innerHTML = `<option value="all">All Periods (${periods.length})</option>` +
-          periods.map(p => `<option value="${p}">${Utils.formatPeriodLabel(p)}</option>`).join('');
-        if (cur && (cur === 'all' || periods.includes(cur))) periodSelect.value = cur;
+      function isSubInPeriod(s, month, year) {
+        if (!s || !s.period) return false;
+        const pMonth = Utils.periodMonthValue(s.period);
+        const pYear = Utils.periodYearValue(s.period);
+        const matchMonth = (month === 'all' || pMonth === month);
+        const matchYear = String(pYear) === String(year);
+        return matchMonth && matchYear;
       }
 
       function renderQueue() {
         const { departments, submissions } = getScopedData();
         document.getElementById('scopeChip').textContent = `${departments.length} Department${departments.length === 1 ? '' : 's'}`;
 
-        const selPeriod = periodSelect.value;
         const query = searchInput.value.trim().toLowerCase();
+        const selectedMonth = monthSelect.value;
+        const selectedYear = yearInput.value || '2026';
 
-        const filteredSubs = submissions.filter(s => {
-          if (selPeriod !== 'all' && s.period !== selPeriod) return false;
+        let queueItems = [];
+
+        if (selectedMonth === 'all') {
+          const yearSubs = submissions.filter(s => String(Utils.periodYearValue(s.period)) === String(selectedYear));
+          if (yearSubs.length > 0) {
+            const existingPeriods = Array.from(new Set(yearSubs.map(s => s.period))).sort((a, b) => Utils.periodKey(b) - Utils.periodKey(a));
+            existingPeriods.forEach(period => {
+              const pMonth = Utils.periodMonthValue(period);
+              departments.forEach(dept => {
+                const sub = yearSubs.find(s => s.departmentId === dept.id && Utils.periodMonthValue(s.period) === pMonth);
+                if (sub) {
+                  queueItems.push(sub);
+                } else {
+                  queueItems.push({
+                    isPendingItem: true,
+                    id: `pending-${dept.id}-${period}`,
+                    departmentId: dept.id,
+                    departmentName: dept.name,
+                    period: period,
+                    status: 'No Submission',
+                    submittedBy: dept.manager || dept.managerName || dept.head || 'Department Manager',
+                    submittedAt: '--',
+                    locked: false
+                  });
+                }
+              });
+            });
+          } else {
+            departments.forEach(dept => {
+              queueItems.push({
+                isPendingItem: true,
+                id: `pending-${dept.id}-03 ${selectedYear}`,
+                departmentId: dept.id,
+                departmentName: dept.name,
+                period: `03 ${selectedYear}`,
+                status: 'No Submission',
+                submittedBy: dept.manager || dept.managerName || dept.head || 'Department Manager',
+                submittedAt: '--',
+                locked: false
+              });
+            });
+          }
+        } else {
+          const displayPeriod = `${selectedMonth} ${selectedYear}`;
+          departments.forEach(dept => {
+            const sub = submissions.find(s => s.departmentId === dept.id && isSubInPeriod(s, selectedMonth, selectedYear));
+            if (sub) {
+              queueItems.push(sub);
+            } else {
+              queueItems.push({
+                isPendingItem: true,
+                id: `pending-${dept.id}-${displayPeriod}`,
+                departmentId: dept.id,
+                departmentName: dept.name,
+                period: displayPeriod,
+                status: 'No Submission',
+                submittedBy: dept.manager || dept.managerName || dept.head || 'Department Manager',
+                submittedAt: '--',
+                locked: false
+              });
+            }
+          });
+        }
+
+        // Filter items by search query
+        const filteredItems = queueItems.filter(item => {
           if (query) {
-            const mText = `${s.departmentName} ${s.period} ${s.status} ${s.submittedBy || ''}`.toLowerCase();
+            const mText = `${item.departmentName} ${item.period} ${item.status} ${item.submittedBy || ''}`.toLowerCase();
             if (!mText.includes(query)) return false;
           }
           return true;
         });
 
-        // Counts
-        const cSub = submissions.filter(s => s.status === 'Submitted' || s.status === 'Under Review').length;
-        const cCorr = submissions.filter(s => s.status === 'Correction Required').length;
-        const cAppr = submissions.filter(s => s.status === 'Approved').length;
-        const cPend = Math.max(0, (departments.length * (selPeriod === 'all' ? 1 : 1)) - submissions.length);
+        // Counts based on target items
+        const cSub = queueItems.filter(s => !s.isPendingItem && ['Submitted', 'Pending Review', 'Under Review'].includes(s.status)).length;
+        const cCorr = queueItems.filter(s => !s.isPendingItem && ['Correction Required', 'Rejected'].includes(s.status)).length;
+        const cAppr = queueItems.filter(s => !s.isPendingItem && s.status === 'Approved').length;
+        const cPend = queueItems.filter(s => s.isPendingItem || s.status === 'No Submission').length;
 
         document.getElementById('countSubmitted').textContent = cSub;
         document.getElementById('countCorrection').textContent = cCorr;
@@ -185,36 +272,61 @@
         document.getElementById('countPending').textContent = cPend;
 
         const tbody = document.getElementById('submissionsTableBody');
-        if (!filteredSubs.length) {
-          tbody.innerHTML = Utils.renderEmptyTableRow(7, 'No Submissions Found', 'No department submissions match the active period or search criteria.', 'inbox');
+        if (!filteredItems.length) {
+          tbody.innerHTML = Utils.renderEmptyTableRow(7, 'No Department Submissions Found', 'No department submissions match the active period or search criteria.', 'inbox');
           return;
         }
 
-        tbody.innerHTML = filteredSubs.map(s => {
-          const st = s.status || 'Submitted';
+        tbody.innerHTML = filteredItems.map(item => {
+          const st = item.status || 'Submitted';
           let badgeClass = 'blue';
-          if (st === 'Approved') badgeClass = 'green';
-          else if (st === 'Correction Required') badgeClass = 'amber';
+          let displayStatus = 'Submitted';
 
-          const readState = s.validation?.readinessScore ? `${s.validation.readinessScore}%` : 'Ready';
-          const calcState = s.locked ? 'Calculated & Locked' : 'Pending Verification';
+          if (st === 'Approved') {
+            badgeClass = 'green';
+            displayStatus = 'Approved';
+          } else if (st === 'Correction Required' || st === 'Rejected') {
+            badgeClass = 'amber';
+            displayStatus = 'Correction Required';
+          } else if (st === 'No Submission' || item.isPendingItem) {
+            badgeClass = 'grey';
+            displayStatus = 'No Submission';
+          } else {
+            badgeClass = 'blue';
+            displayStatus = st === 'Pending Review' || st === 'Under Review' ? 'Submitted' : st;
+          }
+
+          const readState = item.isPendingItem ? '0% (Not Started)' : (item.validation?.readinessScore ? `${item.validation.readinessScore}%` : 'Ready');
+          const calcState = item.isPendingItem ? 'Not Submitted' : (item.locked ? 'Calculated & Locked' : 'Pending Verification');
+
+          const isActionable = !item.isPendingItem && st !== 'Approved' && st !== 'Correction Required' && st !== 'Rejected';
+
+          const actionButtons = item.isPendingItem ? `
+            <button class="action-btn warn" type="button" onclick="sendManagerReminder('${item.departmentId}', '${item.period}')">
+              Send Reminder
+            </button>
+          ` : `
+            <button class="action-btn" type="button" onclick="viewDetail('${item.id}')">View Details</button>
+            ${isActionable ? `<button class="action-btn success" type="button" onclick="approveSubmission('${item.id}')">Approve</button>` : ''}
+            ${isActionable ? `<button class="action-btn warn" type="button" onclick="requestCorrection('${item.id}')">Issue Correction</button>` : ''}
+          `;
 
           return `
             <tr>
               <td>
-                <div class="td--bold">${s.departmentName}</div>
-                <div class="td--muted" style="font-size:12px; margin-top:2px;">Submitted by ${s.submittedBy || 'Manager'}</div>
+                <div class="td--bold">${item.departmentName}</div>
+                <div class="td--muted" style="font-size:12px; margin-top:2px;">
+                  ${item.isPendingItem ? `Manager: ${item.submittedBy}` : `Submitted by ${item.submittedBy || 'Manager'}`}
+                </div>
               </td>
-              <td class="td--bold">${Utils.formatPeriodLabel(s.period)}</td>
-              <td><span class="status-badge status-badge--${badgeClass}">${st}</span></td>
+              <td class="td--bold">${Utils.formatPeriodLabel(item.period)}</td>
+              <td><span class="status-badge status-badge--${badgeClass}">${displayStatus}</span></td>
               <td class="td--muted">${readState}</td>
-              <td class="td--bold" style="color:${s.locked ? '#16a34a' : '#b45309'};">${calcState}</td>
-              <td class="td--muted">${s.submittedAt || s.date || '--'}</td>
+              <td class="td--bold" style="color:${item.isPendingItem ? '#64748b' : (item.locked ? '#16a34a' : '#b45309')};">${calcState}</td>
+              <td class="td--muted">${item.submittedAt || item.date || '--'}</td>
               <td>
                 <div class="action-btn-row">
-                  <button class="action-btn" type="button" onclick="viewDetail('${s.id}')">View Details</button>
-                  ${(st === 'Submitted' || st === 'Under Review') ? `<button class="action-btn success" type="button" onclick="approveSubmission('${s.id}')">Approve</button>` : ''}
-                  ${(st === 'Submitted' || st === 'Under Review') ? `<button class="action-btn warn" type="button" onclick="requestCorrection('${s.id}')">Issue Correction</button>` : ''}
+                  ${actionButtons}
                 </div>
               </td>
             </tr>
@@ -224,7 +336,7 @@
 
       window.viewDetail = function(id) {
         const db = Utils.ensureCollections(Utils.getDB());
-        const s = (db.submissions || []).find(sub => sub.id === id);
+        const s = (db.submissions || []).find(sub => String(sub.id) === String(id));
         if (!s) return;
 
         document.getElementById('detailModalTitle').textContent = `${s.departmentName} — ${Utils.formatPeriodLabel(s.period)}`;
@@ -234,7 +346,7 @@
         const resLines = resources.map(r => `
           <div class="lineage-row" style="display:flex; justify-content:space-between; align-items:center;">
             <div><strong style="color:#0f172a;">${r.type}</strong><span style="font-size:12px; color:#64748b; margin-left:8px;">${Number(r.qty||0).toLocaleString()} ${r.unit}</span></div>
-            <strong style="color:#16a34a;">${Number(r.co2e || (r.qty * 1.5)).toLocaleString(undefined, {maximumFractionDigits:2})} kgCO2e</strong>
+            <strong style="color:#16a34a;">${r.co2e !== undefined && r.co2e !== null ? Number(r.co2e).toLocaleString(undefined, {maximumFractionDigits:2}) + ' kgCO2e' : '<span style="color:#ef4444; font-size:12px;">Not Calculated</span>'}</strong>
           </div>
         `).join('') || '<p style="color:#94a3b8; font-size:13px;">No resource activity logged.</p>';
 
@@ -242,7 +354,7 @@
           <div class="detail-stat-grid">
             <div class="detail-stat-box"><span>Status</span><strong>${s.status || 'Submitted'}</strong></div>
             <div class="detail-stat-box"><span>Total Consumption</span><strong>${Number(s.totalConsumption||0).toLocaleString()} Units</strong></div>
-            <div class="detail-stat-box"><span>Calculated CO2e</span><strong style="color:#16a34a;">${Number(s.totalCO2||0).toLocaleString(undefined,{maximumFractionDigits:2})} kgCO2e</strong></div>
+            <div class="detail-stat-box"><span>Calculated CO2e</span><strong style="color:#16a34a;">${s.totalCO2 !== undefined && s.totalCO2 !== null ? Number(s.totalCO2).toLocaleString(undefined,{maximumFractionDigits:2}) + ' kgCO2e' : 'Not Calculated'}</strong></div>
           </div>
           <h4 style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; margin:16px 0 8px 0;">Resource Lineage Breakdown</h4>
           ${resLines}
@@ -253,7 +365,7 @@
 
       window.approveSubmission = async function(id) {
         const db = Utils.ensureCollections(Utils.getDB());
-        const s = (db.submissions || []).find(sub => sub.id === id);
+        const s = (db.submissions || []).find(sub => String(sub.id) === String(id));
         if (!s) return;
 
         if (s.status === 'Correction Required') {
@@ -270,17 +382,26 @@
         s.approvedBy = currentUser.name || 'Analyst';
         s.approvedAt = Utils.nowLabel();
 
-        Utils.logAction(`Approved submission for ${s.departmentName} (${Utils.formatPeriodLabel(s.period)})`, 'Success', 'green');
+        // Keep managerSubmissions in sync
+        if (Array.isArray(db.managerSubmissions)) {
+          const mSub = db.managerSubmissions.find(m => String(m.id) === String(s.id));
+          if (mSub) {
+            mSub.status = 'Approved';
+            mSub.totalCO2 = s.totalCO2;
+          }
+        }
+
+        Utils.logAction(`Approved submission for ${s.departmentName} (${Utils.formatPeriodLabel(s.period)}) - Calculated ${s.totalCO2.toLocaleString()} kgCO2e`, 'Success', 'green');
         Utils.replaceDB(db);
         await Utils.apiFetch('PATCH', `/api/submissions/${s.id}`, s);
 
-        Utils.showToast(`Submission for ${s.departmentName} approved!`);
+        Utils.showToast(`Submission for ${s.departmentName} approved! Calculated ${s.totalCO2.toLocaleString()} kgCO2e.`);
         renderQueue();
       };
 
       window.requestCorrection = async function(id) {
         const db = Utils.ensureCollections(Utils.getDB());
-        const s = (db.submissions || []).find(sub => sub.id === id);
+        const s = (db.submissions || []).find(sub => String(sub.id) === String(id));
         if (!s) return;
 
         if (s.status === 'Approved') {
@@ -294,6 +415,30 @@
 
         s.status = 'Correction Required';
         s.correctionNotes = 'Analyst flagged data discrepancy. Please verify resource quantities and resubmit.';
+
+        if (Array.isArray(db.managerSubmissions)) {
+          const mSub = db.managerSubmissions.find(m => String(m.id) === String(s.id));
+          if (mSub) {
+            mSub.status = 'Correction Required';
+          }
+        }
+
+        if (!Array.isArray(db.alerts)) db.alerts = [];
+        db.alerts.unshift({
+          id: 'alt-corr-' + Date.now(),
+          submissionId: s.id,
+          departmentId: s.departmentId,
+          departmentName: s.departmentName,
+          period: s.period,
+          type: 'Data Correction Required',
+          title: 'Submission Correction Required',
+          severity: 'Warning',
+          message: s.correctionNotes,
+          status: 'Correction Required',
+          roleScope: ['Manager', 'Analyst'],
+          updatedAt: Utils.nowLabel(),
+          createdAt: Utils.nowLabel()
+        });
 
         if (!Array.isArray(db.notifications)) db.notifications = [];
         db.notifications.unshift({
@@ -314,12 +459,44 @@
         renderQueue();
       };
 
-      populatePeriodFilter();
+      window.sendManagerReminder = async function(deptId, period) {
+        try {
+          const db = Utils.ensureCollections(Utils.getDB());
+          const dept = (db.departments || []).find(d => d.id === deptId);
+          const name = dept ? dept.name : 'Department';
+
+          if (!Array.isArray(db.notifications)) db.notifications = [];
+          const reminderNotif = {
+            id: Date.now(),
+            role: 'Manager',
+            departmentId: deptId,
+            title: 'Data Submission Reminder',
+            body: `Sustainability Analyst reminder: Monthly activity data submission for ${name} (${Utils.formatPeriodLabel(period)}) is pending.`,
+            timestamp: Utils.nowLabel(),
+            read: false
+          };
+
+          db.notifications.unshift(reminderNotif);
+
+          Utils.logAction(`Sent submission reminder to ${name} Manager (${Utils.formatPeriodLabel(period)})`, 'Info', 'blue');
+          Utils.replaceDB(db);
+
+          Utils.showToast(`Submission reminder sent to ${name} Manager!`);
+          window.dispatchEvent(new Event('rorizon-notifications-updated'));
+          renderQueue();
+        } catch (err) {
+          console.error('Failed to send manager reminder:', err);
+          Utils.showToast('Could not send reminder.', 'error');
+        }
+      };
+
       renderQueue();
-      periodSelect.addEventListener('change', renderQueue);
+      monthSelect.addEventListener('change', renderQueue);
+      yearInput.addEventListener('input', renderQueue);
+      yearInput.addEventListener('change', renderQueue);
       searchInput.addEventListener('input', renderQueue);
-      window.addEventListener('rorizon-db-updated', () => { populatePeriodFilter(); renderQueue(); });
-      window.addEventListener('storage', () => { populatePeriodFilter(); renderQueue(); });
+      window.addEventListener('rorizon-db-updated', () => { renderQueue(); });
+      window.addEventListener('storage', () => { renderQueue(); });
       Utils.startPolling(15000);
     });
   </script>
