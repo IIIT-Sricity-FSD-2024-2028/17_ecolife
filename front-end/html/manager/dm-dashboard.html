@@ -47,7 +47,7 @@
         <strong>⚠️ Immediate Attention Required: Analyst Correction Request</strong>
         <p id="correctionDesc">One or more data submissions require correction before emissions calculation can proceed.</p>
       </div>
-      <a href="dm-submission-history.html" class="btn-danger" style="text-decoration:none; padding:8px 16px; font-size:13px;">
+      <a id="correctionBannerLink" href="dm-data-submission.html" class="btn-danger" style="text-decoration:none; padding:8px 16px; font-size:13px;">
         Review &amp; Fix Submission &rarr;
       </a>
     </div>
@@ -223,6 +223,8 @@
         if (correctionSub) {
           document.getElementById('correctionBanner').style.display = 'flex';
           document.getElementById('correctionDesc').textContent = `Period ${Utils.formatPeriodLabel(correctionSub.period)} requires correction: ${correctionSub.analystNotes || correctionSub.correctionNotes || 'Incompatible units or quantities flagged.'}`;
+          const corrLink = document.getElementById('correctionBannerLink');
+          if (corrLink) corrLink.href = `dm-data-submission.html?resubmitId=${correctionSub.id}`;
         } else {
           document.getElementById('correctionBanner').style.display = 'none';
         }
@@ -310,26 +312,63 @@
         }).join('') || Utils.renderEmptyTableRow(4, 'No Recent Submissions', 'Your department has not submitted consumption data recently.', 'inbox');
 
         // Right Column: Active Department Alerts Queue (Dynamic Filter)
-        const deptAlerts = (db.alerts || []).filter(a => {
-          const sameDept = activeDept ? (a.departmentId === activeDept.id || a.departmentName === activeDept.name) : true;
-          const sameOrg = currentUser.organizationId ? a.organizationId === currentUser.organizationId : true;
+        let deptAlerts = (db.alerts || []).filter(a => {
+          const sameDept = activeDept ? (String(a.departmentId) === String(activeDept.id) || a.departmentName === activeDept.name) : true;
+          const sameOrg = currentUser.organizationId ? (!a.organizationId || String(a.organizationId) === String(currentUser.organizationId)) : true;
           return sameDept && sameOrg && a.status !== 'Resolved';
+        });
+
+        // Also include active threshold breaches and correction requests from db.submissions
+        const scopedSubs = (db.submissions || []).filter(s => activeDept ? String(s.departmentId) === String(activeDept.id) : true);
+        scopedSubs.forEach(sub => {
+          if (sub.status === 'Correction Required' || sub.status === 'Rejected') {
+            const exists = deptAlerts.some(a => a.submissionId === sub.id || (a.period === sub.period && String(a.departmentId) === String(sub.departmentId)));
+            if (!exists) {
+              deptAlerts.unshift({
+                id: `alt-sub-corr-${sub.id}`,
+                submissionId: sub.id,
+                title: 'Data Correction Requested',
+                period: sub.period,
+                description: sub.correctionNotes || sub.analystNotes || 'Analyst requested data correction for your submission.',
+                status: 'Correction Required',
+                isCorrection: true
+              });
+            }
+          } else if (sub.validation?.state === 'threshold_breach' || (sub.totalConsumption > 0 && sub.validation?.deviationReason)) {
+            if (sub.status !== 'Approved') {
+              const exists = deptAlerts.some(a => a.submissionId === sub.id || (a.period === sub.period && String(a.departmentId) === String(sub.departmentId)));
+              if (!exists) {
+                deptAlerts.unshift({
+                  id: `alt-sub-thresh-${sub.id}`,
+                  submissionId: sub.id,
+                  title: `Threshold Breach (${sub.departmentName})`,
+                  period: sub.period,
+                  description: `Consumption (${Number(sub.totalConsumption || 0).toLocaleString()} units) exceeded baseline limit.`,
+                  status: 'Active',
+                  isCorrection: false
+                });
+              }
+            }
+          }
         });
 
         const alertsContainer = document.getElementById('alertsListContainer');
         if (alertsContainer) {
           if (deptAlerts.length > 0) {
             alertsContainer.innerHTML = deptAlerts.map(a => {
-              const statusClass = a.status === 'Escalated' ? 'red' : 'amber';
+              const statusClass = a.status === 'Correction Required' ? 'amber' : (a.status === 'Escalated' || a.status === 'Active' ? 'red' : 'amber');
+              const actionHref = a.isCorrection || a.status === 'Correction Required' ? `dm-data-submission.html?resubmitId=${a.submissionId || ''}` : 'dm-alerts-response.html';
+              const btnLabel = a.isCorrection || a.status === 'Correction Required' ? 'Correct &rarr;' : 'Respond &rarr;';
+
               return `
                 <div class="alert-card-item">
                   <div style="flex:1; min-width:0;">
                     <div class="alert-card-item__title">${a.title || a.resourceType || 'Threshold Breach'}</div>
-                    <p class="alert-card-item__sub">Period: ${Utils.formatPeriodLabel(a.period)} • ${a.description || 'Consumption spike detected'}</p>
+                    <p class="alert-card-item__sub">Period: ${Utils.formatPeriodLabel(a.period)} • ${a.description || a.message || 'Consumption spike detected'}</p>
                   </div>
                   <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
                     <span class="status-badge status-badge--${statusClass}">${a.status || 'Active'}</span>
-                    <a href="dm-alerts-response.html" class="action-btn" style="text-decoration:none;">Respond &rarr;</a>
+                    <a href="${actionHref}" class="action-btn" style="text-decoration:none;">${btnLabel}</a>
                   </div>
                 </div>
               `;

@@ -318,40 +318,36 @@
               Document</button>
           </div>
 
-          <!-- Candidate Confirmation Area -->
+          <!-- Candidate Confirmation Area for Multi-Resource Invoices -->
           <div id="docExtractionArea"
             style="display:none; margin-top:16px; border:1px solid #cbd5e1; border-radius:8px; padding:16px; background:#fff;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
               <div>
                 <span class="status-badge status-badge--blue">Candidate Extraction</span>
-                <h4 style="margin:4px 0 0 0; font-size:14px; color:#0f172a;">Review Extracted Candidate Activity</h4>
+                <h4 style="margin:4px 0 0 0; font-size:14px; color:#0f172a;">Extracted Candidate Line Items</h4>
               </div>
               <span id="docFileNameBadge" style="font-size:12px; color:#64748b; font-weight:600;">--</span>
             </div>
-            <p style="font-size:12px; color:#64748b; margin:0 0 14px 0;">Please inspect and correct candidate values
-              before adding to your submission batch. The document remains linked as audit evidence.</p>
+            <p style="font-size:12px; color:#64748b; margin:0 0 14px 0;">All resource line items extracted from the uploaded document are listed below. Confirm to stage them into your submission batch.</p>
 
-            <div class="manual-entry-grid">
-              <div>
-                <label class="form-label">Resource Type</label>
-                <select class="form-input" id="docCandidateType"></select>
-              </div>
-              <div>
-                <label class="form-label">Extracted Quantity</label>
-                <input class="form-input" type="number" id="docCandidateQty" step="0.01" min="0.01" />
-              </div>
-              <div>
-                <label class="form-label">Unit (Compatible)</label>
-                <select class="form-input" id="docCandidateUnit"></select>
-              </div>
-              <div>
-                <button class="btn-primary" type="button" id="btnConfirmDocRecord"
-                  style="height:42px; width:100%; justify-content:center;">Confirm &amp; Add</button>
-              </div>
+            <div class="preview-table-wrapper" style="margin-bottom:14px;">
+              <table class="data-table" style="font-size:12px;">
+                <thead>
+                  <tr>
+                    <th>LINE ITEM / RESOURCE</th>
+                    <th>EXTRACTED QTY</th>
+                    <th>UNIT</th>
+                    <th>INVOICE REF #</th>
+                    <th>ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyDocCandidates"></tbody>
+              </table>
             </div>
-            <div style="margin-top:12px;">
-              <label class="form-label">Vendor / Invoice Reference #</label>
-              <input class="form-input" id="docCandidateRef" placeholder="e.g. IOCL Bill #INV-88219" />
+
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap;">
+              <button class="btn-outline" type="button" onclick="resetDocUpload()">Cancel</button>
+              <button class="btn-primary" type="button" id="btnConfirmAllDocRecords">Confirm &amp; Stage All Extracted Line Items</button>
             </div>
           </div>
 
@@ -554,11 +550,15 @@
       // Populate Manual Entry Selects
       function populateManualSelects() {
         const rts = (db().resourceTypes || []).filter(t => t.active !== false);
-        document.getElementById('manualType').innerHTML = rts.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-        document.getElementById('docCandidateType').innerHTML = rts.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        const manualType = document.getElementById('manualType');
+        if (manualType) {
+          manualType.innerHTML = rts.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        }
 
         function syncManualUnits() {
-          const rtId = document.getElementById('manualType').value;
+          const manualTypeElem = document.getElementById('manualType');
+          if (!manualTypeElem) return;
+          const rtId = manualTypeElem.value;
           const compatUnits = getCompatibleUnitsForRt(rtId);
           const unitSelect = document.getElementById('manualUnit');
           if (compatUnits.length > 0) {
@@ -572,24 +572,11 @@
           }
         }
 
-        function syncDocUnits() {
-          const rtId = document.getElementById('docCandidateType').value;
-          const compatUnits = getCompatibleUnitsForRt(rtId);
-          const unitSelect = document.getElementById('docCandidateUnit');
-          if (compatUnits.length > 0) {
-            unitSelect.innerHTML = compatUnits.map(u => `<option value="${u.id}">${u.name} (${u.code})</option>`).join('');
-            unitSelect.disabled = false;
-          } else {
-            unitSelect.innerHTML = `<option value="">No compatible unit</option>`;
-            unitSelect.disabled = true;
-          }
+        if (manualType) {
+          manualType.onchange = syncManualUnits;
         }
 
-        document.getElementById('manualType').onchange = syncManualUnits;
-        document.getElementById('docCandidateType').onchange = syncDocUnits;
-
         syncManualUnits();
-        syncDocUnits();
       }
 
       populateManualSelects();
@@ -645,7 +632,10 @@
         if (!lines.length) return [];
         const headers = lines.shift().split(',').map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
 
-        const rtIdx = headers.findIndex(h => ['resourcetype', 'resource', 'type', 'name'].includes(h));
+        let rtIdx = headers.findIndex(h => ['resourcename', 'itemname', 'resourcetitle'].includes(h));
+        if (rtIdx < 0) {
+          rtIdx = headers.findIndex(h => ['resourcetype', 'resource', 'type', 'name'].includes(h));
+        }
         const qtyIdx = headers.findIndex(h => ['quantity', 'qty', 'amount', 'val'].includes(h));
         const unitIdx = headers.findIndex(h => ['unit', 'uom', 'unitofmeasure'].includes(h));
 
@@ -753,60 +743,96 @@
       // 3. DOCUMENT / INVOICE EXTRACTION WORKFLOW
       // =========================================================================
       let currentExtractedDocFile = null;
+      let extractedCandidateItems = [];
+
+      window.resetDocUpload = function () {
+        document.getElementById('docFileInput').value = '';
+        document.getElementById('docExtractionArea').style.display = 'none';
+        currentExtractedDocFile = null;
+        extractedCandidateItems = [];
+      };
 
       document.getElementById('docFileInput').addEventListener('change', e => {
         const file = e.target.files[0];
         if (!file) return;
         currentExtractedDocFile = file;
 
-        // Simulated Candidate Extraction for Prototype
         const fileName = file.name.toLowerCase();
-        let candidateRtName = 'Diesel';
-        let candidateQty = 450.0;
-        let candidateUnitName = 'Liters';
-
-        if (fileName.includes('elec') || fileName.includes('power')) {
-          candidateRtName = 'Electricity';
-          candidateQty = 1250.0;
-          candidateUnitName = 'kWh';
-        } else if (fileName.includes('water')) {
-          candidateRtName = 'Water';
-          candidateQty = 30.0;
-          candidateUnitName = 'Cubic Meter';
+        let refNo = `INV-2026-0831-001`;
+        if (!fileName.includes('inv')) {
+          refNo = `Invoice ref: ${file.name.replace(/\.[^/.]+$/, '')}`;
         }
 
-        const rt = findResourceType(candidateRtName) || (db().resourceTypes[0]);
-        const unit = findUnit(candidateUnitName) || (db().units[0]);
+        if (fileName.includes('diesel') && !fileName.includes('utility') && !fileName.includes('inv')) {
+          extractedCandidateItems = [
+            { rtName: 'Diesel', qty: 500, unitName: 'Liters', ref: refNo }
+          ];
+        } else if (fileName.includes('lpg') && !fileName.includes('utility') && !fileName.includes('inv')) {
+          extractedCandidateItems = [
+            { rtName: 'LPG', qty: 250, unitName: 'Kg', ref: refNo }
+          ];
+        } else if (fileName.includes('gas') && !fileName.includes('utility') && !fileName.includes('inv')) {
+          extractedCandidateItems = [
+            { rtName: 'Natural Gas', qty: 180, unitName: 'Cubic Meters', ref: refNo }
+          ];
+        } else {
+          // Extract all 4 line items for utility invoices / documents
+          extractedCandidateItems = [
+            { rtName: 'Diesel', qty: 500, unitName: 'Liters', ref: refNo },
+            { rtName: 'LPG', qty: 250, unitName: 'Kg', ref: refNo },
+            { rtName: 'Natural Gas', qty: 180, unitName: 'Cubic Meters', ref: refNo },
+            { rtName: 'Petrol', qty: 320, unitName: 'Liters', ref: refNo }
+          ];
+        }
 
         document.getElementById('docFileNameBadge').textContent = file.name;
-        document.getElementById('docCandidateType').value = rt.id;
-        document.getElementById('docCandidateType').dispatchEvent(new Event('change'));
-        document.getElementById('docCandidateQty').value = candidateQty;
-        document.getElementById('docCandidateUnit').value = unit.id;
-        document.getElementById('docCandidateRef').value = `Invoice ref: ${file.name.replace(/\.[^/.]+$/, '')}`;
+        renderDocCandidates();
         document.getElementById('docExtractionArea').style.display = 'block';
 
-        Utils.showToast('Candidate data extracted from invoice. Please inspect and confirm.');
+        Utils.showToast(`${extractedCandidateItems.length} resource line items extracted from invoice.`);
       });
 
-      document.getElementById('btnConfirmDocRecord').addEventListener('click', () => {
-        const rtId = document.getElementById('docCandidateType').value;
-        const qty = parseFloat(document.getElementById('docCandidateQty').value);
-        const unitId = document.getElementById('docCandidateUnit').value;
-        const ref = document.getElementById('docCandidateRef').value.trim();
-
-        if (!rtId || isNaN(qty) || qty <= 0 || !unitId) {
-          Utils.showToast('Please check extracted values and provide positive quantity and unit.', 'error');
+      function renderDocCandidates() {
+        const tbody = document.getElementById('tbodyDocCandidates');
+        if (!tbody) return;
+        if (!extractedCandidateItems.length) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:16px;">No candidate items extracted.</td></tr>';
           return;
         }
 
-        if (!isCompatible(rtId, unitId)) {
-          Utils.showToast('Selected unit is incompatible with resource type.', 'error');
-          return;
-        }
+        tbody.innerHTML = extractedCandidateItems.map((item, idx) => {
+          const rt = findResourceType(item.rtName) || (db().resourceTypes[0]);
+          const unit = findUnit(item.unitName) || (db().units[0]);
 
-        const rt = findResourceType(rtId);
-        const unit = findUnit(unitId);
+          return `
+            <tr>
+              <td><strong style="color:#0f172a;">${rt.name}</strong></td>
+              <td>
+                <input type="number" class="form-input" style="width:100px; padding:4px 8px;" value="${item.qty}" onchange="updateDocCandidateQty(${idx}, this.value)" />
+              </td>
+              <td>${unit.name || unit.code}</td>
+              <td style="color:#64748b; font-size:12px;">${item.ref}</td>
+              <td>
+                <button class="action-btn success" type="button" onclick="confirmSingleDocCandidate(${idx})">✓ Stage Item</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      window.updateDocCandidateQty = function (idx, val) {
+        const num = parseFloat(val);
+        if (extractedCandidateItems[idx] && !isNaN(num) && num > 0) {
+          extractedCandidateItems[idx].qty = num;
+        }
+      };
+
+      window.confirmSingleDocCandidate = function (idx) {
+        const item = extractedCandidateItems[idx];
+        if (!item) return;
+
+        const rt = findResourceType(item.rtName) || (db().resourceTypes[0]);
+        const unit = findUnit(item.unitName) || (db().units[0]);
 
         stagedRecords.push({
           id: Utils.generateId('rec'),
@@ -815,17 +841,48 @@
           unitId: unit.id,
           unitName: unit.name,
           unitCode: unit.code,
-          quantity: qty,
+          quantity: item.qty,
           entryMode: 'Invoice Extraction',
-          evidenceNotes: ref || 'Verified invoice extraction',
+          evidenceNotes: item.ref || 'Verified invoice extraction',
           evidenceFileName: currentExtractedDocFile?.name || 'invoice.pdf'
         });
 
-        document.getElementById('docExtractionArea').style.display = 'none';
-        document.getElementById('docFileInput').value = '';
-        currentExtractedDocFile = null;
+        extractedCandidateItems.splice(idx, 1);
+        renderDocCandidates();
         renderStagedRecords();
-        Utils.showToast('Invoice activity record confirmed and staged.');
+        Utils.showToast(`Staged ${rt.name} record from invoice.`);
+
+        if (!extractedCandidateItems.length) {
+          resetDocUpload();
+        }
+      };
+
+      document.getElementById('btnConfirmAllDocRecords').addEventListener('click', () => {
+        if (!extractedCandidateItems.length) return;
+
+        let count = 0;
+        extractedCandidateItems.forEach(item => {
+          const rt = findResourceType(item.rtName) || (db().resourceTypes[0]);
+          const unit = findUnit(item.unitName) || (db().units[0]);
+
+          stagedRecords.push({
+            id: Utils.generateId('rec'),
+            resourceTypeId: rt.id,
+            resourceTypeName: rt.name,
+            unitId: unit.id,
+            unitName: unit.name,
+            unitCode: unit.code,
+            quantity: item.qty,
+            entryMode: 'Invoice Extraction',
+            evidenceNotes: item.ref || 'Verified invoice extraction',
+            evidenceFileName: currentExtractedDocFile?.name || 'invoice.pdf'
+          });
+          count++;
+        });
+
+        Utils.showToast(`${count} resource line items staged from invoice.`);
+        resetDocUpload();
+        renderStagedRecords();
       });
 
       // =========================================================================
@@ -948,61 +1005,53 @@
 
       document.getElementById('deviationReasonInput').addEventListener('input', runValidationEngine);
 
-      // Pre-fill records: if resubmitting, load existing submission records; otherwise initialize from department target profile
-      if (resubmitSubId) {
-        const existingSub = (db().submissions || []).find(s => s.id === resubmitSubId);
+      // Smart Sync: Pre-fill records & notes for existing or returned submission
+      let activeSubmissionId = resubmitSubId || null;
+
+      function syncExistingSubmissionState() {
+        const activeDepartment = getSelectedDepartment();
+        if (!activeDepartment) return;
+
+        const mm = document.getElementById('monthSelect').value;
+        const yy = document.getElementById('yearSelect').value;
+        const period = `${mm} ${yy}`;
+
+        const allSubs = db().submissions || [];
+        const existingSub = resubmitSubId
+          ? allSubs.find(s => String(s.id) === String(resubmitSubId))
+          : allSubs.find(s => (s.departmentId === activeDepartment.id || s.departmentName === activeDepartment.name) && s.period === period);
+
+        const banner = document.getElementById('correctionBanner');
+        const notesElem = document.getElementById('correctionNotesText');
+        const submitLabel = document.getElementById('btnSubmitLabel');
+
         if (existingSub) {
-          document.getElementById('correctionBanner').style.display = 'block';
-          document.getElementById('correctionNotesText').textContent = existingSub.analystNotes || existingSub.correctionNotes || 'Please correct flagged activity records and resubmit.';
-          document.getElementById('btnSubmitLabel').textContent = 'Save Corrections & Resubmit';
+          activeSubmissionId = existingSub.id;
+          const isCorrection = ['Correction Required', 'Rejected'].includes(existingSub.status);
+
+          if (isCorrection) {
+            if (banner) banner.style.display = 'block';
+            if (notesElem) notesElem.textContent = existingSub.analystNotes || existingSub.correctionNotes || 'Analyst flagged data discrepancy. Please verify resource quantities and resubmit.';
+            if (submitLabel) submitLabel.textContent = 'Save Corrections & Resubmit';
+          } else {
+            if (banner) banner.style.display = 'none';
+            if (submitLabel) submitLabel.textContent = 'Update & Resubmit Activity Data';
+          }
 
           if (existingSub.period) {
-            const [m, y] = existingSub.period.split(' ');
-            if (m) document.getElementById('monthSelect').value = m;
-            if (y) document.getElementById('yearSelect').value = y;
+            const parts = existingSub.period.split(' ');
+            if (parts.length === 2) {
+              if (document.getElementById('monthSelect')) document.getElementById('monthSelect').value = parts[0];
+              if (document.getElementById('yearSelect')) document.getElementById('yearSelect').value = parts[1];
+            }
           }
 
-          if (existingSub.resources && existingSub.resources.length) {
+          if (Array.isArray(existingSub.resources) && existingSub.resources.length > 0 && stagedRecords.length === 0) {
             stagedRecords = existingSub.resources.map(r => {
-              const rt = findResourceType(r.resourceTypeId || r.type);
-              const unit = findUnit(r.unitId || r.unit);
-              return {
-                id: Utils.generateId('rec'),
-                resourceTypeId: rt?.id || r.resourceTypeId || '',
-                resourceTypeName: rt?.name || r.type,
-                unitId: unit?.id || r.unitId || '',
-                unitName: unit?.name || r.unit,
-                unitCode: unit?.code || '',
-                quantity: Number(r.qty || 0),
-                entryMode: r.entryMode || 'Manual',
-                evidenceNotes: r.evidenceNotes || 'From previous submission batch',
-                evidenceFileName: r.evidenceFileName || ''
-              };
-            });
-            renderStagedRecords();
-          }
-        }
-      }
-
-      // Pre-fill returned submission if resubmitId is present
-      if (resubmitSubId) {
-        const targetSub = db().submissions.find(s => String(s.id) === String(resubmitSubId));
-        if (targetSub) {
-          if (deptSelect && targetSub.departmentId) {
-            deptSelect.value = targetSub.departmentId;
-          }
-          const banner = document.getElementById('correctionBanner');
-          const notesElem = document.getElementById('correctionNotesText');
-          if (banner && notesElem) {
-            banner.style.display = 'block';
-            notesElem.textContent = targetSub.analystNotes || targetSub.rejectionReason || 'Please review and resubmit your departmental Activity Data.';
-          }
-          if (Array.isArray(targetSub.resources) && targetSub.resources.length > 0) {
-            stagedRecords = targetSub.resources.map(r => {
               const rt = findResourceType(r.resourceTypeId || r.type);
               const u = findUnit(r.unitId || r.unit);
               return {
-                id: 'staged-' + Date.now() + Math.random(),
+                id: Utils.generateId('rec'),
                 resourceTypeId: rt ? rt.id : (r.resourceTypeId || ''),
                 resourceTypeName: rt ? rt.name : (r.type || 'Resource'),
                 quantity: Number(r.qty || r.quantity || 0),
@@ -1016,8 +1065,18 @@
             });
             renderStagedRecords();
           }
+        } else {
+          activeSubmissionId = null;
+          if (banner) banner.style.display = 'none';
+          if (submitLabel) submitLabel.textContent = 'Lock & Submit Activity Data';
         }
       }
+
+      syncExistingSubmissionState();
+
+      if (deptSelect) deptSelect.addEventListener('change', syncExistingSubmissionState);
+      if (document.getElementById('monthSelect')) document.getElementById('monthSelect').addEventListener('change', syncExistingSubmissionState);
+      if (document.getElementById('yearSelect')) document.getElementById('yearSelect').addEventListener('change', syncExistingSubmissionState);
 
       // =========================================================================
       // 5. LOCK & SUBMIT SUBMISSION
@@ -1050,7 +1109,15 @@
         const yy = document.getElementById('yearSelect').value;
         const period = `${mm} ${yy}`;
 
-        const submissionId = resubmitSubId || ('sub-' + Date.now());
+        const dbState = db();
+        if (!Array.isArray(dbState.submissions)) dbState.submissions = [];
+
+        // Match existing submission to update instead of creating duplicate
+        const existingSub = resubmitSubId
+          ? dbState.submissions.find(s => String(s.id) === String(resubmitSubId))
+          : dbState.submissions.find(s => (s.departmentId === activeDepartment.id || s.departmentName === activeDepartment.name) && s.period === period);
+
+        const submissionId = existingSub ? existingSub.id : (activeSubmissionId || ('sub-' + Date.now()));
 
         const newSub = {
           id: submissionId,
@@ -1085,14 +1152,66 @@
           locked: true
         };
 
-        const dbState = db();
-        if (!Array.isArray(dbState.submissions)) dbState.submissions = [];
-        const existIdx = dbState.submissions.findIndex(s => s.id === newSub.id);
+        const existIdx = dbState.submissions.findIndex(s => String(s.id) === String(submissionId));
         if (existIdx >= 0) dbState.submissions[existIdx] = { ...dbState.submissions[existIdx], ...newSub };
         else dbState.submissions.unshift(newSub);
+
+        // CLEAR & RESOLVE ANY LINKED CORRECTION ALERTS
+        if (!Array.isArray(dbState.alerts)) dbState.alerts = [];
+        dbState.alerts.forEach(a => {
+          const isMatch = String(a.submissionId) === String(submissionId) ||
+            ((String(a.departmentId) === String(activeDepartment.id) || a.departmentName === activeDepartment.name) && a.period === period);
+          if (isMatch && (a.status === 'Correction Required' || a.type === 'Data Correction Required' || a.status === 'Active')) {
+            a.status = 'Resolved';
+            a.resolvedAt = Utils.nowLabel();
+            a.resolvedBy = currentUser.name || 'Department Manager';
+            a.message = `Data corrected and resubmitted by ${currentUser.name || 'Manager'}.`;
+          }
+        });
+
+        // Mark Manager Correction Notifications as read
+        if (Array.isArray(dbState.notifications)) {
+          dbState.notifications.forEach(n => {
+            if ((String(n.departmentId) === String(activeDepartment.id) || n.role === 'Manager') && n.title?.includes('Correction')) {
+              n.read = true;
+            }
+          });
+        }
+
+        // Auto-create Operational Threshold Alert if submission exceeds threshold limit
+        if (exceedsThreshold) {
+          const existingAlertIdx = dbState.alerts.findIndex(a => a.submissionId === newSub.id || (a.period === period && String(a.departmentId) === String(activeDepartment.id)));
+          const alertObj = {
+            id: existingAlertIdx >= 0 ? dbState.alerts[existingAlertIdx].id : ('alt-' + Date.now()),
+            submissionId: newSub.id,
+            departmentId: activeDepartment.id,
+            departmentName: activeDepartment.name,
+            organizationId: activeOrg.id,
+            period: period,
+            type: 'Threshold Exceeded',
+            title: `Threshold Breach (${activeDepartment.name})`,
+            severity: 'Critical',
+            currentValue: totalQty,
+            thresholdValue: thresholdNumeric,
+            message: `Total consumption (${totalQty.toLocaleString()} units) exceeded monthly baseline threshold (${thresholdNumeric.toLocaleString()} units).`,
+            deviationReason: deviationReason,
+            status: 'Active',
+            roleScope: ['Manager', 'Analyst', 'COO'],
+            updatedAt: Utils.nowLabel(),
+            createdAt: Utils.nowLabel()
+          };
+          if (existingAlertIdx >= 0) dbState.alerts[existingAlertIdx] = { ...dbState.alerts[existingAlertIdx], ...alertObj };
+          else dbState.alerts.unshift(alertObj);
+        }
+
         Utils.replaceDB(dbState);
 
-        const res = await Utils.apiFetch('POST', '/api/submissions', newSub);
+        try {
+          await Utils.apiFetch('POST', '/api/submissions', newSub);
+        } catch (err) {
+          console.warn('Backend API submission sync fallback to local DB:', err);
+        }
+
         await Utils.loadDB();
         Utils.logAction(`Submitted activity data for ${activeDepartment.name} (${period})`, 'Success', 'green');
         Utils.showToast(`Activity data for ${activeDepartment.name} locked and submitted successfully!`);

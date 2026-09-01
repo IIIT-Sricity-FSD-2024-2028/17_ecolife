@@ -283,6 +283,32 @@
         btn.disabled = true;
         btn.textContent = 'Registering...';
 
+        // Try backend API registration first
+        let apiResult = null;
+        try {
+          apiResult = await Utils.apiFetch('POST', '/api/auth/register', {
+            email,
+            password,
+            organizationName: company,
+            cooName,
+            departments: departmentsInput || 'Operations',
+          });
+        } catch (err) {
+          // API may not be available; fall through to client-side
+        }
+
+        if (apiResult) {
+          // Backend registration succeeded — reload full snapshot to sync
+          await Utils.loadDB();
+          Utils.logAction(`Registered organization ${company}`, 'Success', 'green');
+          Utils.showToast('Organization registered successfully. You can sign in now.', 'success');
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('loginTime');
+          setTimeout(() => { window.location.href = 'auth-login.html'; }, 1400);
+          return;
+        }
+
+        // Fallback: Client-side registration when backend is unavailable
         const orgId = `org-${Date.now()}`;
         const userId = Date.now() + 1;
 
@@ -356,6 +382,18 @@
           type: 'info',
           read: false,
           createdAt: new Date().toISOString()
+        });
+
+        db.auditLogs = db.auditLogs || [];
+        db.auditLogs.unshift({
+          id: Date.now() + 3,
+          timestamp: new Date().toLocaleString(),
+          actor: `${cooName} (COO)`,
+          organizationId: orgId,
+          action: `Registered organization ${company} and provisioned initial COO account`,
+          status: 'Success',
+          statusType: 'green',
+          ip: '127.0.0.1'
         });
 
         Utils.syncOrganizationDerivedFields(db, orgId);

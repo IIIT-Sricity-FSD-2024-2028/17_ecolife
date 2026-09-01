@@ -118,22 +118,18 @@
       const deptAlertSelect = document.getElementById('deptAlertSelect');
       if (deptAlertSelect) {
         if (managerDepartments.length > 0) {
-          deptAlertSelect.innerHTML = managerDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-          const initialId = currentUser.departmentId && managerDepartments.some(d => String(d.id) === String(currentUser.departmentId))
-            ? currentUser.departmentId
-            : managerDepartments[0].id;
-          deptAlertSelect.value = initialId;
+          deptAlertSelect.innerHTML = `<option value="all">All Assigned Departments (${managerDepartments.length})</option>` +
+            managerDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+          deptAlertSelect.value = 'all';
         } else {
-          deptAlertSelect.innerHTML = `<option value="">No Department Assigned</option>`;
+          deptAlertSelect.innerHTML = `<option value="all">All Assigned Departments</option>`;
         }
 
         deptAlertSelect.addEventListener('change', () => {
           initializedTab = null;
           renderAlerts();
           const selectedDept = getSelectedDept();
-          if (selectedDept) {
-            Utils.showToast(`Filtered alerts for ${selectedDept.name}`);
-          }
+          Utils.showToast(selectedDept ? `Filtered alerts for ${selectedDept.name}` : 'Showing alerts for all assigned departments');
         });
       }
 
@@ -142,8 +138,9 @@
       }
 
       function getSelectedDept() {
-        const selectedId = deptAlertSelect ? deptAlertSelect.value : currentUser.departmentId;
-        return (state.departments || []).find(d => String(d.id) === String(selectedId)) || managerDepartments[0] || null;
+        const selectedId = deptAlertSelect ? deptAlertSelect.value : 'all';
+        if (!selectedId || selectedId === 'all') return null;
+        return (state.departments || []).find(d => String(d.id) === String(selectedId)) || null;
       }
 
       function getScopedAlerts(db) {
@@ -151,12 +148,68 @@
         const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
         const currentOrg = Utils.getCurrentOrganization(currentUser, db);
         const orgId = currentOrg?.id || currentUser.organizationId;
+        const scopedDeptIds = managerDepartments.map(d => String(d.id));
 
         let alerts = (db.alerts || []).filter(alert => {
-          const isManagerRole = !alert.roleScope || (Array.isArray(alert.roleScope) && alert.roleScope.includes('Manager'));
-          const sameDept = activeDept ? (String(alert.departmentId) === String(activeDept.id) || alert.departmentName === activeDept.name) : true;
+          const isManagerRole = !alert.roleScope || 
+            (Array.isArray(alert.roleScope) && alert.roleScope.includes('Manager')) ||
+            (typeof alert.roleScope === 'string' && alert.roleScope.includes('Manager'));
+          
+          const alertDeptId = alert.departmentId ? String(alert.departmentId) : null;
+          const sameDept = activeDept 
+            ? (alertDeptId === String(activeDept.id) || alert.departmentName === activeDept.name) 
+            : (!alertDeptId || scopedDeptIds.includes(alertDeptId) || managerDepartments.some(d => d.name === alert.departmentName));
+            
           const sameOrg = orgId ? (!alert.organizationId || String(alert.organizationId) === String(orgId)) : true;
           return isManagerRole && sameDept && sameOrg;
+        });
+
+        // Sync active Correction Required submissions into alerts
+        const submissions = Array.isArray(db.submissions) ? db.submissions : [];
+        submissions.forEach(sub => {
+          const subDeptId = String(sub.departmentId);
+          const inScope = activeDept ? subDeptId === String(activeDept.id) : (scopedDeptIds.includes(subDeptId) || !scopedDeptIds.length);
+          
+          if ((sub.status === 'Correction Required' || sub.status === 'Rejected') && inScope) {
+            const alreadyAlert = alerts.some(a => a.submissionId === sub.id || (a.period === sub.period && String(a.departmentId) === subDeptId));
+            if (!alreadyAlert) {
+              alerts.unshift({
+                id: `alt-sub-corr-${sub.id}`,
+                submissionId: sub.id,
+                departmentId: sub.departmentId,
+                departmentName: sub.departmentName,
+                period: sub.period,
+                severity: 'Warning',
+                type: 'Data Correction Required',
+                title: 'Data Correction Requested by Analyst',
+                message: sub.correctionNotes || sub.analystNotes || 'Analyst requested data correction for this submission.',
+                status: 'Correction Required',
+                updatedAt: sub.updatedAt || Utils.nowLabel()
+              });
+            }
+          }
+
+          // Auto-detect threshold breaches from submissions if missing in db.alerts
+          if ((sub.validation?.state === 'threshold_breach' || (sub.totalConsumption > 0 && sub.validation?.deviationReason)) && inScope) {
+            const alreadyAlert = alerts.some(a => a.submissionId === sub.id || (a.period === sub.period && String(a.departmentId) === subDeptId));
+            if (!alreadyAlert) {
+              alerts.unshift({
+                id: `alt-sub-thresh-${sub.id}`,
+                submissionId: sub.id,
+                departmentId: sub.departmentId,
+                departmentName: sub.departmentName,
+                period: sub.period,
+                severity: 'Critical',
+                type: 'Threshold Exceeded',
+                title: `Threshold Breach (${sub.departmentName})`,
+                currentValue: sub.totalConsumption,
+                message: `Total consumption (${Number(sub.totalConsumption || 0).toLocaleString()} units) exceeded baseline threshold. Deviation: ${sub.validation?.deviationReason || 'Unspecified'}`,
+                deviationReason: sub.validation?.deviationReason || '',
+                status: sub.status === 'Approved' ? 'Resolved' : 'Active',
+                updatedAt: sub.updatedAt || sub.submittedAt || Utils.nowLabel()
+              });
+            }
+          }
         });
 
         if (query) {
@@ -208,6 +261,7 @@
         }
 
         host.innerHTML = displayed.map(alert => {
+          const isCorrection = alert.status === 'Correction Required' || alert.type === 'Data Correction Required';
           const alertIdStr = String(alert.id);
           const isExpanded = expandedAlertIds.has(alertIdStr);
           const dept = (db.departments || []).find(d => String(d.id) === String(alert.departmentId) || d.name === alert.departmentName);
@@ -217,6 +271,30 @@
           const status = (alert.status || 'Active').trim();
           const isResolved = status === 'Resolved';
 
+          // Clean Minimal Card for Data Correction Alerts
+          if (isCorrection) {
+            return `
+              <div class="alert-item-card" id="card-${alert.id}" style="border-left:4px solid #f59e0b;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                  <div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                      <span class="status-badge status-badge--amber">Correction Required</span>
+                      <h3 style="margin:0; font-size:15px; font-weight:700; color:#0f172a;">${alert.title || 'Data Correction Requested'}</h3>
+                    </div>
+                    <p style="margin:0 0 6px 0; font-size:13px; color:#475569;">${alert.message || 'Analyst requested data correction for your submission.'}</p>
+                    <div style="font-size:12px; color:#64748b;">
+                      Department: <strong>${alert.departmentName || '--'}</strong> &bull; Period: <strong>${Utils.formatPeriodLabel(alert.period || '')}</strong>
+                    </div>
+                  </div>
+                  <div>
+                    <a class="btn-primary" href="dm-data-submission.html?resubmitId=${alert.submissionId || ''}" style="text-decoration:none; padding:8px 14px; font-size:13px;">Correct Data &amp; Resubmit &rarr;</a>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          // Full Governance Card for Operational Threshold Alerts
           const curVal = Utils.parseAmount(alert.currentValue || alert.current || dept?.current || 0);
           const threshVal = Utils.parseAmount(alert.thresholdValue || alert.threshold || dept?.threshold || 0);
           let variancePct = 0;
@@ -224,12 +302,10 @@
             variancePct = Math.round(((curVal - threshVal) / threshVal) * 100);
           }
 
-          // Enriched Resources with Emissions & Line-Item Variance Status
           const rawResources = sub?.resources || alert.resources || [];
           const resourcesList = rawResources.map(r => {
             const qty = Number(r.qty || r.quantity || 0);
-            const factor = Number(r.emissionFactor || (String(r.resourceTypeName || r.type).toLowerCase().includes('electricity') ? 0.5 : 2.68));
-            const co2e = r.co2e ? Number(r.co2e) : Math.round(qty * factor);
+            const co2e = Number(r.co2e || 0);
             const targetVal = Number(r.targetQty || r.thresholdQty || Math.round(qty * 0.75));
             let lineVarPct = 0;
             if (targetVal > 0 && qty > targetVal) {
@@ -245,21 +321,16 @@
           });
 
           const hasManagerInput = Boolean((alert.managerExplanation && alert.managerExplanation.trim()) || (alert.deviationReason && alert.deviationReason.trim()));
-
-          // Precise Stepper Calculations
           const s1Done = true;
           const s2Done = (hasManagerInput && !isClarificationRequested) || status === 'Analyst Review' || status === 'Manager Notified' || isResolved;
           const s2Current = !s2Done;
-
           const s3Done = status === 'Manager Notified' || isResolved;
           const s3Current = s2Done && !s3Done;
-
           const s4Done = isResolved;
           const s4Current = s3Done && !s4Done;
 
           return `
             <div class="alert-item-card" id="card-${alert.id}">
-              <!-- Direct Header Click Toggle (Simple & Clean) -->
               <div class="alert-header-row" onclick="toggleAlertExpand('${alert.id}')">
                 <div>
                   <h3 style="margin:0 0 2px 0; font-size:15px; font-weight:700; color:#0f172a;">${alert.type || alert.title || 'Operational Threshold Alert'}</h3>
@@ -270,7 +341,6 @@
                 </div>
               </div>
 
-              <!-- Sleek Governance Stepper Bar -->
               <div class="stepper-bar">
                 <div class="step-item ${s1Done ? 'completed' : ''}">
                   <span class="step-dot">✓</span>
@@ -293,7 +363,6 @@
                 </div>
               </div>
 
-              <!-- Expanded Detailed View -->
               <div class="alert-drawer-body ${isExpanded ? 'is-expanded' : ''}">
                 <div class="alert-meta-grid">
                   <div><span>Department</span><strong>${alert.departmentName || '--'}</strong></div>
@@ -370,7 +439,7 @@
                   </div>
                   <div>
                     ${!isSubmittedToAnalyst ? `
-                      <button class="btn-primary" type="button" onclick="handleManagerAlert('${alert.id}')" style="justify-content:center;">
+                      <button class="btn-primary" type="button" onclick="handleManagerAlert('${alert.id}', event)" style="justify-content:center;">
                         ${isClarificationRequested ? 'Resubmit Clarified Explanation &amp; Escalate' : 'Send Explanation &amp; Escalate to Analyst'}
                       </button>
                     ` : `
@@ -410,7 +479,9 @@
         renderAlerts();
       });
 
-      window.handleManagerAlert = async function(alertId) {
+      window.handleManagerAlert = async function(alertId, event) {
+        if (event) event.stopPropagation();
+
         const explElem = document.getElementById(`expl-${alertId}`);
         const actElem = document.getElementById(`act-${alertId}`);
 
@@ -423,8 +494,32 @@
         }
 
         const db = Utils.ensureCollections(Utils.getDB());
-        const alertIndex = (db.alerts || []).findIndex(a => String(a.id) === String(alertId));
-        if (alertIndex < 0) return;
+        if (!Array.isArray(db.alerts)) db.alerts = [];
+
+        let alertIndex = db.alerts.findIndex(a => String(a.id) === String(alertId));
+        if (alertIndex < 0) {
+          // If auto-detected from a submission, create the alert in db.alerts
+          const subId = String(alertId).replace(/^alt-sub-(corr|thresh)-/, '');
+          const sub = (db.submissions || []).find(s => String(s.id) === String(subId));
+          const newAlert = {
+            id: alertId,
+            submissionId: sub?.id || subId,
+            departmentId: sub?.departmentId || currentUser.departmentId || 'dept-01',
+            departmentName: sub?.departmentName || 'Department',
+            organizationId: sub?.organizationId || currentUser.organizationId || 'org-01',
+            period: sub?.period || '',
+            type: 'Threshold Exceeded',
+            title: `Threshold Breach (${sub?.departmentName || 'Department'})`,
+            severity: 'Critical',
+            message: sub?.validation?.deviationReason || explanation,
+            status: 'Active',
+            roleScope: ['Manager', 'Analyst', 'COO'],
+            updatedAt: Utils.nowLabel(),
+            createdAt: Utils.nowLabel()
+          };
+          db.alerts.unshift(newAlert);
+          alertIndex = 0;
+        }
 
         const alert = db.alerts[alertIndex];
         alert.managerExplanation = explanation;
