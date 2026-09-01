@@ -6,8 +6,8 @@ import { RorizonDb } from '../in-memory/entities';
 export class SyncService {
   constructor(private readonly store: InMemoryStoreService) {}
 
-  snapshot() {
-    return this.store.snapshot();
+  snapshot(role?: string, userId?: string) {
+    return this.store.snapshot(role, userId);
   }
 
   replace(snapshot: Partial<RorizonDb>) {

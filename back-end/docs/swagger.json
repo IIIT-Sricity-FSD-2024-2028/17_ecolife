@@ -7,9 +7,17 @@
         "parameters": [
           {
             "name": "x-role",
+            "required": true,
             "in": "header",
-            "description": "Any active role can read its synchronized UI state.",
-            "required": false,
+            "description": "Role reading synchronized UI state.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
             "schema": {
               "type": "string"
             }
@@ -33,7 +41,7 @@
           {
             "name": "x-role",
             "in": "header",
-            "description": "Role performing the synchronization write.",
+            "description": "Role required for runtime snapshot synchronization.",
             "required": true,
             "schema": {
               "type": "string"
@@ -55,7 +63,7 @@
             "description": ""
           }
         },
-        "summary": "Replace in-memory runtime snapshot after a UI workflow updates state.",
+        "summary": "Replace or update in-memory runtime snapshot for active user session.",
         "tags": [
           "database snapshot"
         ]
@@ -68,7 +76,7 @@
           {
             "name": "x-role",
             "in": "header",
-            "description": "Optional role header for consistency. Login does not enforce authentication.",
+            "description": "Optional role header for consistency. Auth endpoints do not enforce authentication.",
             "required": false,
             "schema": {
               "type": "string"
@@ -111,6 +119,171 @@
           }
         },
         "summary": "Validate seeded credentials and return the user. No auth token is required.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Optional role header for consistency. Auth endpoints do not enforce authentication.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Register a new organization with a COO account and initial departments.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "operationId": "AuthController_forgotPassword",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Optional role header for consistency. Auth endpoints do not enforce authentication.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Request a password reset OTP for the given email. Returns simulated OTP for project purposes.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Optional role header for consistency. Auth endpoints do not enforce authentication.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Reset account password using the OTP received from forgot-password.",
         "tags": [
           "auth"
         ]
@@ -243,6 +416,22 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -280,6 +469,22 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
             "schema": {
               "type": "string"
             }
@@ -332,6 +537,1188 @@
         },
         "tags": [
           "users"
+        ]
+      }
+    },
+    "/api/revenue/plans": {
+      "get": {
+        "operationId": "RevenueController_listPlans",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "post": {
+        "operationId": "RevenueController_createPlan",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/plans/{id}": {
+      "get": {
+        "operationId": "RevenueController_findPlan",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "put": {
+        "operationId": "RevenueController_replacePlan",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "patch": {
+        "operationId": "RevenueController_updatePlan",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "delete": {
+        "operationId": "RevenueController_removePlan",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/addons": {
+      "get": {
+        "operationId": "RevenueController_listAddons",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "post": {
+        "operationId": "RevenueController_createAddon",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAddonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/addons/{id}": {
+      "get": {
+        "operationId": "RevenueController_findAddon",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "put": {
+        "operationId": "RevenueController_replaceAddon",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAddonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "patch": {
+        "operationId": "RevenueController_updateAddon",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAddonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "delete": {
+        "operationId": "RevenueController_removeAddon",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/subscriptions": {
+      "get": {
+        "operationId": "RevenueController_listSubscriptions",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "post": {
+        "operationId": "RevenueController_createSubscription",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubscriptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/subscriptions/{id}": {
+      "get": {
+        "operationId": "RevenueController_findSubscription",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "put": {
+        "operationId": "RevenueController_replaceSubscription",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSubscriptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "patch": {
+        "operationId": "RevenueController_updateSubscription",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSubscriptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      },
+      "delete": {
+        "operationId": "RevenueController_removeSubscription",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/subscriptions/upgrade": {
+      "post": {
+        "operationId": "RevenueController_upgradeSubscription",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/subscriptions/{id}/cancel": {
+      "post": {
+        "operationId": "RevenueController_cancelSubscription",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/subscriptions/{id}/renew": {
+      "post": {
+        "operationId": "RevenueController_renewSubscription",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/subscriptions/addons/toggle": {
+      "post": {
+        "operationId": "RevenueController_toggleAddon",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/subscriptions/expansion/buy": {
+      "post": {
+        "operationId": "RevenueController_buyExpansionPack",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/subscriptions/expansion/manage": {
+      "post": {
+        "operationId": "RevenueController_manageExpansionPack",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/overview": {
+      "get": {
+        "operationId": "RevenueController_getOverview",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
+        ]
+      }
+    },
+    "/api/revenue/usage/{organizationId}": {
+      "get": {
+        "operationId": "RevenueController_getUsage",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User for full management; COO for organization billing.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "revenue"
         ]
       }
     },
@@ -990,6 +2377,195 @@
         ]
       }
     },
+    "/api/submissions/{id}/approve": {
+      "post": {
+        "operationId": "SubmissionsController_approve",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates/locks; Analyst/COO review; Super User audits.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveSubmissionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Analyst approves a calculation-ready submission.",
+        "tags": [
+          "submissions"
+        ]
+      }
+    },
+    "/api/submissions/{id}/request-correction": {
+      "post": {
+        "operationId": "SubmissionsController_requestCorrection",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates/locks; Analyst/COO review; Super User audits.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestCorrectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Analyst requests correction for a submission with required comment.",
+        "tags": [
+          "submissions"
+        ]
+      }
+    },
+    "/api/submissions/{id}/resubmit": {
+      "post": {
+        "operationId": "SubmissionsController_resubmit",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates/locks; Analyst/COO review; Super User audits.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResubmitSubmissionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Manager resubmits corrected resource data.",
+        "tags": [
+          "submissions"
+        ]
+      }
+    },
     "/api/reports": {
       "get": {
         "operationId": "ReportsController_list",
@@ -1226,7 +2802,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "type": "string"
             }
           }
         ],
@@ -1289,7 +2865,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "type": "string"
             }
           }
         ],
@@ -1329,6 +2905,69 @@
           }
         },
         "summary": "COO requests report revision with required comment.",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/reports/{id}/resubmit": {
+      "post": {
+        "operationId": "ReportsController_resubmit",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Analyst generates/revises; COO approves or requests revisions.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResubmitReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Analyst resubmits revised report to COO.",
         "tags": [
           "reports"
         ]
@@ -1630,6 +3269,30 @@
           },
           {
             "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-department-id",
             "required": true,
             "in": "header",
             "schema": {
@@ -2066,7 +3729,7 @@
           {
             "name": "x-role",
             "in": "header",
-            "description": "Super User only for system health and module status.",
+            "description": "Super User only for system health, module status, and settings.",
             "required": true,
             "schema": {
               "type": "string"
@@ -2090,7 +3753,7 @@
           {
             "name": "x-role",
             "in": "header",
-            "description": "Super User only for system health and module status.",
+            "description": "Super User only for system health, module status, and settings.",
             "required": true,
             "schema": {
               "type": "string"
@@ -2104,6 +3767,2072 @@
         },
         "tags": [
           "system"
+        ]
+      }
+    },
+    "/api/system/settings": {
+      "get": {
+        "operationId": "SystemController_getSettings",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User only for system health, module status, and settings.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Read global platform settings.",
+        "tags": [
+          "system"
+        ]
+      },
+      "patch": {
+        "operationId": "SystemController_updateSettings",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User only for system health, module status, and settings.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Update global platform settings (maintenance mode, session timeout, etc.).",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/resources/categories": {
+      "get": {
+        "operationId": "ResourcesController_categories",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "post": {
+        "operationId": "ResourcesController_createCategory",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/categories/{id}": {
+      "patch": {
+        "operationId": "ResourcesController_updateCategory",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResourceCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "put": {
+        "operationId": "ResourcesController_replaceCategory",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResourceCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "delete": {
+        "operationId": "ResourcesController_removeCategory",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/units": {
+      "get": {
+        "operationId": "ResourcesController_units",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "post": {
+        "operationId": "ResourcesController_createUnit",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/units/{id}": {
+      "patch": {
+        "operationId": "ResourcesController_updateUnit",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "put": {
+        "operationId": "ResourcesController_replaceUnit",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "delete": {
+        "operationId": "ResourcesController_removeUnit",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/types": {
+      "get": {
+        "operationId": "ResourcesController_types",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "post": {
+        "operationId": "ResourcesController_createType",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceTypeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/types/{id}": {
+      "patch": {
+        "operationId": "ResourcesController_updateType",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResourceTypeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "put": {
+        "operationId": "ResourcesController_replaceType",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResourceTypeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "delete": {
+        "operationId": "ResourcesController_removeType",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/compatibilities": {
+      "get": {
+        "operationId": "ResourcesController_compatibilities",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "post": {
+        "operationId": "ResourcesController_createCompatibility",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceUnitCompatibilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/compatibilities/{id}": {
+      "patch": {
+        "operationId": "ResourcesController_updateCompatibility",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResourceUnitCompatibilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "put": {
+        "operationId": "ResourcesController_replaceCompatibility",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResourceUnitCompatibilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      },
+      "delete": {
+        "operationId": "ResourcesController_removeCompatibility",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages master data; other roles can read allowed resource masters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/factors/sources": {
+      "get": {
+        "operationId": "FactorsController_sources",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      },
+      "post": {
+        "operationId": "FactorsController_createSource",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactorSourceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      }
+    },
+    "/api/factors/sources/{id}": {
+      "patch": {
+        "operationId": "FactorsController_updateSource",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFactorSourceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      },
+      "put": {
+        "operationId": "FactorsController_replaceSource",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFactorSourceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      },
+      "delete": {
+        "operationId": "FactorsController_removeSource",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      }
+    },
+    "/api/factors/versions": {
+      "get": {
+        "operationId": "FactorsController_versions",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      },
+      "post": {
+        "operationId": "FactorsController_createVersion",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactorVersionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      }
+    },
+    "/api/factors/versions/{id}": {
+      "patch": {
+        "operationId": "FactorsController_updateVersion",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFactorVersionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      },
+      "put": {
+        "operationId": "FactorsController_replaceVersion",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFactorVersionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      },
+      "delete": {
+        "operationId": "FactorsController_removeVersion",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      }
+    },
+    "/api/factors": {
+      "get": {
+        "operationId": "FactorsController_list",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      },
+      "post": {
+        "operationId": "FactorsController_create",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmissionFactorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      }
+    },
+    "/api/factors/{id}": {
+      "patch": {
+        "operationId": "FactorsController_update",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEmissionFactorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      },
+      "put": {
+        "operationId": "FactorsController_replace",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEmissionFactorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      },
+      "delete": {
+        "operationId": "FactorsController_remove",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Super User manages factor governance; other roles can read factor catalogues.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factors"
+        ]
+      }
+    },
+    "/api/resource-records": {
+      "get": {
+        "operationId": "ResourceRecordsController_list",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates records; Analyst/COO review; Super User has full control.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resource-records"
+        ]
+      },
+      "post": {
+        "operationId": "ResourceRecordsController_create",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates records; Analyst/COO review; Super User has full control.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceRecordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resource-records"
+        ]
+      }
+    },
+    "/api/resource-records/{id}": {
+      "get": {
+        "operationId": "ResourceRecordsController_find",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates records; Analyst/COO review; Super User has full control.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resource-records"
+        ]
+      },
+      "patch": {
+        "operationId": "ResourceRecordsController_update",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates records; Analyst/COO review; Super User has full control.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResourceRecordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resource-records"
+        ]
+      },
+      "put": {
+        "operationId": "ResourceRecordsController_replace",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates records; Analyst/COO review; Super User has full control.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResourceRecordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resource-records"
+        ]
+      },
+      "delete": {
+        "operationId": "ResourceRecordsController_remove",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates records; Analyst/COO review; Super User has full control.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "resource-records"
+        ]
+      }
+    },
+    "/api/calculations": {
+      "get": {
+        "operationId": "CalculationsController_calculations",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Authorized roles can review calculated impact results; Super User/Analyst can trigger recalculation.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "calculations"
+        ]
+      }
+    },
+    "/api/calculations/results": {
+      "get": {
+        "operationId": "CalculationsController_results",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Authorized roles can review calculated impact results; Super User/Analyst can trigger recalculation.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "calculations"
+        ]
+      }
+    },
+    "/api/calculations/records/{id}/recalculate": {
+      "post": {
+        "operationId": "CalculationsController_recalculate",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Authorized roles can review calculated impact results; Super User/Analyst can trigger recalculation.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "calculations"
+        ]
+      }
+    },
+    "/api/evidence": {
+      "get": {
+        "operationId": "EvidenceController_list",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager uploads evidence; Analyst/COO/Super User can review evidence status.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "evidence"
+        ]
+      },
+      "post": {
+        "operationId": "EvidenceController_create",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager uploads evidence; Analyst/COO/Super User can review evidence status.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "evidence"
+        ]
+      }
+    },
+    "/api/evidence/{id}": {
+      "get": {
+        "operationId": "EvidenceController_find",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager uploads evidence; Analyst/COO/Super User can review evidence status.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "evidence"
+        ]
+      },
+      "patch": {
+        "operationId": "EvidenceController_update",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager uploads evidence; Analyst/COO/Super User can review evidence status.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEvidenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "evidence"
+        ]
+      },
+      "put": {
+        "operationId": "EvidenceController_replace",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager uploads evidence; Analyst/COO/Super User can review evidence status.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEvidenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "evidence"
+        ]
+      },
+      "delete": {
+        "operationId": "EvidenceController_remove",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager uploads evidence; Analyst/COO/Super User can review evidence status.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "evidence"
+        ]
+      }
+    },
+    "/api/evidence/upload": {
+      "post": {
+        "operationId": "EvidenceController_uploadEvidenceFile",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager uploads evidence; Analyst/COO/Super User can review evidence status.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Evidence file (PDF, JPEG, PNG, GIF, WebP). Max 10 MB."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Upload an evidence file (PDF or image). Max 10 MB.",
+        "tags": [
+          "evidence"
+        ]
+      }
+    },
+    "/api/imports": {
+      "get": {
+        "operationId": "ImportsController_list",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates import batches; review roles can inspect status and row errors.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "imports"
+        ]
+      },
+      "post": {
+        "operationId": "ImportsController_create",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates import batches; review roles can inspect status and row errors.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportBatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "imports"
+        ]
+      }
+    },
+    "/api/imports/errors": {
+      "get": {
+        "operationId": "ImportsController_errors",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates import batches; review roles can inspect status and row errors.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "imports"
+        ]
+      }
+    },
+    "/api/imports/{id}": {
+      "get": {
+        "operationId": "ImportsController_find",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates import batches; review roles can inspect status and row errors.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "imports"
+        ]
+      },
+      "patch": {
+        "operationId": "ImportsController_update",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates import batches; review roles can inspect status and row errors.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateImportBatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "imports"
+        ]
+      },
+      "put": {
+        "operationId": "ImportsController_replace",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates import batches; review roles can inspect status and row errors.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateImportBatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "imports"
+        ]
+      },
+      "delete": {
+        "operationId": "ImportsController_remove",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates import batches; review roles can inspect status and row errors.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "imports"
+        ]
+      }
+    },
+    "/api/imports/upload": {
+      "post": {
+        "operationId": "ImportsController_uploadCsvBatch",
+        "parameters": [
+          {
+            "name": "x-role",
+            "in": "header",
+            "description": "Manager creates import batches; review roles can inspect status and row errors.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-role",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "organizationId",
+                  "departmentId"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CSV file with columns: resourceType, unit, quantity, activityDate, period"
+                  },
+                  "organizationId": {
+                    "type": "string",
+                    "example": "org-techcorp"
+                  },
+                  "departmentId": {
+                    "type": "string",
+                    "example": "dept-ops"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standard response format."
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Upload a CSV file to create an import batch. Max 10 MB.",
+        "tags": [
+          "imports"
         ]
       }
     }
@@ -2157,6 +5886,84 @@
               "type": "object"
             }
           },
+          "resourceCategories": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "resourceTypes": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "resourceUnitCompatibilities": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "factorSources": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "factorVersions": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "emissionFactors": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "evidences": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "importBatches": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "importErrors": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "resourceRecords": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "impactCalculations": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "impactResults": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
           "managerSubmissions": {
             "type": "array",
             "items": {
@@ -2193,6 +6000,24 @@
               "type": "object"
             }
           },
+          "plans": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "addons": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "subscriptions": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
           "systemMetrics": {
             "type": "object"
           },
@@ -2224,7 +6049,7 @@
         "properties": {
           "email": {
             "type": "string",
-            "example": "admin@rorizon.com"
+            "example": "admin@platformops.com"
           },
           "password": {
             "type": "string",
@@ -2234,6 +6059,79 @@
         "required": [
           "email",
           "password"
+        ]
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "coo@company.com",
+            "description": "COO email address"
+          },
+          "password": {
+            "type": "string",
+            "example": "Secure@123",
+            "description": "Minimum 8 characters"
+          },
+          "organizationName": {
+            "type": "string",
+            "example": "Acme Industries",
+            "description": "Organization name"
+          },
+          "cooName": {
+            "type": "string",
+            "example": "Jane Smith",
+            "description": "COO full name"
+          },
+          "departments": {
+            "type": "string",
+            "example": "Operations, Manufacturing",
+            "description": "Comma-separated department names"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "organizationName",
+          "cooName"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@company.com",
+            "description": "Email of the account to reset"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@company.com"
+          },
+          "otp": {
+            "type": "string",
+            "example": "123456",
+            "description": "OTP code received"
+          },
+          "newPassword": {
+            "type": "string",
+            "example": "NewSecure@123",
+            "description": "New password (minimum 8 characters)"
+          }
+        },
+        "required": [
+          "email",
+          "otp",
+          "newPassword"
         ]
       },
       "UserDto": {
@@ -2259,7 +6157,7 @@
           },
           "email": {
             "type": "string",
-            "example": "asha@tc.com"
+            "example": "manager@techcorp.com"
           },
           "password": {
             "type": "string",
@@ -2284,7 +6182,7 @@
           },
           "organizationId": {
             "type": "string",
-            "example": "org-tc"
+            "example": "org-techcorp"
           },
           "phone": {
             "type": "string",
@@ -2334,7 +6232,7 @@
           },
           "email": {
             "type": "string",
-            "example": "asha@tc.com"
+            "example": "manager@techcorp.com"
           },
           "password": {
             "type": "string",
@@ -2359,7 +6257,7 @@
           },
           "organizationId": {
             "type": "string",
-            "example": "org-tc"
+            "example": "org-techcorp"
           },
           "phone": {
             "type": "string",
@@ -2377,6 +6275,382 @@
           "lastLogin": {
             "type": "string",
             "example": "Apr 01, 2026, 09:00 AM"
+          }
+        }
+      },
+      "CreatePlanDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Starter"
+          },
+          "description": {
+            "type": "string",
+            "example": "For small organizations beginning tracking."
+          },
+          "priceMonthly": {
+            "type": "number",
+            "example": 14999
+          },
+          "priceAnnual": {
+            "type": "number",
+            "example": 149990
+          },
+          "currency": {
+            "type": "string",
+            "example": "INR"
+          },
+          "maxUsers": {
+            "type": "number",
+            "example": 10
+          },
+          "maxDepartments": {
+            "type": "number",
+            "example": 3
+          },
+          "maxSubmissions": {
+            "type": "number",
+            "example": 500
+          },
+          "maxReports": {
+            "type": "number",
+            "example": 25
+          },
+          "maxStorage": {
+            "type": "number",
+            "example": 2
+          },
+          "features": {
+            "example": [
+              "Basic emissions tracking",
+              "Basic reports"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "annualDiscount": {
+            "type": "number",
+            "example": 17
+          },
+          "maxAdditionalUsers": {
+            "type": "number",
+            "example": 10
+          },
+          "additionalUserPriceMonthly": {
+            "type": "number",
+            "example": 250
+          },
+          "additionalUserPriceAnnual": {
+            "type": "number",
+            "example": 2500
+          },
+          "maxAdditionalDepartments": {
+            "type": "number",
+            "example": 5
+          },
+          "additionalDepartmentPriceMonthly": {
+            "type": "number",
+            "example": 1000
+          },
+          "additionalDepartmentPriceAnnual": {
+            "type": "number",
+            "example": 10000
+          },
+          "supportLevel": {
+            "type": "string",
+            "example": "Standard Business Hours"
+          },
+          "status": {
+            "type": "string",
+            "example": "ACTIVE",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "priceMonthly",
+          "priceAnnual",
+          "maxUsers",
+          "maxDepartments",
+          "maxReports",
+          "maxStorage",
+          "features"
+        ]
+      },
+      "UpdatePlanDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Starter"
+          },
+          "description": {
+            "type": "string",
+            "example": "For small organizations beginning tracking."
+          },
+          "priceMonthly": {
+            "type": "number",
+            "example": 14999
+          },
+          "priceAnnual": {
+            "type": "number",
+            "example": 149990
+          },
+          "currency": {
+            "type": "string",
+            "example": "INR"
+          },
+          "maxUsers": {
+            "type": "number",
+            "example": 10
+          },
+          "maxDepartments": {
+            "type": "number",
+            "example": 3
+          },
+          "maxSubmissions": {
+            "type": "number",
+            "example": 500
+          },
+          "maxReports": {
+            "type": "number",
+            "example": 25
+          },
+          "maxStorage": {
+            "type": "number",
+            "example": 2
+          },
+          "features": {
+            "example": [
+              "Basic emissions tracking",
+              "Basic reports"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "annualDiscount": {
+            "type": "number",
+            "example": 17
+          },
+          "maxAdditionalUsers": {
+            "type": "number",
+            "example": 10
+          },
+          "additionalUserPriceMonthly": {
+            "type": "number",
+            "example": 250
+          },
+          "additionalUserPriceAnnual": {
+            "type": "number",
+            "example": 2500
+          },
+          "maxAdditionalDepartments": {
+            "type": "number",
+            "example": 5
+          },
+          "additionalDepartmentPriceMonthly": {
+            "type": "number",
+            "example": 1000
+          },
+          "additionalDepartmentPriceAnnual": {
+            "type": "number",
+            "example": 10000
+          },
+          "supportLevel": {
+            "type": "string",
+            "example": "Standard Business Hours"
+          },
+          "status": {
+            "type": "string",
+            "example": "ACTIVE",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          }
+        }
+      },
+      "CreateAddonDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Advanced Analytics Module"
+          },
+          "description": {
+            "type": "string",
+            "example": "Deep-dive Scope 1-3 analytics and AI forecasting."
+          },
+          "priceMonthly": {
+            "type": "number",
+            "example": 1500
+          },
+          "priceAnnual": {
+            "type": "number",
+            "example": 15000
+          },
+          "status": {
+            "type": "string",
+            "example": "ACTIVE",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "priceMonthly",
+          "priceAnnual"
+        ]
+      },
+      "UpdateAddonDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Advanced Analytics Module"
+          },
+          "description": {
+            "type": "string",
+            "example": "Deep-dive Scope 1-3 analytics and AI forecasting."
+          },
+          "priceMonthly": {
+            "type": "number",
+            "example": 1500
+          },
+          "priceAnnual": {
+            "type": "number",
+            "example": 15000
+          },
+          "status": {
+            "type": "string",
+            "example": "ACTIVE",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          }
+        }
+      },
+      "CreateSubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "example": "org-techcorp"
+          },
+          "planId": {
+            "type": "string",
+            "example": "plan-pro"
+          },
+          "status": {
+            "type": "string",
+            "example": "ACTIVE",
+            "enum": [
+              "TRIAL",
+              "ACTIVE",
+              "PAST_DUE",
+              "CANCELLED",
+              "EXPIRED"
+            ]
+          },
+          "billingCycle": {
+            "type": "string",
+            "example": "MONTHLY",
+            "enum": [
+              "MONTHLY",
+              "ANNUAL"
+            ]
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2026-04-01"
+          },
+          "renewalDate": {
+            "type": "string",
+            "example": "2027-04-01"
+          },
+          "customPrice": {
+            "type": "number",
+            "example": 125000,
+            "description": "Negotiated custom price per billing cycle for Enterprise plans."
+          },
+          "addonIds": {
+            "example": [
+              "addon-analytics"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "organizationId",
+          "planId",
+          "billingCycle"
+        ]
+      },
+      "UpdateSubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "example": "org-techcorp"
+          },
+          "planId": {
+            "type": "string",
+            "example": "plan-pro"
+          },
+          "status": {
+            "type": "string",
+            "example": "ACTIVE",
+            "enum": [
+              "TRIAL",
+              "ACTIVE",
+              "PAST_DUE",
+              "CANCELLED",
+              "EXPIRED"
+            ]
+          },
+          "billingCycle": {
+            "type": "string",
+            "example": "MONTHLY",
+            "enum": [
+              "MONTHLY",
+              "ANNUAL"
+            ]
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2026-04-01"
+          },
+          "renewalDate": {
+            "type": "string",
+            "example": "2027-04-01"
+          },
+          "customPrice": {
+            "type": "number",
+            "example": 125000,
+            "description": "Negotiated custom price per billing cycle for Enterprise plans."
+          },
+          "addonIds": {
+            "example": [
+              "addon-analytics"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -2439,6 +6713,10 @@
           "statusType": {
             "type": "string",
             "example": "green"
+          },
+          "accountStatus": {
+            "type": "string",
+            "example": "Active"
           },
           "registrationStatus": {
             "type": "string",
@@ -2514,6 +6792,10 @@
             "type": "string",
             "example": "green"
           },
+          "accountStatus": {
+            "type": "string",
+            "example": "Active"
+          },
           "registrationStatus": {
             "type": "string",
             "example": "Approved"
@@ -2533,7 +6815,7 @@
           },
           "orgId": {
             "type": "string",
-            "example": "org-tc"
+            "example": "org-techcorp"
           },
           "name": {
             "type": "string",
@@ -2557,7 +6839,7 @@
           },
           "orgName": {
             "type": "string",
-            "example": "TC Works"
+            "example": "TechCorp Industries"
           },
           "current": {
             "type": "string",
@@ -2596,7 +6878,7 @@
           },
           "orgId": {
             "type": "string",
-            "example": "org-tc"
+            "example": "org-techcorp"
           },
           "name": {
             "type": "string",
@@ -2620,7 +6902,7 @@
           },
           "orgName": {
             "type": "string",
-            "example": "TC Works"
+            "example": "TechCorp Industries"
           },
           "current": {
             "type": "string",
@@ -2661,13 +6943,29 @@
             "type": "number",
             "example": 2500
           },
-          "emissionFactor": {
-            "type": "number",
-            "example": 2.68
+          "resourceTypeId": {
+            "type": "string",
+            "example": "rt-diesel"
           },
-          "co2": {
-            "type": "number",
-            "example": 6700
+          "unitId": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "evidenceId": {
+            "type": "string",
+            "example": "ev-001"
+          },
+          "entryMode": {
+            "type": "string",
+            "example": "Manual"
+          },
+          "evidenceFileName": {
+            "type": "string",
+            "example": "invoice.pdf"
+          },
+          "evidenceNotes": {
+            "type": "string",
+            "example": "Verified invoice"
           }
         },
         "required": [
@@ -2685,7 +6983,7 @@
           },
           "organizationId": {
             "type": "string",
-            "example": "org-tc"
+            "example": "org-techcorp"
           },
           "departmentId": {
             "type": "string",
@@ -2701,9 +6999,27 @@
               "$ref": "#/components/schemas/ResourceDto"
             }
           },
+          "resourceRecordIds": {
+            "example": [
+              "rec-001"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "impactResultIds": {
+            "example": [
+              "ir-rec-001"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "managerName": {
             "type": "string",
-            "example": "Asha"
+            "example": "Sarah Miller"
           },
           "managerUserId": {
             "type": "number",
@@ -2733,9 +7049,21 @@
             "type": "string",
             "example": "Apr 01, 2026"
           },
-          "resubmittedAt": {
+          "dataReadinessStatus": {
             "type": "string",
-            "example": "2026-05-05 10:30:00"
+            "example": "Ready"
+          },
+          "calculationStatus": {
+            "type": "string",
+            "example": "Pending"
+          },
+          "analystNotes": {
+            "type": "string",
+            "example": "Please verify Diesel volume"
+          },
+          "correctionNotes": {
+            "type": "string",
+            "example": "Updated invoice attached"
           },
           "totalConsumption": {
             "type": "number",
@@ -2753,8 +7081,7 @@
         "required": [
           "organizationId",
           "departmentId",
-          "period",
-          "resources"
+          "period"
         ]
       },
       "UpdateSubmissionDto": {
@@ -2766,7 +7093,7 @@
           },
           "organizationId": {
             "type": "string",
-            "example": "org-tc"
+            "example": "org-techcorp"
           },
           "departmentId": {
             "type": "string",
@@ -2782,9 +7109,27 @@
               "$ref": "#/components/schemas/ResourceDto"
             }
           },
+          "resourceRecordIds": {
+            "example": [
+              "rec-001"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "impactResultIds": {
+            "example": [
+              "ir-rec-001"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "managerName": {
             "type": "string",
-            "example": "Asha"
+            "example": "Sarah Miller"
           },
           "managerUserId": {
             "type": "number",
@@ -2814,9 +7159,21 @@
             "type": "string",
             "example": "Apr 01, 2026"
           },
-          "resubmittedAt": {
+          "dataReadinessStatus": {
             "type": "string",
-            "example": "2026-05-05 10:30:00"
+            "example": "Ready"
+          },
+          "calculationStatus": {
+            "type": "string",
+            "example": "Pending"
+          },
+          "analystNotes": {
+            "type": "string",
+            "example": "Please verify Diesel volume"
+          },
+          "correctionNotes": {
+            "type": "string",
+            "example": "Updated invoice attached"
           },
           "totalConsumption": {
             "type": "number",
@@ -2832,12 +7189,46 @@
           }
         }
       },
+      "ApproveSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "approvedBy": {
+            "type": "string",
+            "example": "Analyst"
+          }
+        }
+      },
+      "RequestCorrectionDto": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string",
+            "example": "Please provide updated fuel invoice."
+          },
+          "requestedBy": {
+            "type": "string",
+            "example": "Analyst"
+          }
+        },
+        "required": [
+          "comment"
+        ]
+      },
+      "ResubmitSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "string",
+            "example": "Updated fuel consumption per invoice."
+          }
+        }
+      },
       "ReportDto": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 9003
+            "type": "object",
+            "example": "rep-001"
           },
           "title": {
             "type": "string",
@@ -2849,7 +7240,7 @@
           },
           "organizationId": {
             "type": "string",
-            "example": "org-tc"
+            "example": "org-techcorp"
           },
           "status": {
             "type": "string",
@@ -2857,7 +7248,31 @@
           },
           "analystName": {
             "type": "string",
-            "example": "Meera"
+            "example": "Michael Chen"
+          },
+          "submittedBy": {
+            "type": "string",
+            "example": "Michael Chen"
+          },
+          "submittedAt": {
+            "type": "string",
+            "example": "2026-04-01T09:15:00.000Z"
+          },
+          "reviewedBy": {
+            "type": "string",
+            "example": "John Anderson"
+          },
+          "approvedBy": {
+            "type": "string",
+            "example": "John Anderson"
+          },
+          "approvedAt": {
+            "type": "string",
+            "example": "2026-04-01 10:00:00"
+          },
+          "decisionDate": {
+            "type": "string",
+            "example": "4/1/2026"
           },
           "content": {
             "type": "object",
@@ -2874,8 +7289,12 @@
             "type": "string",
             "example": "amber"
           },
+          "idAnalyst": {
+            "type": "object",
+            "example": 104
+          },
           "analystUserId": {
-            "type": "number",
+            "type": "object",
             "example": 104
           },
           "sourceSubmissionIds": {
@@ -2903,33 +7322,6 @@
               "requestedBy": "",
               "requestedAt": ""
             }
-          },
-          "version": {
-            "type": "number",
-            "example": 2
-          },
-          "versions": {
-            "example": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "reviewedBy": {
-            "type": "string",
-            "example": "Rajesh Kumar"
-          },
-          "reviewedByUserId": {
-            "type": "number",
-            "example": 102
-          },
-          "decisionDate": {
-            "type": "string",
-            "example": "3/7/2026"
-          },
-          "resubmittedAt": {
-            "type": "string",
-            "example": "3/8/2026"
           }
         },
         "required": [
@@ -2941,8 +7333,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "example": 9003
+            "type": "object",
+            "example": "rep-001"
           },
           "title": {
             "type": "string",
@@ -2954,7 +7346,7 @@
           },
           "organizationId": {
             "type": "string",
-            "example": "org-tc"
+            "example": "org-techcorp"
           },
           "status": {
             "type": "string",
@@ -2962,7 +7354,31 @@
           },
           "analystName": {
             "type": "string",
-            "example": "Meera"
+            "example": "Michael Chen"
+          },
+          "submittedBy": {
+            "type": "string",
+            "example": "Michael Chen"
+          },
+          "submittedAt": {
+            "type": "string",
+            "example": "2026-04-01T09:15:00.000Z"
+          },
+          "reviewedBy": {
+            "type": "string",
+            "example": "John Anderson"
+          },
+          "approvedBy": {
+            "type": "string",
+            "example": "John Anderson"
+          },
+          "approvedAt": {
+            "type": "string",
+            "example": "2026-04-01 10:00:00"
+          },
+          "decisionDate": {
+            "type": "string",
+            "example": "4/1/2026"
           },
           "content": {
             "type": "object",
@@ -2979,8 +7395,12 @@
             "type": "string",
             "example": "amber"
           },
+          "idAnalyst": {
+            "type": "object",
+            "example": 104
+          },
           "analystUserId": {
-            "type": "number",
+            "type": "object",
             "example": 104
           },
           "sourceSubmissionIds": {
@@ -3008,33 +7428,6 @@
               "requestedBy": "",
               "requestedAt": ""
             }
-          },
-          "version": {
-            "type": "number",
-            "example": 2
-          },
-          "versions": {
-            "example": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "reviewedBy": {
-            "type": "string",
-            "example": "Rajesh Kumar"
-          },
-          "reviewedByUserId": {
-            "type": "number",
-            "example": 102
-          },
-          "decisionDate": {
-            "type": "string",
-            "example": "3/7/2026"
-          },
-          "resubmittedAt": {
-            "type": "string",
-            "example": "3/8/2026"
           }
         }
       },
@@ -3043,7 +7436,7 @@
         "properties": {
           "approvedBy": {
             "type": "string",
-            "example": "Rajesh (COO)"
+            "example": "John Anderson (COO)"
           }
         }
       },
@@ -3056,12 +7449,24 @@
           },
           "requestedBy": {
             "type": "string",
-            "example": "Rajesh (COO)"
+            "example": "John Anderson (COO)"
           }
         },
         "required": [
           "comment"
         ]
+      },
+      "ResubmitReportDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Updated Executive Summary"
+          },
+          "content": {
+            "type": "object"
+          }
+        }
       },
       "AlertDto": {
         "type": "object",
@@ -3069,6 +7474,14 @@
           "id": {
             "type": "string",
             "example": "alt-003"
+          },
+          "submissionId": {
+            "type": "string",
+            "example": "sub-001"
+          },
+          "title": {
+            "type": "string",
+            "example": "Submission Correction Required"
           },
           "type": {
             "type": "string",
@@ -3080,7 +7493,7 @@
           },
           "organizationId": {
             "type": "string",
-            "example": "org-tc"
+            "example": "org-techcorp"
           },
           "departmentId": {
             "type": "string",
@@ -3108,13 +7521,45 @@
               "type": "string"
             }
           },
+          "period": {
+            "type": "string",
+            "example": "03 2026"
+          },
           "deviationReason": {
             "type": "string",
             "example": "Temporary generator usage."
           },
+          "managerExplanation": {
+            "type": "string",
+            "example": "Generator test conducted."
+          },
+          "managerActionTaken": {
+            "type": "string",
+            "example": "Reduced generator hours."
+          },
+          "managerName": {
+            "type": "string",
+            "example": "Robert Johnson"
+          },
+          "cooDirective": {
+            "type": "string",
+            "example": "Limit generator operation to peak hours."
+          },
+          "analystClarificationNotes": {
+            "type": "string",
+            "example": "Provide generator log files."
+          },
           "response": {
             "type": "string",
             "example": "Corrective action completed."
+          },
+          "resolvedAt": {
+            "type": "string",
+            "example": "Just now"
+          },
+          "resolvedBy": {
+            "type": "string",
+            "example": "John Anderson"
           },
           "createdAt": {
             "type": "string",
@@ -3128,9 +7573,7 @@
         "required": [
           "type",
           "severity",
-          "organizationId",
           "departmentId",
-          "departmentName",
           "status",
           "message"
         ]
@@ -3142,6 +7585,14 @@
             "type": "string",
             "example": "alt-003"
           },
+          "submissionId": {
+            "type": "string",
+            "example": "sub-001"
+          },
+          "title": {
+            "type": "string",
+            "example": "Submission Correction Required"
+          },
           "type": {
             "type": "string",
             "example": "Threshold Breach"
@@ -3152,7 +7603,7 @@
           },
           "organizationId": {
             "type": "string",
-            "example": "org-tc"
+            "example": "org-techcorp"
           },
           "departmentId": {
             "type": "string",
@@ -3180,13 +7631,45 @@
               "type": "string"
             }
           },
+          "period": {
+            "type": "string",
+            "example": "03 2026"
+          },
           "deviationReason": {
             "type": "string",
             "example": "Temporary generator usage."
           },
+          "managerExplanation": {
+            "type": "string",
+            "example": "Generator test conducted."
+          },
+          "managerActionTaken": {
+            "type": "string",
+            "example": "Reduced generator hours."
+          },
+          "managerName": {
+            "type": "string",
+            "example": "Robert Johnson"
+          },
+          "cooDirective": {
+            "type": "string",
+            "example": "Limit generator operation to peak hours."
+          },
+          "analystClarificationNotes": {
+            "type": "string",
+            "example": "Provide generator log files."
+          },
           "response": {
             "type": "string",
             "example": "Corrective action completed."
+          },
+          "resolvedAt": {
+            "type": "string",
+            "example": "Just now"
+          },
+          "resolvedBy": {
+            "type": "string",
+            "example": "John Anderson"
           },
           "createdAt": {
             "type": "string",
@@ -3247,6 +7730,14 @@
             "type": "number",
             "example": 103
           },
+          "organizationId": {
+            "type": "string",
+            "example": "org-techcorp"
+          },
+          "departmentId": {
+            "type": "string",
+            "example": "dept-ops"
+          },
           "message": {
             "type": "string",
             "example": "Target Nearing"
@@ -3305,6 +7796,14 @@
           "userId": {
             "type": "number",
             "example": 103
+          },
+          "organizationId": {
+            "type": "string",
+            "example": "org-techcorp"
+          },
+          "departmentId": {
+            "type": "string",
+            "example": "dept-ops"
           },
           "message": {
             "type": "string",
@@ -3394,6 +7893,942 @@
           "ip": {
             "type": "string",
             "example": "127.0.0.1"
+          }
+        }
+      },
+      "ResourceCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "cat-fuel"
+          },
+          "name": {
+            "type": "string",
+            "example": "Fuel"
+          },
+          "description": {
+            "type": "string",
+            "example": "Combustion fuels."
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateResourceCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "cat-fuel"
+          },
+          "name": {
+            "type": "string",
+            "example": "Fuel"
+          },
+          "description": {
+            "type": "string",
+            "example": "Combustion fuels."
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "UnitDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "code": {
+            "type": "string",
+            "example": "L"
+          },
+          "name": {
+            "type": "string",
+            "example": "Liters"
+          },
+          "dimension": {
+            "type": "string",
+            "example": "volume"
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "UpdateUnitDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "code": {
+            "type": "string",
+            "example": "L"
+          },
+          "name": {
+            "type": "string",
+            "example": "Liters"
+          },
+          "dimension": {
+            "type": "string",
+            "example": "volume"
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "ResourceTypeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "rt-diesel"
+          },
+          "categoryId": {
+            "type": "string",
+            "example": "cat-fuel"
+          },
+          "name": {
+            "type": "string",
+            "example": "Diesel"
+          },
+          "description": {
+            "type": "string",
+            "example": "Diesel fuel."
+          },
+          "defaultUnitId": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "name",
+          "defaultUnitId"
+        ]
+      },
+      "UpdateResourceTypeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "rt-diesel"
+          },
+          "categoryId": {
+            "type": "string",
+            "example": "cat-fuel"
+          },
+          "name": {
+            "type": "string",
+            "example": "Diesel"
+          },
+          "description": {
+            "type": "string",
+            "example": "Diesel fuel."
+          },
+          "defaultUnitId": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "ResourceUnitCompatibilityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "ruc-diesel-liter"
+          },
+          "resourceTypeId": {
+            "type": "string",
+            "example": "rt-diesel"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "resourceTypeId",
+          "unitId"
+        ]
+      },
+      "UpdateResourceUnitCompatibilityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "ruc-diesel-liter"
+          },
+          "resourceTypeId": {
+            "type": "string",
+            "example": "rt-diesel"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "FactorSourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "efs-rorizon-demo"
+          },
+          "name": {
+            "type": "string",
+            "example": "Rorizon Demo Factors"
+          },
+          "publisher": {
+            "type": "string",
+            "example": "Platform Governance"
+          },
+          "region": {
+            "type": "string",
+            "example": "IN"
+          },
+          "datasetName": {
+            "type": "string",
+            "example": "Published conversion factor dataset"
+          },
+          "datasetUrl": {
+            "type": "string",
+            "example": "https://example.org/dataset"
+          },
+          "acquisitionMethod": {
+            "type": "string",
+            "example": "Published Dataset",
+            "enum": [
+              "Manual Upload",
+              "Published Dataset",
+              "API",
+              "Other"
+            ]
+          },
+          "license": {
+            "type": "string",
+            "example": "Open Government License"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Imported by Super User after dataset review."
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "name",
+          "publisher",
+          "region"
+        ]
+      },
+      "UpdateFactorSourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "efs-rorizon-demo"
+          },
+          "name": {
+            "type": "string",
+            "example": "Rorizon Demo Factors"
+          },
+          "publisher": {
+            "type": "string",
+            "example": "Platform Governance"
+          },
+          "region": {
+            "type": "string",
+            "example": "IN"
+          },
+          "datasetName": {
+            "type": "string",
+            "example": "Published conversion factor dataset"
+          },
+          "datasetUrl": {
+            "type": "string",
+            "example": "https://example.org/dataset"
+          },
+          "acquisitionMethod": {
+            "type": "string",
+            "example": "Published Dataset",
+            "enum": [
+              "Manual Upload",
+              "Published Dataset",
+              "API",
+              "Other"
+            ]
+          },
+          "license": {
+            "type": "string",
+            "example": "Open Government License"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Imported by Super User after dataset review."
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "FactorVersionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "fv-2026-demo"
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "efs-rorizon-demo"
+          },
+          "name": {
+            "type": "string",
+            "example": "2026 Demo Baseline"
+          },
+          "datasetName": {
+            "type": "string",
+            "example": "Government conversion factors"
+          },
+          "datasetYear": {
+            "type": "string",
+            "example": "2026"
+          },
+          "importedAt": {
+            "type": "string",
+            "example": "2026-04-01T00:00:00.000Z"
+          },
+          "importedBy": {
+            "type": "string",
+            "example": "System Admin"
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "example": "2026-01-01"
+          },
+          "effectiveTo": {
+            "type": "string",
+            "example": "2026-12-31"
+          },
+          "status": {
+            "type": "string",
+            "example": "Active",
+            "enum": [
+              "Draft",
+              "Active",
+              "Archived",
+              "Retired"
+            ]
+          },
+          "locked": {
+            "type": "boolean",
+            "example": false
+          }
+        },
+        "required": [
+          "sourceId",
+          "name",
+          "effectiveFrom"
+        ]
+      },
+      "UpdateFactorVersionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "fv-2026-demo"
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "efs-rorizon-demo"
+          },
+          "name": {
+            "type": "string",
+            "example": "2026 Demo Baseline"
+          },
+          "datasetName": {
+            "type": "string",
+            "example": "Government conversion factors"
+          },
+          "datasetYear": {
+            "type": "string",
+            "example": "2026"
+          },
+          "importedAt": {
+            "type": "string",
+            "example": "2026-04-01T00:00:00.000Z"
+          },
+          "importedBy": {
+            "type": "string",
+            "example": "System Admin"
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "example": "2026-01-01"
+          },
+          "effectiveTo": {
+            "type": "string",
+            "example": "2026-12-31"
+          },
+          "status": {
+            "type": "string",
+            "example": "Active",
+            "enum": [
+              "Draft",
+              "Active",
+              "Archived",
+              "Retired"
+            ]
+          },
+          "locked": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "EmissionFactorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "ef-diesel-liter-2026"
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "efs-rorizon-demo"
+          },
+          "versionId": {
+            "type": "string",
+            "example": "fv-2026-demo"
+          },
+          "resourceTypeId": {
+            "type": "string",
+            "example": "rt-diesel"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "factor": {
+            "type": "number",
+            "example": 2.5
+          },
+          "factorUnit": {
+            "type": "string",
+            "example": "kgCO2e/L"
+          },
+          "geography": {
+            "type": "string",
+            "example": "IN"
+          },
+          "scope": {
+            "type": "string",
+            "example": "Scope 1"
+          },
+          "activityBoundary": {
+            "type": "string",
+            "example": "Combustion, tank-to-wheel"
+          },
+          "uncertainty": {
+            "type": "string",
+            "example": "Medium"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Use only for stationary diesel combustion."
+          },
+          "validFrom": {
+            "type": "string",
+            "example": "2026-01-01"
+          },
+          "validTo": {
+            "type": "string",
+            "example": "2026-12-31"
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "sourceId",
+          "versionId",
+          "resourceTypeId",
+          "unitId",
+          "factor",
+          "factorUnit"
+        ]
+      },
+      "UpdateEmissionFactorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "ef-diesel-liter-2026"
+          },
+          "sourceId": {
+            "type": "string",
+            "example": "efs-rorizon-demo"
+          },
+          "versionId": {
+            "type": "string",
+            "example": "fv-2026-demo"
+          },
+          "resourceTypeId": {
+            "type": "string",
+            "example": "rt-diesel"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "factor": {
+            "type": "number",
+            "example": 2.5
+          },
+          "factorUnit": {
+            "type": "string",
+            "example": "kgCO2e/L"
+          },
+          "geography": {
+            "type": "string",
+            "example": "IN"
+          },
+          "scope": {
+            "type": "string",
+            "example": "Scope 1"
+          },
+          "activityBoundary": {
+            "type": "string",
+            "example": "Combustion, tank-to-wheel"
+          },
+          "uncertainty": {
+            "type": "string",
+            "example": "Medium"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Use only for stationary diesel combustion."
+          },
+          "validFrom": {
+            "type": "string",
+            "example": "2026-01-01"
+          },
+          "validTo": {
+            "type": "string",
+            "example": "2026-12-31"
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "ResourceRecordDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "rec-001"
+          },
+          "submissionId": {
+            "type": "string",
+            "example": "sub-ops-2026-03"
+          },
+          "organizationId": {
+            "type": "string",
+            "example": "org-techcorp"
+          },
+          "departmentId": {
+            "type": "string",
+            "example": "dept-ops"
+          },
+          "resourceTypeId": {
+            "type": "string",
+            "example": "rt-diesel"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 100
+          },
+          "activityDate": {
+            "type": "string",
+            "example": "2026-03-15"
+          },
+          "period": {
+            "type": "string",
+            "example": "03 2026"
+          },
+          "entryMode": {
+            "type": "string",
+            "example": "Manual",
+            "enum": [
+              "Manual",
+              "Import",
+              "Evidence"
+            ]
+          },
+          "evidenceId": {
+            "type": "string",
+            "example": "ev-001"
+          },
+          "status": {
+            "type": "string",
+            "example": "Ready",
+            "enum": [
+              "Draft",
+              "Ready",
+              "Rejected"
+            ]
+          }
+        },
+        "required": [
+          "organizationId",
+          "departmentId",
+          "resourceTypeId",
+          "unitId",
+          "quantity",
+          "activityDate",
+          "period"
+        ]
+      },
+      "UpdateResourceRecordDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "rec-001"
+          },
+          "submissionId": {
+            "type": "string",
+            "example": "sub-ops-2026-03"
+          },
+          "organizationId": {
+            "type": "string",
+            "example": "org-techcorp"
+          },
+          "departmentId": {
+            "type": "string",
+            "example": "dept-ops"
+          },
+          "resourceTypeId": {
+            "type": "string",
+            "example": "rt-diesel"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 100
+          },
+          "activityDate": {
+            "type": "string",
+            "example": "2026-03-15"
+          },
+          "period": {
+            "type": "string",
+            "example": "03 2026"
+          },
+          "entryMode": {
+            "type": "string",
+            "example": "Manual",
+            "enum": [
+              "Manual",
+              "Import",
+              "Evidence"
+            ]
+          },
+          "evidenceId": {
+            "type": "string",
+            "example": "ev-001"
+          },
+          "status": {
+            "type": "string",
+            "example": "Ready",
+            "enum": [
+              "Draft",
+              "Ready",
+              "Rejected"
+            ]
+          }
+        }
+      },
+      "EvidenceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "ev-001"
+          },
+          "submissionId": {
+            "type": "string",
+            "example": "sub-ops-2026-03"
+          },
+          "resourceRecordId": {
+            "type": "string",
+            "example": "rec-001"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "invoice.pdf"
+          },
+          "fileType": {
+            "type": "string",
+            "example": "application/pdf"
+          },
+          "fileSizeBytes": {
+            "type": "number",
+            "example": 1048576
+          },
+          "status": {
+            "type": "string",
+            "example": "Uploaded"
+          },
+          "extractedFields": {
+            "type": "object",
+            "example": {
+              "quantity": 100,
+              "unit": "L"
+            }
+          },
+          "notes": {
+            "type": "string",
+            "example": "Manual evidence upload."
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-03-15T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "fileName",
+          "fileType"
+        ]
+      },
+      "UpdateEvidenceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "ev-001"
+          },
+          "submissionId": {
+            "type": "string",
+            "example": "sub-ops-2026-03"
+          },
+          "resourceRecordId": {
+            "type": "string",
+            "example": "rec-001"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "invoice.pdf"
+          },
+          "fileType": {
+            "type": "string",
+            "example": "application/pdf"
+          },
+          "fileSizeBytes": {
+            "type": "number",
+            "example": 1048576
+          },
+          "status": {
+            "type": "string",
+            "example": "Uploaded"
+          },
+          "extractedFields": {
+            "type": "object",
+            "example": {
+              "quantity": 100,
+              "unit": "L"
+            }
+          },
+          "notes": {
+            "type": "string",
+            "example": "Manual evidence upload."
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-03-15T00:00:00.000Z"
+          }
+        }
+      },
+      "ImportRowDto": {
+        "type": "object",
+        "properties": {
+          "resourceType": {
+            "type": "string",
+            "example": "Diesel"
+          },
+          "resourceTypeId": {
+            "type": "string",
+            "example": "rt-diesel"
+          },
+          "unit": {
+            "type": "string",
+            "example": "Liters"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "unit-liter"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 100
+          },
+          "activityDate": {
+            "type": "string",
+            "example": "2026-03-15"
+          },
+          "period": {
+            "type": "string",
+            "example": "03 2026"
+          }
+        }
+      },
+      "ImportBatchDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "imp-001"
+          },
+          "organizationId": {
+            "type": "string",
+            "example": "org-techcorp"
+          },
+          "departmentId": {
+            "type": "string",
+            "example": "dept-ops"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "march-data.csv"
+          },
+          "status": {
+            "type": "string",
+            "example": "Pending"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-03-15T00:00:00.000Z"
+          },
+          "rowCount": {
+            "type": "number",
+            "example": 10
+          },
+          "createdRecordIds": {
+            "example": [
+              "rec-001"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportRowDto"
+            }
+          }
+        },
+        "required": [
+          "organizationId",
+          "departmentId",
+          "fileName"
+        ]
+      },
+      "UpdateImportBatchDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "imp-001"
+          },
+          "organizationId": {
+            "type": "string",
+            "example": "org-techcorp"
+          },
+          "departmentId": {
+            "type": "string",
+            "example": "dept-ops"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "march-data.csv"
+          },
+          "status": {
+            "type": "string",
+            "example": "Pending"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-03-15T00:00:00.000Z"
+          },
+          "rowCount": {
+            "type": "number",
+            "example": 10
+          },
+          "createdRecordIds": {
+            "example": [
+              "rec-001"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportRowDto"
+            }
           }
         }
       }
