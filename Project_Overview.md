@@ -31,20 +31,6 @@ In general, the Super User manages the platform, the COO works with organization
 level data, Managers enter operational data and evidence, and Analysts review data
 and prepare reports.
 
-The current authorization mechanism is the `x-role` request header together with
-NestJS `@Roles()` decorators. This is enough for the prototype, but it is not a
-real production login session or token-based authentication system.
-
-### Test accounts
-
-| Role | Email | Password |
-|---|---|---|
-| Super User | `admin@platformops.com` | `Admin@123` |
-| COO | `john.anderson@techcorp.com` | `Coo@12345` |
-| Manager | `sarah.miller@techcorp.com` | `Manager@123` |
-| Analyst | `michael.chen@techcorp.com` | `Analyst@123` |
-
-The remaining seeded users are in `back-end/src/in-memory/seed.ts`.
 
 ---
 
@@ -184,24 +170,6 @@ listed in `SnapshotDto`.
 
 ---
 
-## Things to fix before calling it production-ready
-
-These are known limitations of the current prototype:
-
-1. `SnapshotDto` does not declare `plans` and `subscriptions`, even though those
-   collections are present in the runtime snapshot. A full snapshot update can
-   therefore fail with HTTP 400.
-2. The rate limiter is configured for 600 requests per minute, but its comments and
-   error message say 120. Those values should be made consistent.
-3. The upload controllers should explicitly return HTTP 400 when a request does
-   not contain a file.
-4. CORS is broad and Content Security Policy is disabled to support the static
-   frontend.
-5. Passwords are stored in the seeded in-memory records, and the `x-role` header
-   is client-supplied. Real authentication and hashed password storage are needed
-   for production.
-
----
 
 ## Quick verification
 
