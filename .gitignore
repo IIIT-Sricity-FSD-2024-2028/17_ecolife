@@ -1,4 +1,23 @@
+# Dependencies
 node_modules/
+**/node_modules/
+
+# Build Outputs
 dist/
-server.out.log
-server.err.log
+**/dist/
+
+# Runtime Logs (api-logger.middleware.ts & server logs)
+logs/
+**/logs/
+*.log
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# OS & IDE Junk Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
