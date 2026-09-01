@@ -220,8 +220,16 @@
 
       function getPeriodMetrics(periodCode) {
         const db = Utils.ensureCollections(Utils.getDB());
-        const ids = Utils.getUserDepartmentScope(currentUser, db);
-        const subs = (db.submissions || []).filter(s => s.period === periodCode && s.status === 'Approved' && ids.includes(s.departmentId));
+        const currentUser = Utils.getCurrentUser();
+        const currentOrg = Utils.getCurrentOrganization(currentUser, db);
+        const orgId = currentUser?.organizationId || currentOrg?.id;
+
+        const subs = (db.submissions || []).filter(s => {
+          if (s.period !== periodCode) return false;
+          if (orgId && s.organizationId && s.organizationId !== orgId) return false;
+          return s.status === 'Approved' || s.calculationStatus === 'Calculated';
+        });
+
         return {
           submissions: subs,
           totalConsumption: subs.reduce((sum, s) => sum + Number(s.totalConsumption || 0), 0),
@@ -273,6 +281,23 @@
         document.getElementById('reportDocTitle').textContent = `Executive Emissions Report — ${label}`;
         document.getElementById('reportDocMeta').textContent = `Prepared By: ${currentUser.name || 'Sustainability Analyst'}`;
 
+        const db = Utils.ensureCollections(Utils.getDB());
+        const existingRpt = (db.reports || []).find(r => r.period === period);
+
+        const submitBtn = document.getElementById('btnSubmitToCoo');
+        if (submitBtn) {
+          if (submissions.length === 0) {
+            submitBtn.textContent = 'Submit Report to COO';
+            submitBtn.title = 'No approved department submissions exist for this period. Approve submissions first in Submissions Status.';
+          } else if (existingRpt) {
+            submitBtn.textContent = 'Update & Resubmit Report to COO';
+            submitBtn.title = `Update existing report for ${label} with latest ${submissions.length} department submission(s) and submit to COO.`;
+          } else {
+            submitBtn.textContent = 'Submit Report to COO';
+            submitBtn.title = 'Submit Report to COO';
+          }
+        }
+
         const key = `reportDraft_${currentUser.id}_${period}`;
         const savedDraft = localStorage.getItem(key);
         let content;
@@ -322,8 +347,10 @@
         }
 
         tbody.innerHTML = reports.map(r => {
-          const st = r.status === 'Approved' ? 'Approved' : (r.status === 'Revision Required' ? 'Revision Required' : 'Pending Review');
-          const badgeClass = st === 'Approved' ? 'green' : (st === 'Revision Required' ? 'red' : 'blue');
+          const isApproved = r.status === 'Executive Approved' || r.status === 'Approved';
+          const isRevision = r.status === 'Revision Requested' || r.status === 'Revision Required';
+          const st = isApproved ? 'Executive Approved' : (isRevision ? 'Revision Requested' : 'Under COO Review');
+          const badgeClass = isApproved ? 'green' : (isRevision ? 'red' : 'blue');
 
           return `
             <tr>
@@ -347,7 +374,9 @@
           return;
         }
 
-        const displayStatus = r.status === 'Approved' ? 'Approved' : (r.status === 'Revision Required' ? 'Revision Required' : 'Pending Review');
+        const isApproved = r.status === 'Executive Approved' || r.status === 'Approved';
+        const isRevision = r.status === 'Revision Requested' || r.status === 'Revision Required';
+        const displayStatus = isApproved ? 'Executive Approved' : (isRevision ? 'Revision Requested' : 'Under COO Review');
         document.getElementById('viewModalTitle').textContent = r.title || 'Executive Emissions Report';
         document.getElementById('viewModalMeta').textContent = `Submitted by ${r.submittedBy || r.analystName || 'Sustainability Analyst'} on ${r.submittedAt || r.date || '--'} • Status: ${displayStatus}`;
 
@@ -432,38 +461,23 @@
           conclusions: document.getElementById('conclusions').value
         };
 
-        const newReport = {
-          id: `rep_${Date.now()}`,
+        const payload = {
           title: `Executive Emissions Report — ${label}`,
           period: period,
-          analystUserId: currentUser.id,
-          analystName: currentUser.name || 'Sustainability Analyst',
-          submittedBy: currentUser.name || 'Sustainability Analyst',
           organizationId: targetOrgId,
-          submittedAt: Utils.nowLabel(),
-          status: 'Pending Review',
-          content: contentObj,
-          sections: contentObj
+          analystName: currentUser.name || 'Sustainability Analyst',
+          content: contentObj
         };
 
-        if (!db.reports) db.reports = [];
-        db.reports.unshift(newReport);
+        const result = await Utils.apiFetch('POST', '/api/reports', payload);
+        if (!result) {
+          const errorMsg = Utils.lastApiError || 'Failed to create executive report. Ensure approved calculated source submissions exist.';
+          Utils.showToast(errorMsg, 'error');
+          return;
+        }
 
-        if (!db.notifications) db.notifications = [];
-        db.notifications.unshift({
-          id: Date.now(),
-          role: 'COO',
-          organizationId: targetOrgId,
-          title: 'Executive Emissions Report Submitted',
-          body: `${currentUser.name || 'Sustainability Analyst'} submitted the Executive Emissions Report for ${label}.`,
-          timestamp: Utils.nowLabel(),
-          read: false
-        });
-
-        Utils.logAction(`Submitted Executive Emissions Report to COO: ${label}`, 'Success', 'green');
-        Utils.replaceDB(db);
-        await Utils.apiFetch('POST', '/api/reports', newReport);
-
+        localStorage.removeItem(`reportDraft_${currentUser.id}_${period}`);
+        await Utils.refreshFromBackend();
         renderHistory();
         Utils.showToast('Executive report submitted to COO successfully!');
       });

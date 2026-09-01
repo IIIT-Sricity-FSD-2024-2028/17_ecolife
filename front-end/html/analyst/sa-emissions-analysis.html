@@ -190,12 +190,27 @@
 
       function getSelectedPeriod() { return `${monthFilter.value} ${yearFilter.value}`; }
 
+      function isSubInPeriod(s, month, year) {
+        if (!s || !s.period) return false;
+        const pMonth = Utils.periodMonthValue(s.period);
+        const pYear = Utils.periodYearValue(s.period);
+        const matchMonth = (month === 'all' || pMonth === month);
+        const matchYear = String(pYear) === String(year);
+        return matchMonth && matchYear;
+      }
+
       function getScopedData() {
         const db = Utils.ensureCollections(Utils.getDB());
         const ids = Utils.getUserDepartmentScope(currentUser, db);
+        const scopedSubmissions = (db.submissions || []).filter(s => ids.includes(s.departmentId));
+
+        scopedSubmissions.forEach(s => {
+          s.totalCO2 = Number(s.totalCO2 || 0);
+        });
+
         return {
           departments: (db.departments || []).filter(d => ids.includes(d.id)),
-          submissions: (db.submissions || []).filter(s => ids.includes(s.departmentId) && s.status === 'Approved')
+          submissions: scopedSubmissions
         };
       }
 
@@ -212,15 +227,19 @@
         const container = document.getElementById('trendGraphContainer');
         if (!container) return;
 
-        const uniquePeriods = Array.from(new Set(submissions.map(s => s.period)))
-          .sort((a, b) => Utils.periodKey(a) - Utils.periodKey(b));
+        const selectedYear = yearFilter.value || '2026';
+        const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
 
-        const graphData = uniquePeriods.map(p => {
-          const matchingSubs = submissions.filter(s => s.period === p && (selectedDeptId === 'all' || s.departmentId === selectedDeptId));
+        const graphData = months.map(m => {
+          const matchingSubs = submissions.filter(s => {
+            const matchDept = (selectedDeptId === 'all' || s.departmentId === selectedDeptId);
+            const matchPer = isSubInPeriod(s, m, selectedYear);
+            return matchDept && matchPer;
+          });
           const totalCO2 = matchingSubs.reduce((sum, s) => sum + Number(s.totalCO2 || 0), 0);
           return {
-            periodKey: p,
-            label: Utils.formatPeriodLabel(p),
+            periodKey: `${selectedYear}-${m}`,
+            label: Utils.formatPeriodLabel(`${m} ${selectedYear}`),
             co2: totalCO2
           };
         });
@@ -275,13 +294,15 @@
           `;
         }
 
-        // Clean Data Points (No overlapping text)
+        // Clean Data Points & Short Month Labels
+        const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         let nodesHtml = '';
         points.forEach((p, idx) => {
+          const xLabel = shortMonths[idx] || p.label;
           nodesHtml += `
             <g class="graph-point" data-label="${p.label}" data-val="${p.co2.toLocaleString(undefined, {maximumFractionDigits:1})} kgCO2e" data-x="${p.x.toFixed(1)}" data-y="${p.y.toFixed(1)}">
               <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="#2563eb" stroke="#fff" stroke-width="2" />
-              <text x="${p.x.toFixed(1)}" y="${(padding.top + graphH + 20).toFixed(1)}" fill="#475569" font-size="11" font-weight="600" text-anchor="middle">${p.label}</text>
+              <text x="${p.x.toFixed(1)}" y="${(padding.top + graphH + 20).toFixed(1)}" fill="#475569" font-size="11" font-weight="600" text-anchor="middle">${xLabel}</text>
             </g>
           `;
         });
@@ -327,7 +348,7 @@
         const period = getSelectedPeriod();
         const deptId = deptFilter.value;
         const targetDepts = deptId === 'all' ? departments : departments.filter(d => d.id === deptId);
-        const periodSubs = submissions.filter(s => s.period === period && (deptId === 'all' || s.departmentId === deptId));
+        const periodSubs = submissions.filter(s => isSubInPeriod(s, monthFilter.value, yearFilter.value) && (deptId === 'all' || s.departmentId === deptId));
 
         document.getElementById('periodChip').textContent = Utils.formatPeriodLabel(period);
         document.getElementById('trendDeptNote').textContent = deptId === 'all' ? 'All departments' : (targetDepts[0]?.name || '');
@@ -375,9 +396,15 @@
               badge = '<span class="status-badge status-badge--green">Within Target</span>'; 
             }
           } else if (sub) {
-            badge = `<span class="status-badge status-badge--${sub.status === 'Approved' ? 'green' : 'blue'}">${sub.status || 'Submitted'}</span>`;
+            const st = sub.status || 'Submitted';
+            let bCls = 'blue';
+            let stTxt = 'Submitted';
+            if (st === 'Approved') { bCls = 'green'; stTxt = 'Approved'; }
+            else if (st === 'Correction Required' || st === 'Rejected') { bCls = 'amber'; stTxt = 'Correction Required'; }
+            else if (st === 'No Submission') { bCls = 'grey'; stTxt = 'No Submission'; }
+            badge = `<span class="status-badge status-badge--${bCls}">${stTxt}</span>`;
           } else {
-            badge = '<span class="status-badge status-badge--amber">No Submission</span>';
+            badge = '<span class="status-badge status-badge--grey">No Submission</span>';
           }
 
           return `
@@ -412,31 +439,50 @@
             const factor = (db.emissionFactors || []).find(i => i.id === r.factorId);
             const version = (db.factorVersions || []).find(i => i.id === r.factorVersionId);
             const source = (db.factorSources || []).find(i => i.id === r.factorSourceId);
+
+            const rtName = rt?.name || r.resourceTypeId || 'Fuel Resource';
+            const unitName = unit?.code || unit?.name || '';
+            const sourceName = source?.name || source?.datasetName || r.factorSourceId || 'Official Dataset';
+            const versionName = version?.name || r.factorVersionId || 'Active Edition';
+            const factorVal = factor?.factor ?? r.factorUsed ?? 0;
+            const factorUnitStr = factor?.factorUnit || `kgCO2e/${unitName || 'unit'}`;
+
             return `
               <div class="lineage-row">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                   <div>
-                    <strong style="color:#0f172a;">${rt?.name || r.resourceTypeId}</strong>
-                    <span style="color:#64748b; font-size:12px; margin-left:8px;">${Number(r.quantity || 0).toLocaleString()} ${unit?.code || unit?.name || 'Units'}</span>
+                    <strong style="color:#0f172a;">${rtName}</strong>
+                    <span style="color:#64748b; font-size:12px; margin-left:8px;">${Number(r.quantity || 0).toLocaleString()} ${unitName}</span>
                   </div>
-                  <strong style="color:#16a34a;">${Number(r.co2e || 0).toLocaleString(undefined, {maximumFractionDigits:2})} kgCO2e</strong>
+                  <div style="font-weight:700; color:#16a34a; font-size:14px;">${Number(r.co2e || 0).toFixed(2)} kgCO2e</div>
                 </div>
-                <div style="font-size:12px; color:#64748b; background:#f8fafc; padding:6px 10px; border-radius:6px; border:1px solid #e2e8f0;">
-                  Factor: ${factor?.factor ?? r.factor ?? '--'} ${factor?.factorUnit || ''} &bull; Source: ${source?.name || r.factorSourceId || 'Governed'} &bull; Version: ${version?.name || r.factorVersionId || 'Active'}
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:6px; margin-top:8px; font-size:12px; color:#475569; background:#f8fafc; padding:8px 10px; border-radius:6px;">
+                  <div><strong>Factor Rate:</strong> ${Number(factorVal).toFixed(4)} ${factorUnitStr}</div>
+                  <div><strong>Dataset Source:</strong> ${sourceName}</div>
+                  <div><strong>Version Edition:</strong> ${versionName}</div>
+                  <div><strong>Scope:</strong> ${r.scope || 'Scope 1'}</div>
+                </div>
+                <div style="font-size:11px; color:#64748b; margin-top:6px; font-family:monospace;">
+                  Calculation: ${Number(r.quantity || 0).toLocaleString()} ${unitName} × ${Number(factorVal).toFixed(4)} = ${Number(r.co2e || 0).toFixed(2)} kgCO2e
                 </div>
               </div>
             `;
           }).join('');
         } else if (sub.resources?.length) {
-          html = sub.resources.map(r => `
-            <div class="lineage-row" style="display:flex; justify-content:space-between; align-items:center;">
-              <div>
-                <strong style="color:#0f172a;">${r.type}</strong>
-                <span style="color:#64748b; font-size:12px; margin-left:8px;">${Number(r.qty || 0).toLocaleString()} ${r.unit}</span>
+          html = sub.resources.map(r => {
+            const qty = Number(r.qty || 0);
+            const itemCO2Label = r.co2e !== undefined && r.co2e !== null ? Number(r.co2e).toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:2}) + ' kgCO2e' : '<span style="color:#ef4444; font-size:12px;">Not Calculated</span>';
+
+            return `
+              <div class="lineage-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <strong style="color:#0f172a;">${r.type}</strong>
+                  <span style="color:#64748b; font-size:12px; margin-left:8px;">${qty.toLocaleString()} ${r.unit}</span>
+                </div>
+                <strong style="color:#16a34a; font-size:14px;">${itemCO2Label}</strong>
               </div>
-              <span class="status-badge status-badge--amber">Pending Factor Verification</span>
-            </div>
-          `).join('');
+            `;
+          }).join('');
         } else {
           html = '<p style="color:#94a3b8; font-size:13px; margin:0;">No resource records found for this submission.</p>';
         }

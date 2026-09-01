@@ -173,7 +173,7 @@
       document.getElementById('revisionWorkspace').style.display = 'grid';
 
       document.getElementById('revisionPeriodValue').textContent = Utils.formatPeriodLabel(report.period);
-      document.getElementById('reportStatusBadge').textContent = 'Revision Required';
+      document.getElementById('reportStatusBadge').textContent = report.status === 'Under COO Review' ? 'Under COO Review' : 'Revision Required';
       document.getElementById('feedbackCommentText').textContent = report.revision?.comment || 'No specific feedback note provided. Please review and revise the report for resubmission.';
       document.getElementById('feedbackAuthorText').textContent = `Requested by ${report.revision?.requestedBy || 'COO'}${report.revision?.requestedAt ? ' • ' + new Date(report.revision.requestedAt).toLocaleDateString() : ''}`;
 
@@ -191,7 +191,6 @@
 
     async function resubmit() {
       const db = Utils.ensureCollections(Utils.getDB());
-      const currentUser = Utils.getCurrentUser() || { name: 'Sustainability Analyst', id: null };
       const report = (db.reports || []).find(r => String(r.id) === String(activeRevisionId));
       if (!report) return;
 
@@ -203,44 +202,29 @@
 
       if (!intro || !consumption) { Utils.showToast('Please complete the executive summary and consumption sections.', 'error'); return; }
 
-      const currentOrg = Utils.getCurrentOrganization(currentUser, db);
-      const targetOrgId = report.organizationId || currentUser.organizationId || currentOrg?.id || (db.organizations && db.organizations[0] ? db.organizations[0].id : '');
+      const btn = document.getElementById('btnResubmit');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
 
-      const contentObj = { intro, consumption, emissions, comparisons, conclusions };
-      report.content = contentObj;
-      report.sections = contentObj;
-      report.status = 'Pending Review';
-      report.organizationId = targetOrgId;
-      report.submittedBy = currentUser.name || 'Sustainability Analyst';
-      report.submittedAt = Utils.nowLabel();
-      report.date = new Date().toLocaleDateString();
+      try {
+        const payload = {
+          title: report.title,
+          content: { intro, consumption, emissions, comparisons, conclusions }
+        };
 
-      const prevComment = report.revision?.comment || '';
-      report.revision = {
-        required: false,
-        comment: prevComment,
-        requestedBy: report.revision?.requestedBy || 'COO',
-        requestedAt: report.revision?.requestedAt || '',
-        resubmittedAt: Utils.nowLabel()
-      };
+        const result = await Utils.apiFetch('POST', `/api/reports/${report.id}/resubmit`, payload);
+        if (!result) {
+          Utils.showToast(Utils.lastApiError || 'Failed to resubmit report to COO.', 'error');
+          return;
+        }
 
-      if (!Array.isArray(db.notifications)) db.notifications = [];
-      db.notifications.unshift({
-        id: Date.now(),
-        role: 'COO',
-        organizationId: targetOrgId,
-        title: 'Revised Report Resubmitted',
-        body: `${report.title} was revised and resubmitted by ${currentUser.name || 'Sustainability Analyst'}.`,
-        timestamp: Utils.nowLabel(),
-        read: false,
-        details: `Updated on ${Utils.nowLabel()}.`
-      });
-
-      Utils.logAction(`Analyst resubmitted: ${report.title}`, 'Success', 'green');
-      Utils.replaceDB(db);
-      await Utils.apiFetch('PATCH', `/api/reports/${report.id}`, report);
-      Utils.showToast('Revised report successfully submitted to the COO!');
-      syncPage(true);
+        Utils.showToast('Revised report successfully submitted to the COO!');
+        await Utils.refreshFromBackend();
+        syncPage(true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Resubmit Report to COO';
+      }
     }
 
     function syncPage(forceReset = false) { 

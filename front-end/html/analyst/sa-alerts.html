@@ -201,8 +201,7 @@
           const rawResources = sub?.resources || a.resources || [];
           const resourcesList = rawResources.map(r => {
             const qty = Number(r.qty || r.quantity || 0);
-            const factor = Number(r.emissionFactor || (String(r.resourceTypeName || r.type).toLowerCase().includes('electricity') ? 0.5 : 2.68));
-            const co2e = r.co2e ? Number(r.co2e) : Math.round(qty * factor);
+            const co2e = Number(r.co2e || 0);
             const targetVal = Number(r.targetQty || r.thresholdQty || Math.round(qty * 0.75));
             let lineVarPct = 0;
             if (targetVal > 0 && qty > targetVal) {
