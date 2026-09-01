@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApproveReportDto, ReportDto, RevisionDto, UpdateReportDto } from '../common/base.dto';
+import { ApproveReportDto, ReportDto, ResubmitReportDto, RevisionDto, UpdateReportDto } from '../common/base.dto';
 import { ok } from '../common/crud.types';
 import { Roles } from '../common/decorators/roles.decorator';
 import { ReportsService } from './reports.service';
@@ -16,7 +16,8 @@ export class ReportsController {
   @Post() @Roles('Analyst') create(@Body() dto: ReportDto) { return ok('Report created.', this.reportsService.create(dto)); }
   @Patch(':id') @Roles('Analyst', 'COO', 'Super User') update(@Param('id') id: string, @Body() dto: UpdateReportDto) { return ok('Report updated.', this.reportsService.update(id, dto)); }
   @Put(':id') @Roles('Analyst', 'COO', 'Super User') replace(@Param('id') id: string, @Body() dto: UpdateReportDto) { return ok('Report updated.', this.reportsService.update(id, dto)); }
-  @Post(':id/approve') @Roles('COO') @ApiOperation({ summary: 'COO approves a generated analyst report.' }) approve(@Param('id', ParseIntPipe) id: number, @Body() body: ApproveReportDto) { return ok('Report approved.', this.reportsService.approve(id, body?.approvedBy || 'COO')); }
-  @Post(':id/revision') @Roles('COO') @ApiOperation({ summary: 'COO requests report revision with required comment.' }) revision(@Param('id', ParseIntPipe) id: number, @Body() dto: RevisionDto) { return ok('Revision requested.', this.reportsService.requestRevision(id, dto.comment, dto.requestedBy || 'COO')); }
+  @Post(':id/approve') @Roles('COO') @ApiOperation({ summary: 'COO approves a generated analyst report.' }) approve(@Param('id') id: string, @Body() body: ApproveReportDto) { return ok('Report approved.', this.reportsService.approve(id, body?.approvedBy || 'COO')); }
+  @Post(':id/revision') @Roles('COO') @ApiOperation({ summary: 'COO requests report revision with required comment.' }) revision(@Param('id') id: string, @Body() dto: RevisionDto) { return ok('Revision requested.', this.reportsService.requestRevision(id, dto.comment, dto.requestedBy || 'COO')); }
+  @Post(':id/resubmit') @Roles('Analyst') @ApiOperation({ summary: 'Analyst resubmits revised report to COO.' }) resubmit(@Param('id') id: string, @Body() dto: ResubmitReportDto) { return ok('Report resubmitted.', this.reportsService.resubmit(id, dto)); }
   @Delete(':id') @Roles('Super User') remove(@Param('id') id: string) { return ok('Report deleted.', this.reportsService.remove(id)); }
 }

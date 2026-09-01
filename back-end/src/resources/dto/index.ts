@@ -1,0 +1,1 @@
+export { ResourceCategoryDto, ResourceTypeDto, ResourceUnitCompatibilityDto, UnitDto, UpdateResourceCategoryDto, UpdateResourceTypeDto, UpdateResourceUnitCompatibilityDto, UpdateUnitDto } from '../../common/base.dto';

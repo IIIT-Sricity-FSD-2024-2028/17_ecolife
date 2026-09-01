@@ -13,9 +13,9 @@ export class AlertsController {
   constructor(private readonly alertsService: AlertsService) {}
   @Get() @Roles('Super User', 'COO', 'Manager', 'Analyst') list() { return ok('Alerts loaded.', this.alertsService.list()); }
   @Get(':id') @Roles('Super User', 'COO', 'Manager', 'Analyst') find(@Param('id') id: string) { return ok('Alert loaded.', this.alertsService.find(id)); }
-  @Post() @Roles('Super User', 'COO') create(@Body() dto: AlertDto) { return ok('Alert created.', this.alertsService.create(dto)); }
-  @Patch(':id') @Roles('Super User', 'COO', 'Manager') update(@Param('id') id: string, @Body() dto: UpdateAlertDto) { return ok('Alert updated.', this.alertsService.update(id, dto)); }
-  @Put(':id') @Roles('Super User', 'COO', 'Manager') replace(@Param('id') id: string, @Body() dto: UpdateAlertDto) { return ok('Alert updated.', this.alertsService.update(id, dto)); }
+  @Post() @Roles('Super User', 'COO', 'Analyst') create(@Body() dto: AlertDto) { return ok('Alert created.', this.alertsService.create(dto)); }
+  @Patch(':id') @Roles('Super User', 'COO', 'Manager', 'Analyst') update(@Param('id') id: string, @Body() dto: UpdateAlertDto) { return ok('Alert updated.', this.alertsService.update(id, dto)); }
+  @Put(':id') @Roles('Super User', 'COO', 'Manager', 'Analyst') replace(@Param('id') id: string, @Body() dto: UpdateAlertDto) { return ok('Alert updated.', this.alertsService.update(id, dto)); }
   @Post(':id/respond') @Roles('Manager', 'COO') @ApiOperation({ summary: 'Resolve an alert with business response text.' }) respond(@Param('id') id: string, @Body() dto: AlertResponseDto) { return ok('Alert response saved.', this.alertsService.respond(id, dto.response)); }
   @Delete(':id') @Roles('Super User') remove(@Param('id') id: string) { return ok('Alert deleted.', this.alertsService.remove(id)); }
 }

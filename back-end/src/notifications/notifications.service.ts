@@ -8,10 +8,16 @@ import { Role } from '../common/decorators/roles.decorator';
 export class NotificationsService {
   constructor(private readonly store: InMemoryStoreService) {}
 
-  list(role?: Role) {
+  list(role?: Role, scope: { userId?: string; organizationId?: string; departmentId?: string } = {}) {
     const notifications = this.store.list<NotificationItem>('notifications');
     if (!role || role === 'Super User') return notifications;
-    return notifications.filter((notification) => notification.role === role);
+    return notifications.filter((notification: NotificationItem) => {
+      if (notification.role !== role) return false;
+      if (notification.userId && String(notification.userId) !== String(scope.userId || '')) return false;
+      if (notification.organizationId && notification.organizationId !== (scope.organizationId || '')) return false;
+      if (notification.departmentId && scope.departmentId && notification.departmentId !== scope.departmentId) return false;
+      return true;
+    });
   }
 
   find(id: string) {
