@@ -1,0 +1,106 @@
+.empty-state {
+  text-align: center;
+  padding: var(--space-7) var(--space-5);
+}
+
+.empty-state__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; border-radius: 999px; margin-bottom: var(--space-3);
+  background: var(--color-primary-light); color: var(--color-primary-dark);
+}
+
+.empty-state__title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-2);
+}
+
+.empty-state__description {
+  margin-bottom: var(--space-4);
+}
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.dialog {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-5);
+  width: 100%;
+  max-width: 420px;
+}
+
+.dialog__head { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+.dialog__title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+.dialog__icon { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 999px; flex-shrink: 0; }
+.dialog__icon--danger { background: var(--color-danger-bg); color: var(--color-danger); }
+.dialog__icon--primary { background: var(--color-primary-light); color: var(--color-primary-dark); }
+
+.dialog__message {
+  margin-bottom: var(--space-5);
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  vertical-align: middle;
+  line-height: var(--line-height-normal);
+}
+
+.data-table th {
+  border-bottom: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.data-table td {
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Numeric columns: header and cells share the same right alignment
+   (needs the higher specificity to beat the th/td rule above). */
+.data-table th.num,
+.data-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table td .row-actions { align-items: center; }
+
+.data-table tbody tr:last-child td { border-bottom: 0; }
+
+.data-table tr:hover td {
+  background: var(--color-bg);
+}
