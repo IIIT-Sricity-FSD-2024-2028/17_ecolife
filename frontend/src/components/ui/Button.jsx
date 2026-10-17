@@ -17,15 +17,20 @@ export function Button({
   fullWidth = false,
   icon: Icon,
   title,
+  style,
+  className = '',
+  ...rest
 }) {
   const iconSize = size === 'sm' ? 14 : 16;
   return (
     <button
       type={type}
       title={title}
-      className={`btn btn--${variant} btn--${size}${fullWidth ? ' btn--full' : ''}`}
+      style={style}
+      className={`btn btn--${variant} btn--${size}${fullWidth ? ' btn--full' : ''}${className ? ` ${className}` : ''}`}
       disabled={disabled || loading}
       onClick={onClick}
+      {...rest}
     >
       {loading ? (
         <>
@@ -41,4 +46,3 @@ export function Button({
     </button>
   );
 }
-

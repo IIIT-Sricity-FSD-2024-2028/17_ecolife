@@ -104,3 +104,34 @@
 .data-table tr:hover td {
   background: var(--color-bg);
 }
+
+/* Text-styled button used for inline actions such as "Resend verification link". */
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--color-primary, #2563eb);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ---- Comment threads ---------------------------------------------------- */
+.comment-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.comment { padding: var(--space-3); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.comment__meta { font-size: var(--font-size-sm); margin-bottom: var(--space-1); }
+.comment__body { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---- Announcements ------------------------------------------------------ */
+.announcement-banner { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4); }
+.announcement { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-4); border-left: 3px solid var(--color-info); background: var(--color-info-bg); border-radius: var(--radius-md); }
+.announcement__main { flex: 1; min-width: 0; }
+.announcement__title { font-weight: var(--font-weight-semibold); }
+.announcement__body { margin: var(--space-1) 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--font-size-sm); }
+.announcement__meta { font-size: var(--font-size-xs); margin-top: var(--space-1); }
+.announcement__dismiss { border: 0; background: transparent; cursor: pointer; color: var(--color-text-muted); padding: var(--space-1); border-radius: var(--radius-sm); }
+.announcement__dismiss:hover { color: var(--color-text); }

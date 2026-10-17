@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { useAuth } from '../../context/AuthContext';
+import { AnnouncementsBanner } from '../shared/AnnouncementsBanner';
 import { profileService } from '../../services/profileService';
 import { getNavItemsForRole, getHomePathForRole, getProfilePathForRole } from '../../utils/permissions';
 import { ORG_ROLE_LABELS } from '../../constants/roles';
@@ -16,7 +18,7 @@ import './layout.css';
  */
 export function DashboardShell() {
   const { user, logout } = useAuth();
-  const navItems = getNavItemsForRole(user?.role);
+  const navItems = useMemo(() => getNavItemsForRole(user?.role), [user?.role]);
   const roleLabel = ORG_ROLE_LABELS[user?.role] || '';
   const homePath = getHomePathForRole(user?.role);
   // Same query key as the Profile page, so the name is shared and cached.
@@ -30,13 +32,14 @@ export function DashboardShell() {
           portal="org"
           role={user?.role}
           navItems={navItems}
-          displayName={profile?.fullName}
-          email={user?.email}
+          displayName={profile?.fullName || user?.fullName}
+          email={profile?.email || user?.email}
           roleLabel={roleLabel}
           profilePath={getProfilePathForRole(user?.role)}
           onLogout={logout}
         />
         <main className="dashboard-shell__content">
+          <AnnouncementsBanner />
           <Outlet />
         </main>
       </div>

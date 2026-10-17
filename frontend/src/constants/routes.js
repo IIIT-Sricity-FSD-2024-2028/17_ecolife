@@ -6,6 +6,7 @@ export const ORG_ROUTES = {
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
+  VERIFY_EMAIL: '/verify-email',
   DASHBOARD: '/',
   RESOURCE_RECORDS: '/resource-records',
   RESOURCE_RECORD_NEW: '/resource-records/new',
@@ -57,6 +58,8 @@ export const EXECUTIVE_ROUTES = {
 
 export const ADMIN_ROUTES = {
   LOGIN: '/admin/login',
+  FORGOT_PASSWORD: '/admin/forgot-password',
+  RESET_PASSWORD: '/admin/reset-password',
   DASHBOARD: '/admin',
   ORGANIZATIONS: '/admin/organizations',
   RESOURCES: '/admin/resources',

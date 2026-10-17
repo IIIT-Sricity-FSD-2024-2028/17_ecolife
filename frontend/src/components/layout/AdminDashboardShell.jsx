@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { LayoutDashboard, Building2, Layers, CircleDollarSign, ScrollText, ShieldCheck, Settings, UserCircle } from 'lucide-react';
@@ -15,7 +16,7 @@ const ADMIN_NAV_ITEMS = [
   { label: 'Resource Governance', path: '/admin/resources', icon: Layers },
   { label: 'Revenue', path: '/admin/revenue', icon: CircleDollarSign },
   { label: 'Audit Log', path: '/admin/audit-log', icon: ScrollText },
-  { label: 'Admin Team', path: '/admin/admin-team', icon: ShieldCheck },
+  { label: 'Admin Team', path: '/admin/admin-team', icon: ShieldCheck, superAdminOnly: true },
   { label: 'Settings', path: '/admin/settings', icon: Settings },
   { label: 'Profile', path: '/admin/profile', icon: UserCircle },
 ];
@@ -25,15 +26,25 @@ export function AdminDashboardShell() {
   const roleLabel = PLATFORM_ROLE_LABELS[admin?.role] || '';
   const { data: profile } = useQuery({ queryKey: ['admin-me'], queryFn: adminProfileService.get });
 
+  const navItems = useMemo(() => {
+    return ADMIN_NAV_ITEMS.filter((item) => {
+      if (item.superAdminOnly && admin?.role !== 'SUPER_ADMIN') {
+        return false;
+      }
+      return true;
+    });
+  }, [admin?.role]);
+
   return (
     <div className="dashboard-shell">
-      <Sidebar items={ADMIN_NAV_ITEMS} roleLabel={roleLabel} homePath={ADMIN_ROUTES.DASHBOARD} tag="Admin" />
+      <Sidebar items={navItems} roleLabel={roleLabel} homePath={ADMIN_ROUTES.DASHBOARD} tag="Admin" />
       <div className="dashboard-shell__main">
         <Topbar
           portal="admin"
-          navItems={ADMIN_NAV_ITEMS}
-          displayName={profile?.fullName}
-          email={admin?.email}
+          role={admin?.role}
+          navItems={navItems}
+          displayName={profile?.fullName || admin?.fullName}
+          email={profile?.email || admin?.email}
           roleLabel={roleLabel}
           profilePath={ADMIN_ROUTES.PROFILE}
           onLogout={logout}

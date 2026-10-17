@@ -35,6 +35,44 @@ export const SUBMISSION_STATUS_LABELS = {
   LOCKED: 'Locked',
 };
 
+// Role-aware perspectives for human-centric UX:
+// - Contributors see statuses as their action/progress items (e.g. 'Under Review', 'Action Required')
+// - Reviewers see statuses as their workload queue (e.g. 'Needs Review', 'Returned to Contributor')
+export const ROLE_BASED_STATUS_LABELS = {
+  CONTRIBUTOR: {
+    DRAFT: 'Draft',
+    SUBMITTED: 'Under Review',
+    CHANGES_REQUESTED: 'Action Required',
+    APPROVED: 'Approved',
+    LOCKED: 'Approved',
+    REJECTED: 'Rejected',
+  },
+  REVIEWER: {
+    DRAFT: 'Contributor Draft',
+    SUBMITTED: 'Needs Review',
+    CHANGES_REQUESTED: 'Returned to Contributor',
+    APPROVED: 'Approved',
+    LOCKED: 'Approved',
+    REJECTED: 'Rejected',
+  },
+  EXECUTIVE: {
+    DRAFT: 'Draft',
+    SUBMITTED: 'Pending Review',
+    CHANGES_REQUESTED: 'Changes Requested',
+    APPROVED: 'Approved',
+    LOCKED: 'Approved',
+    REJECTED: 'Rejected',
+  },
+  ORG_ADMIN: {
+    DRAFT: 'Draft',
+    SUBMITTED: 'Pending Review',
+    CHANGES_REQUESTED: 'Changes Requested',
+    APPROVED: 'Approved',
+    LOCKED: 'Approved',
+    REJECTED: 'Rejected',
+  },
+};
+
 export const REPORT_STATUS_LABELS = {
   DRAFT: 'Draft',
   PENDING_APPROVAL: 'Pending Approval',

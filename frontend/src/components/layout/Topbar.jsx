@@ -85,7 +85,9 @@ function ProfileMenu({ displayName, email, roleLabel, profilePath, onLogout }) {
     .filter(Boolean)
     .slice(0, 2)
     .map((p) => p[0].toUpperCase())
-    .join('');
+    .join('') || '?';
+
+  const displayedName = displayName || email || 'Account';
 
   const askLogout = async () => {
     setOpen(false);
@@ -102,15 +104,15 @@ function ProfileMenu({ displayName, email, roleLabel, profilePath, onLogout }) {
     <div className="topbar__menu" ref={ref}>
       <button type="button" className="topbar__profile-btn" aria-haspopup="true" aria-expanded={open} aria-label="Account menu" onClick={() => setOpen((o) => !o)}>
         <span className="avatar" aria-hidden="true">{initials}</span>
-        <span className="topbar__profile-name">{displayName || email}</span>
+        <span className="topbar__profile-name">{displayedName}</span>
         <ChevronDown size={16} className={`topbar__caret${open ? ' is-open' : ''}`} aria-hidden="true" />
       </button>
 
       {open && (
         <div className="popover" role="menu">
           <div className="popover__identity">
-            <strong>{displayName || email}</strong>
-            {displayName && <span className="text-muted">{email}</span>}
+            <strong>{displayedName}</strong>
+            {displayName && email && <span className="text-muted">{email}</span>}
             {roleLabel && <span className="popover__role">{roleLabel}</span>}
           </div>
           <Link to={profilePath} className="popover__item" role="menuitem">

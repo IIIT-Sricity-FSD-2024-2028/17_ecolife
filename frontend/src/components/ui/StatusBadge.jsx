@@ -13,6 +13,7 @@ const TONE_BY_STATUS = {
   REVISION_REQUESTED: 'warning',
   SUPERSEDED: 'neutral',
   OPEN: 'warning',
+  ACKNOWLEDGED: 'info',
   RESOLVED: 'success',
   ACTIVE: 'success',
   SUSPENDED: 'danger',

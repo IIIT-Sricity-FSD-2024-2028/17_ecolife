@@ -66,6 +66,43 @@
   background: var(--color-bg);
   color: var(--color-text);
 }
+
+/* Semantic Table Action Text Buttons */
+.btn--ghost-info,
+.btn--ghost-blue {
+  background: transparent;
+  color: #1d6fa5;
+  font-weight: var(--font-weight-medium);
+}
+.btn--ghost-info:not(:disabled):hover,
+.btn--ghost-blue:not(:disabled):hover {
+  background: var(--color-info-bg);
+  color: #154b72;
+}
+
+.btn--ghost-success,
+.btn--ghost-green {
+  background: transparent;
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+.btn--ghost-success:not(:disabled):hover,
+.btn--ghost-green:not(:disabled):hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.btn--ghost-danger,
+.btn--ghost-red {
+  background: transparent;
+  color: var(--color-danger);
+  font-weight: var(--font-weight-medium);
+}
+.btn--ghost-danger:not(:disabled):hover,
+.btn--ghost-red:not(:disabled):hover {
+  background: var(--color-danger-bg);
+  color: #7f1d1d;
+}
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -331,6 +368,34 @@ textarea.text-input {
   padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--color-border);
   background: var(--color-bg);
+}
+
+/* ---- Modal (Drawer variant="modal"): centered form overlay ---------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(15, 30, 24, 0.38);
+}
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: calc(100vh - 2 * var(--space-4));
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.modal .drawer__body { overflow-y: auto; }
+@media (max-width: 560px) {
+  /* On phones the form rises from the bottom like a sheet, full width. */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal { max-width: none !important; max-height: 92vh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
 }
 
 /* ---- Tabs ---------------------------------------------------------------- */

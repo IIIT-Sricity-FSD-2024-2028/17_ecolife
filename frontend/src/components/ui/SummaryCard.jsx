@@ -3,7 +3,7 @@ import './ui.css';
 
 /** Pure presentational — receives everything as props, used across all
  * four role dashboards instead of each hand-writing its own stat markup. */
-export function SummaryCard({ label, value, icon: Icon }) {
+export function SummaryCard({ label, value, icon: Icon, children }) {
   return (
     <Card>
       <div className="summary-card__top">
@@ -14,7 +14,10 @@ export function SummaryCard({ label, value, icon: Icon }) {
           </span>
         )}
       </div>
-      <p className="summary-card__value">{value}</p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
+        <p className="summary-card__value" style={{ margin: 0 }}>{value}</p>
+        {children}
+      </div>
     </Card>
   );
 }
