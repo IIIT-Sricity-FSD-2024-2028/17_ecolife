@@ -1,3 +1,4 @@
+import { assertWithinPlan } from '../billing/plan-limits';
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DbService } from '../database/db.service';
 import { AuditLogService } from '../database/audit-log.service';
@@ -9,8 +10,11 @@ export class DepartmentsService {
   constructor(private readonly db: DbService, private readonly auditLog: AuditLogService) {}
 
   create(user: AuthenticatedOrgUser, dto: CreateDepartmentDto) {
+    assertWithinPlan(this.db, user.organizationId, 'departments');
     const existing = this.db.store.departments.find(
-      (d) => d.organizationId === user.organizationId && d.name === dto.name,
+      (d) =>
+        d.organizationId === user.organizationId &&
+        d.name.trim().toLowerCase() === dto.name.trim().toLowerCase(),
     );
     if (existing) {
       throw new ConflictException('A department with this name already exists in your organization.');
@@ -20,8 +24,9 @@ export class DepartmentsService {
     const dept = {
       id: this.db.id(),
       organizationId: user.organizationId,
-      name: dto.name,
+      name: dto.name.trim(),
       description: dto.description ?? null,
+      allowedResourceTypeIds: dto.allowedResourceTypeIds ? [...new Set(dto.allowedResourceTypeIds)] : [],
       createdAt: now,
       updatedAt: now,
     };
@@ -57,8 +62,25 @@ export class DepartmentsService {
 
   update(user: AuthenticatedOrgUser, id: string, dto: UpdateDepartmentDto) {
     const dept = this.findOne(user, id);
-    if (dto.name !== undefined) dept.name = dto.name;
+
+    if (dto.name !== undefined) {
+      const trimmedName = dto.name.trim();
+      const duplicate = this.db.store.departments.some(
+        (d) =>
+          d.organizationId === user.organizationId &&
+          d.id !== id &&
+          d.name.trim().toLowerCase() === trimmedName.toLowerCase(),
+      );
+      if (duplicate) {
+        throw new ConflictException(`A department named "${trimmedName}" already exists in your organization.`);
+      }
+      dept.name = trimmedName;
+    }
+
     if (dto.description !== undefined) dept.description = dto.description;
+    if (dto.allowedResourceTypeIds !== undefined) {
+      dept.allowedResourceTypeIds = [...new Set(dto.allowedResourceTypeIds)];
+    }
     dept.updatedAt = this.db.now();
     this.db.persist();
 
@@ -77,11 +99,34 @@ export class DepartmentsService {
   remove(user: AuthenticatedOrgUser, id: string) {
     this.findOne(user, id);
 
-    const hasUsers = this.db.store.orgUsers.some((u) => u.departmentId === id && u.isActive);
-    if (hasUsers) {
+    const hasActiveUsers = this.db.store.orgUsers.some((u) => u.departmentId === id && u.isActive);
+    if (hasActiveUsers) {
       throw new ForbiddenException(
         'This department still has active users assigned. Reassign or deactivate them first.',
       );
+    }
+
+    const hasRecords = this.db.store.resourceRecords.some((r) => r.departmentId === id);
+    if (hasRecords) {
+      throw new ForbiddenException('Cannot delete department with existing resource entries.');
+    }
+
+    const hasLocations = this.db.store.locations.some((l) => l.departmentId === id);
+    if (hasLocations) {
+      throw new ForbiddenException('Cannot delete department with assigned locations.');
+    }
+
+    const hasTargets = this.db.store.targets.some((t) => t.departmentId === id);
+    if (hasTargets) {
+      throw new ForbiddenException('Cannot delete department with assigned targets.');
+    }
+
+    // Detach any deactivated users pointing at this deleted department
+    for (const u of this.db.store.orgUsers) {
+      if (u.departmentId === id && !u.isActive) {
+        u.departmentId = null;
+        u.updatedAt = this.db.now();
+      }
     }
 
     this.db.store.departments = this.db.store.departments.filter((d) => d.id !== id);

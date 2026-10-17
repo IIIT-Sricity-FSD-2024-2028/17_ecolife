@@ -15,6 +15,32 @@ export class GenerateReportDto {
   @IsDateString(STRICT_DATE, { message: 'periodEnd must be a valid date' })
   @IsNotBefore('periodStart', { message: 'Period end cannot be before the start date' })
   periodEnd!: string;
+
+  @ApiProperty({ required: false, description: 'Executive summary, highlights, or caveats' })
+  @OptionalText(5000)
+  notes?: string;
+}
+
+export class UpdateReportDto {
+  @ApiProperty({ required: false, example: 'Q3 2026 Emissions Report' })
+  @OptionalText(200)
+  title?: string;
+
+  @ApiProperty({ required: false, example: '2026-07-01' })
+  @OptionalText(50)
+  periodStart?: string;
+
+  @ApiProperty({ required: false, example: '2026-09-30' })
+  @OptionalText(50)
+  periodEnd?: string;
+
+  @ApiProperty({ required: false, description: 'Executive summary, highlights, or caveats' })
+  @OptionalText(5000)
+  notes?: string;
+
+  @ApiProperty({ required: false, description: 'Context for the approver.' })
+  @OptionalText(1000)
+  submissionNote?: string;
 }
 
 export class SubmitReportDto {

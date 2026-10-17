@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsOptional, IsUUID } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsUUID, ValidateIf } from 'class-validator';
 import { IsEmailAddress, IsNewPassword, RequiredText } from '../../common/validation/validators';
 
 const INVITABLE_ROLES = ['ORG_ADMIN', 'CONTRIBUTOR', 'REVIEWER', 'EXECUTIVE'];
@@ -41,10 +41,11 @@ export class UpdateOrgUserDto {
   @IsIn(INVITABLE_ROLES, { message: 'Role must be one of: ' + INVITABLE_ROLES.join(', ') })
   role?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, nullable: true })
   @IsOptional()
+  @ValidateIf((_obj, val) => val !== null && val !== undefined)
   @IsUUID('4', { message: 'departmentId must be a valid UUID' })
-  departmentId?: string;
+  departmentId?: string | null;
 
   @ApiProperty({ required: false })
   @IsOptional()

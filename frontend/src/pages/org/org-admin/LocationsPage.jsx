@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useZodForm } from '../../../../../../tropos new/frontend/src/hooks/useZodForm';
-import { locationSchema } from '../../../../../../tropos new/frontend/src/schemas/formSchemas';
+import { useZodForm } from '../../../hooks/useZodForm';
+import { locationSchema } from '../../../schemas/formSchemas';
 import { MapPin, Plus, Pencil, Trash2, Save, ChevronLeft, ChevronRight, FilterX, SearchX } from 'lucide-react';
-import { useDepartments } from '../../../../../../tropos new/frontend/src/hooks/useOrgData';
-import { useLocations } from '../../../../../../tropos new/frontend/src/hooks/useOrgData';
-import { useOrgAdminActions } from '../../../../../../tropos new/frontend/src/hooks/useRoleData';
+import { useDepartments } from '../../../hooks/useOrgData';
+import { useLocations } from '../../../hooks/useOrgData';
+import { useOrgAdminActions } from '../../../hooks/useRoleData';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { Button } from '../../../components/ui/Button';
@@ -13,8 +13,8 @@ import { FormField, TextInput, Select } from '../../../components/ui/FormField';
 import { ConfirmDialog } from '../../../components/shared/ConfirmDialog';
 import { useConfirm } from '../../../components/shared/ConfirmProvider';
 import { EmptyState } from '../../../components/shared/EmptyState';
-import { rowProps } from '../../../../../../tropos new/frontend/src/context/ToastContextwProps';
-import { useToast } from '../../../../../../tropos new/frontend/src/services/apiClientxt';
+import { rowProps } from '../../../components/shared/rowProps';
+import { useToast } from '../../../context/ToastContext';
 import { ApiError } from '../../../services/apiClient';
 
 const PAGE_SIZE = 10;

@@ -25,7 +25,7 @@ export class AnalyticsService {
     );
 
     const rows = records.flatMap((record) => {
-      const calc = s.calculationResults.find((c) => c.resourceRecordId === record.id);
+      const calc = s.calculationResults.find((c) => c.resourceRecordId === record.id && !c.supersededAt);
       return calc ? [{ record, calc }] : [];
     });
 
@@ -69,7 +69,7 @@ export class AnalyticsService {
       });
       let actual = 0;
       for (const r of inScope) {
-        const c = s.calculationResults.find((x) => x.resourceRecordId === r.id);
+        const c = s.calculationResults.find((x) => x.resourceRecordId === r.id && !x.supersededAt);
         if (t.metric === 'usage') actual += r.quantity;
         else if (t.metric === 'cost') actual += r.cost ?? 0;
         else if (t.metric === 'emissions') actual += c?.co2eKg ?? 0;

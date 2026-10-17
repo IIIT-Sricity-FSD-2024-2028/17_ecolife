@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, ParseUUIDPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrgAuth, PlatformAuth } from '../auth/decorators/protected.decorator';
 import {
@@ -7,7 +7,13 @@ import {
   AuthenticatedOrgUser,
 } from '../auth/decorators/current-user.decorator';
 import { ResourcesService } from './resources.service';
-import { CreateFactorVersionDto, CreateResourceTypeDto } from './dto/resource-type.dto';
+import {
+  CreateFactorVersionDto,
+  CreateResourceTypeDto,
+  UpdateFactorSourceDto,
+  UpdateFactorVersionDto,
+  UpdateResourceTypeDto,
+} from './dto/resource-type.dto';
 import { CreateFactorSourceDto } from '../platform-admin/dto/platform-admin.dto';
 
 @ApiTags('Resource Types')
@@ -23,6 +29,25 @@ export class ResourcesController {
     return { message: 'Resource type created.', data: type };
   }
 
+  @Patch(':id')
+  @PlatformAuth('PLATFORM_ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Update a resource type + units or status (Platform Admin)' })
+  update(
+    @CurrentUser() admin: AuthenticatedPlatformAdmin,
+    @Param('id') id: string,
+    @Body() dto: UpdateResourceTypeDto,
+  ) {
+    const type = this.service.updateType(admin, id, dto);
+    return { message: 'Resource type updated.', data: type };
+  }
+
+  @Delete(':id')
+  @PlatformAuth('PLATFORM_ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Delete or retire a resource type (Platform Admin)' })
+  delete(@CurrentUser() admin: AuthenticatedPlatformAdmin, @Param('id') id: string) {
+    return this.service.deleteType(admin, id);
+  }
+
   @Get()
   @OrgAuth()
   @ApiOperation({ summary: 'List the resource type catalog with compatible units' })
@@ -33,7 +58,7 @@ export class ResourcesController {
   @Get(':id')
   @OrgAuth()
   @ApiOperation({ summary: 'Get a single resource type with its units' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id') id: string) {
     return this.service.findOneType(id);
   }
 }
@@ -61,12 +86,56 @@ export class FactorsController {
     return { message: 'Factor source created.', data: source };
   }
 
+  @Patch('sources/:id')
+  @PlatformAuth('PLATFORM_ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Update an emission factor source (Platform Admin)' })
+  updateSource(
+    @CurrentUser() admin: AuthenticatedPlatformAdmin,
+    @Param('id') id: string,
+    @Body() dto: UpdateFactorSourceDto,
+  ) {
+    const source = this.service.updateSource(admin, id, dto);
+    return { message: 'Factor source updated.', data: source };
+  }
+
+  @Delete('sources/:id')
+  @PlatformAuth('PLATFORM_ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Delete an emission factor source (Platform Admin)' })
+  deleteSource(
+    @CurrentUser() admin: AuthenticatedPlatformAdmin,
+    @Param('id') id: string,
+  ) {
+    return this.service.deleteSource(admin, id);
+  }
+
   @Post('versions/global')
   @PlatformAuth('PLATFORM_ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Create a global-default emission factor version (Platform Admin)' })
   createGlobalVersion(@CurrentUser() admin: AuthenticatedPlatformAdmin, @Body() dto: CreateFactorVersionDto) {
     const version = this.service.createFactorVersionGlobal(admin, dto);
     return { message: 'Global emission factor version created.', data: version };
+  }
+
+  @Patch('versions/:id')
+  @PlatformAuth('PLATFORM_ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Update an emission factor version (Platform Admin)' })
+  updateVersion(
+    @CurrentUser() admin: AuthenticatedPlatformAdmin,
+    @Param('id') id: string,
+    @Body() dto: UpdateFactorVersionDto,
+  ) {
+    const version = this.service.updateFactorVersion(admin, id, dto);
+    return { message: 'Emission factor version updated.', data: version };
+  }
+
+  @Delete('versions/:id')
+  @PlatformAuth('PLATFORM_ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Delete an emission factor version (Platform Admin)' })
+  deleteVersion(
+    @CurrentUser() admin: AuthenticatedPlatformAdmin,
+    @Param('id') id: string,
+  ) {
+    return this.service.deleteFactorVersion(admin, id);
   }
 
   @Post('versions/override')
@@ -80,10 +149,17 @@ export class FactorsController {
     return { message: 'Org factor override created.', data: version };
   }
 
+  @Get('versions')
+  @OrgAuth()
+  @ApiOperation({ summary: 'List applicable factor versions for all resource types (org override + global default)' })
+  findAllVersions(@CurrentUser() user: AuthenticatedOrgUser) {
+    return this.service.findAllFactorVersions(user.organizationId);
+  }
+
   @Get('versions/:resourceTypeId')
   @OrgAuth()
   @ApiOperation({ summary: 'List applicable factor versions for a resource type (org override + global default)' })
-  findVersions(@CurrentUser() user: AuthenticatedOrgUser, @Param('resourceTypeId', ParseUUIDPipe) resourceTypeId: string) {
+  findVersions(@CurrentUser() user: AuthenticatedOrgUser, @Param('resourceTypeId') resourceTypeId: string) {
     return this.service.findFactorVersionsForType(resourceTypeId, user.organizationId);
   }
 }

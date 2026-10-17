@@ -5,6 +5,7 @@ import { DbService } from '../database/db.service';
 import { AuditLogService } from '../database/audit-log.service';
 import { AuthenticatedOrgUser, AuthenticatedPlatformAdmin } from '../auth/decorators/current-user.decorator';
 import { ChangePasswordDto, UpdateProfileDto } from './dto/profile.dto';
+import { AuthService } from '../auth/auth.service';
 
 /**
  * Self-service profile for the signed-in person (org user or platform
@@ -19,6 +20,7 @@ export class ProfileService {
     private readonly db: DbService,
     private readonly auditLog: AuditLogService,
     config: ConfigService,
+    private readonly auth: AuthService,
   ) {
     this.saltRounds = Number(config.get('BCRYPT_SALT_ROUNDS') ?? 10);
   }
@@ -41,6 +43,7 @@ export class ProfileService {
       organizationName: org?.name ?? null,
       departmentId: user.departmentId ?? null,
       departmentName: dept?.name ?? null,
+      allowedResourceTypeIds: dept?.allowedResourceTypeIds ?? [],
       lastLogin: user.lastLogin,
       createdAt: user.createdAt,
     };
@@ -70,6 +73,8 @@ export class ProfileService {
       entityType: 'OrgUser',
       entityId: user.id,
     });
+    // Every older session just became invalid; hand the caller a fresh one so they stay signed in.
+    return { token: this.auth.signOrgToken(user) };
   }
 
   // ---- Platform admin -----------------------------------------------------
@@ -111,6 +116,7 @@ export class ProfileService {
       entityType: 'PlatformAdmin',
       entityId: admin.id,
     });
+    return { token: this.auth.signAdminToken(admin) };
   }
 
   // ---- Helpers ------------------------------------------------------------

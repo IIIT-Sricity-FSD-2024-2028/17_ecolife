@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DbService } from './db.service';
 import { Alert, Amendment, Report, ResourceRecord } from './types';
 import { resolveFactors } from '../calculations/factor-resolution';
+import { convertQuantity } from '../calculations/unit-conversion';
 
 /**
  * Read models: the stored entities joined with the human-readable names and
@@ -24,7 +25,7 @@ export class ViewsService {
     const dept = s.departments.find((d) => d.id === r.departmentId);
     const loc = r.locationId ? s.locations.find((l) => l.id === r.locationId) : null;
     const submission = s.submissions.find((x) => x.resourceRecordId === r.id) ?? null;
-    const calc = s.calculationResults.find((c) => c.resourceRecordId === r.id) ?? null;
+    const calc = s.calculationResults.find((c) => c.resourceRecordId === r.id && !c.supersededAt) ?? null;
 
     let calculation: Record<string, unknown> | null = null;
     if (calc) {
@@ -41,7 +42,7 @@ export class ViewsService {
           effectiveFrom: f.effectiveFrom,
           isLocked: f.isLocked,
           sourceName: s.emissionFactorSources.find((src) => src.id === f.sourceId)?.name ?? 'Unknown source',
-          contributionKg: r.quantity * f.factorValue * f.gwp,
+          contributionKg: convertQuantity(r.quantity, r.unit, f.unit) * f.factorValue * f.gwp,
         })),
       };
     }
@@ -61,6 +62,10 @@ export class ViewsService {
         reviewComment: submission.reviewComment,
         reviewedAt: submission.reviewedAt,
         reviewedByName: this.userName(submission.reviewedById),
+        claimedById: submission.claimedById ?? null,
+        claimedByName: this.userName(submission.claimedById),
+        claimedExpiresAt: submission.claimedExpiresAt ?? null,
+        isClaimActive: !!(submission.claimedExpiresAt && new Date(submission.claimedExpiresAt) > new Date()),
       },
       calculation,
     };
@@ -71,7 +76,7 @@ export class ViewsService {
     const dept = a.relatedDepartmentId ? s.departments.find((d) => d.id === a.relatedDepartmentId) : null;
     const rec = a.relatedResourceRecordId ? s.resourceRecords.find((r) => r.id === a.relatedResourceRecordId) : null;
     const type = rec ? s.resourceTypes.find((t) => t.id === rec.resourceTypeId) : null;
-    const calc = rec ? s.calculationResults.find((c) => c.resourceRecordId === rec.id) : null;
+    const calc = rec ? s.calculationResults.find((c) => c.resourceRecordId === rec.id && !c.supersededAt) : null;
     const response = s.alertResponses.find((x) => x.alertId === a.id) ?? null;
 
     const threshold = type?.evidenceThreshold ?? null;

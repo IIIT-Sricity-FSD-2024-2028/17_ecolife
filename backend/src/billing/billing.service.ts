@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { DbService } from '../database/db.service';
 import { AuditLogService } from '../database/audit-log.service';
 import { AuthenticatedOrgUser, AuthenticatedPlatformAdmin } from '../auth/decorators/current-user.decorator';
 import { ChangePlanDto, CreatePlanDto } from './dto/billing.dto';
+import { isUnlimited } from './plan-limits';
 
 @Injectable()
 export class BillingService {
@@ -12,9 +13,13 @@ export class BillingService {
   // Plans — Platform Admin manages, everyone can read
   // ---------------------------------------------------------------------
   createPlan(admin: AuthenticatedPlatformAdmin, dto: CreatePlanDto) {
+    if (this.db.store.plans.some((p) => p.name.toLowerCase() === dto.name.trim().toLowerCase())) {
+      throw new ConflictException('A plan with this name already exists.');
+    }
+
     const plan = {
       id: this.db.id(),
-      name: dto.name,
+      name: dto.name.trim(),
       description: dto.description?.trim() || null,
       maxDepartments: dto.maxDepartments,
       maxUsers: dto.maxUsers,
@@ -48,6 +53,13 @@ export class BillingService {
     const sub = this.db.store.subscriptions.find((s) => s.organizationId === user.organizationId);
     if (!sub) throw new NotFoundException('No subscription found for your organization.');
 
+    // If trial has expired, mark it expired
+    if (sub.status === 'TRIAL' && sub.renewalDate && new Date(sub.renewalDate) < new Date()) {
+      sub.status = 'EXPIRED';
+      sub.updatedAt = this.db.now();
+      this.db.persist();
+    }
+
     const plan = this.db.store.plans.find((p) => p.id === sub.planId);
     return { ...sub, plan };
   }
@@ -64,12 +76,35 @@ export class BillingService {
     const plan = this.db.store.plans.find((p) => p.id === dto.planId && p.isActive);
     if (!plan) throw new NotFoundException('Plan not found.');
 
+    // Enforce users cap on downgrade
     const userCount = this.db.store.orgUsers.filter(
       (u) => u.organizationId === user.organizationId && u.isActive,
     ).length;
-    if (userCount > plan.maxUsers) {
+    if (!isUnlimited(plan.maxUsers) && userCount > plan.maxUsers) {
       throw new BadRequestException(
         `This plan allows up to ${plan.maxUsers} users, but your organization currently has ${userCount}.`,
+      );
+    }
+
+    // Enforce departments cap on downgrade
+    const deptCount = this.db.store.departments.filter(
+      (d) => d.organizationId === user.organizationId,
+    ).length;
+    if (!isUnlimited(plan.maxDepartments) && deptCount > plan.maxDepartments) {
+      throw new BadRequestException(
+        `This plan allows up to ${plan.maxDepartments} departments, but your organization currently has ${deptCount}.`,
+      );
+    }
+
+    // Enforce resource types cap on downgrade
+    const usedTypesCount = new Set(
+      this.db.store.resourceRecords
+        .filter((r) => r.organizationId === user.organizationId)
+        .map((r) => r.resourceTypeId),
+    ).size;
+    if (!isUnlimited(plan.maxResourceTypes) && usedTypesCount > plan.maxResourceTypes) {
+      throw new BadRequestException(
+        `This plan allows up to ${plan.maxResourceTypes} resource types, but your organization currently uses ${usedTypesCount}.`,
       );
     }
 
@@ -78,6 +113,7 @@ export class BillingService {
 
     sub.planId = plan.id;
     sub.status = 'ACTIVE';
+    sub.renewalDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     sub.updatedAt = this.db.now();
 
     this.db.store.invoices.push({

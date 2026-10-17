@@ -25,6 +25,9 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { PlatformInsightsModule } from './platform-insights/platform-insights.module';
 import { AppController } from './app.controller';
 import { winstonConfig } from './common/logger/winston.config';
+import { CommentsModule } from './comments/comments.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
+import { AuthRequiredGuard } from './auth/guards/auth-required.guard';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 import { MaintenanceModeMiddleware } from './common/middleware/maintenance-mode.middleware';
 
@@ -41,6 +44,15 @@ import { MaintenanceModeMiddleware } from './common/middleware/maintenance-mode.
             `Missing required environment variable(s): ${missing.join(', ')}. ` +
               'Copy .env.example to .env in the backend root and fill them in.',
           );
+        }
+        if (env.JWT_SECRET === env.JWT_ADMIN_SECRET) {
+          throw new Error('JWT_SECRET and JWT_ADMIN_SECRET must be different values.');
+        }
+        if (env.NODE_ENV === 'production') {
+          const weak = ['JWT_SECRET', 'JWT_ADMIN_SECRET'].filter((k) => String(env[k]).length < 32);
+          if (weak.length) {
+            throw new Error(`${weak.join(', ')} must be at least 32 characters in production.`);
+          }
         }
         return env;
       },
@@ -67,6 +79,8 @@ import { MaintenanceModeMiddleware } from './common/middleware/maintenance-mode.
     AuditLogsModule,
     AnalyticsModule,
     PlatformInsightsModule,
+    CommentsModule,
+    AnnouncementsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -75,6 +89,8 @@ import { MaintenanceModeMiddleware } from './common/middleware/maintenance-mode.
     // verification: 6 rapid login attempts all returned 401 with none
     // ever hitting the configured 5/min limit.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Deny by default: every route must declare @Public() or @OrgAuth()/@PlatformAuth().
+    { provide: APP_GUARD, useClass: AuthRequiredGuard },
   ],
 })
 export class AppModule implements NestModule {

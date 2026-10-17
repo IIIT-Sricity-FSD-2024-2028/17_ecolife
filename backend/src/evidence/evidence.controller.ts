@@ -1,23 +1,11 @@
-import { BadRequestException, Controller, Get, Param, Post, UploadedFile, UseInterceptors, ParseUUIDPipe } from '@nestjs/common';
+import { BadRequestException, Controller, Delete, Get, Param, Post, Res, UploadedFile, UseInterceptors, ParseUUIDPipe } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { memoryStorage } from 'multer';
 import { OrgAuth } from '../auth/decorators/protected.decorator';
 import { CurrentUser, AuthenticatedOrgUser } from '../auth/decorators/current-user.decorator';
-import { EvidenceService } from './evidence.service';
-
-const ALLOWED_MIME_TYPES = [
-  'application/pdf',
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'text/csv',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-];
+import { ALLOWED_MIME_TYPES, EvidenceService } from './evidence.service';
 
 @ApiTags('Evidence')
 @Controller('resource-records/:recordId/evidence')
@@ -30,17 +18,14 @@ export class EvidenceController {
   @ApiOperation({ summary: 'Upload evidence for a resource record (Contributor)' })
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: process.env.UPLOAD_DIR || './uploads',
-        filename: (_req, file, cb) => cb(null, `${uuidv4()}${extname(file.originalname)}`),
-      }),
+      storage: memoryStorage(), // nothing touches disk until the service has authorized the request
       fileFilter: (_req, file, cb) => {
         if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
           return cb(new BadRequestException(`File type "${file.mimetype}" is not allowed.`), false);
         }
         cb(null, true);
       },
-      limits: { fileSize: 10 * 1024 * 1024 },
+      limits: { fileSize: 10 * 1024 * 1024, files: 1 },
     }),
   )
   async upload(
@@ -49,7 +34,6 @@ export class EvidenceController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) throw new BadRequestException('No file was uploaded.');
-    this.service.validateFile(file);
     const evidence = this.service.attach(user, recordId, file);
     return { message: 'Evidence uploaded.', data: evidence };
   }
@@ -59,5 +43,61 @@ export class EvidenceController {
   @ApiOperation({ summary: 'List evidence files attached to a resource record' })
   findAll(@CurrentUser() user: AuthenticatedOrgUser, @Param('recordId', ParseUUIDPipe) recordId: string) {
     return this.service.findForRecord(user, recordId);
+  }
+
+  @Get(':evidenceId/download')
+  @OrgAuth()
+  @ApiOperation({ summary: 'Download an evidence file (same access rules as listing)' })
+  download(
+    @CurrentUser() user: AuthenticatedOrgUser,
+    @Param('recordId', ParseUUIDPipe) recordId: string,
+    @Param('evidenceId', ParseUUIDPipe) evidenceId: string,
+    @Res() res: Response,
+  ) {
+    const file = this.service.resolveDownload(user, recordId, evidenceId);
+    // Always an attachment, never rendered inline, and never sniffed into another type.
+    const asciiName = file.fileName.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
+    res.setHeader('Content-Type', file.mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(file.fileName)}`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'private, no-store');
+    if (file.sha256Hash) {
+      res.setHeader('ETag', `"${file.sha256Hash}"`);
+      res.setHeader('X-Evidence-SHA256', file.sha256Hash);
+    }
+    res.sendFile(file.path);
+  }
+
+  @Get(':evidenceId/view')
+  @OrgAuth()
+  @ApiOperation({ summary: 'View an evidence file inline (same access rules as listing)' })
+  view(
+    @CurrentUser() user: AuthenticatedOrgUser,
+    @Param('recordId', ParseUUIDPipe) recordId: string,
+    @Param('evidenceId', ParseUUIDPipe) evidenceId: string,
+    @Res() res: Response,
+  ) {
+    const file = this.service.resolveDownload(user, recordId, evidenceId);
+    const asciiName = file.fileName.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
+    res.setHeader('Content-Type', file.mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(file.fileName)}`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'private, no-store');
+    if (file.sha256Hash) {
+      res.setHeader('ETag', `"${file.sha256Hash}"`);
+      res.setHeader('X-Evidence-SHA256', file.sha256Hash);
+    }
+    res.sendFile(file.path);
+  }
+
+  @Delete(':evidenceId')
+  @OrgAuth('CONTRIBUTOR')
+  @ApiOperation({ summary: 'Delete an evidence file (Contributor)' })
+  remove(
+    @CurrentUser() user: AuthenticatedOrgUser,
+    @Param('recordId', ParseUUIDPipe) recordId: string,
+    @Param('evidenceId', ParseUUIDPipe) evidenceId: string,
+  ) {
+    return this.service.remove(user, recordId, evidenceId);
   }
 }

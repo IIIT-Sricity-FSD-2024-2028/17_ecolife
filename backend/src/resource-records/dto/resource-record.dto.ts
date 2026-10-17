@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsNumber, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsBoolean, IsDateString, IsIn, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { IsNotBefore, OptionalText, RequiredText, STRICT_DATE } from '../../common/validation/validators';
 
 const MAX_AMOUNT = 1_000_000_000;
@@ -40,12 +40,28 @@ export class CreateResourceRecordDto {
   @IsUUID('4', { message: 'locationId must be a valid UUID' })
   locationId?: string;
 
+  @ApiProperty({ required: false, enum: ['NONE', 'REC', 'PPA', 'GREEN_TARIFF'] })
+  @IsOptional()
+  @IsIn(['NONE', 'REC', 'PPA', 'GREEN_TARIFF'])
+  marketInstrument?: 'NONE' | 'REC' | 'PPA' | 'GREEN_TARIFF' | null;
+
   @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  deviceId?: string | null;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @OptionalText(1000)
   notes?: string;
 }
 
 export class UpdateResourceRecordDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsUUID('4', { message: 'resourceTypeId must be a valid UUID' })
+  resourceTypeId?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 4 }, { message: 'Quantity must be a number (up to 4 decimal places)' })
@@ -65,7 +81,33 @@ export class UpdateResourceRecordDto {
   @Max(MAX_AMOUNT, { message: 'Cost is unrealistically large' })
   cost?: number;
 
+  @ApiProperty({ example: '2026-09-01', required: false })
+  @IsOptional()
+  @IsDateString(STRICT_DATE, { message: 'periodStart must be a valid date' })
+  periodStart?: string;
+
+  @ApiProperty({ example: '2026-09-30', required: false })
+  @IsOptional()
+  @IsDateString(STRICT_DATE, { message: 'periodEnd must be a valid date' })
+  periodEnd?: string;
+
   @ApiProperty({ required: false })
+  @IsOptional()
+  @IsUUID('4', { message: 'locationId must be a valid UUID' })
+  locationId?: string | null;
+
+  @ApiProperty({ required: false, enum: ['NONE', 'REC', 'PPA', 'GREEN_TARIFF'] })
+  @IsOptional()
+  @IsIn(['NONE', 'REC', 'PPA', 'GREEN_TARIFF'])
+  marketInstrument?: 'NONE' | 'REC' | 'PPA' | 'GREEN_TARIFF' | null;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  deviceId?: string | null;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @OptionalText(1000)
   notes?: string;
 }
@@ -74,4 +116,71 @@ export class ReviewDecisionDto {
   @ApiProperty({ required: false })
   @OptionalText(1000)
   comment?: string;
+}
+
+export class WithdrawResourceRecordDto {
+  @ApiProperty({ example: 'Incorrect meter reading; replacement entry will be submitted.' })
+  @RequiredText(1000, 'A withdrawal reason is required')
+  reason!: string;
+}
+
+export class IngestTelemetryDto {
+  @ApiProperty({ example: 'METER-GRID-001' })
+  @RequiredText(100, 'deviceId is required')
+  deviceId!: string;
+
+  @ApiProperty()
+  @IsUUID('4', { message: 'resourceTypeId must be a valid UUID' })
+  resourceTypeId!: string;
+
+  @ApiProperty({ example: 1250.5 })
+  @IsNumber({ maxDecimalPlaces: 4 }, { message: 'Quantity must be a number (up to 4 decimal places)' })
+  @Min(0.0001, { message: 'Quantity must be greater than 0' })
+  @Max(MAX_AMOUNT, { message: 'Quantity is unrealistically large' })
+  quantity!: number;
+
+  @ApiProperty({ example: 'kWh' })
+  @RequiredText(30, 'Unit is required')
+  unit!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Cost must be a number (up to 2 decimal places)' })
+  @Min(0, { message: 'Cost cannot be negative' })
+  @Max(MAX_AMOUNT, { message: 'Cost is unrealistically large' })
+  cost?: number;
+
+  @ApiProperty({ example: '2026-09-01' })
+  @IsDateString(STRICT_DATE, { message: 'periodStart must be a valid date' })
+  periodStart!: string;
+
+  @ApiProperty({ example: '2026-09-30' })
+  @IsDateString(STRICT_DATE, { message: 'periodEnd must be a valid date' })
+  @IsNotBefore('periodStart', { message: 'Period end cannot be before the start date' })
+  periodEnd!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsUUID('4', { message: 'locationId must be a valid UUID' })
+  locationId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsUUID('4', { message: 'departmentId must be a valid UUID' })
+  departmentId?: string;
+
+  @ApiProperty({ required: false, enum: ['NONE', 'REC', 'PPA', 'GREEN_TARIFF'] })
+  @IsOptional()
+  @IsIn(['NONE', 'REC', 'PPA', 'GREEN_TARIFF'])
+  marketInstrument?: 'NONE' | 'REC' | 'PPA' | 'GREEN_TARIFF' | null;
+
+  @ApiProperty({ required: false, example: true, default: true })
+  @IsOptional()
+  @IsBoolean()
+  autoSubmit?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @OptionalText(1000)
+  notes?: string;
 }

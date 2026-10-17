@@ -21,4 +21,12 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  {
+    files: ['src/**/*.spec.ts'],
+    rules: {
+      // Some isolated Node tests must load mutable CommonJS built-ins after
+      // setup so Jest can simulate filesystem failures.
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 ];

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useZodForm } from '../../../hooks/useZodForm';
 import { ArrowRight, ArrowLeft, Building2 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
@@ -8,13 +8,13 @@ import { AuthLayout } from '../../../components/layout/AuthLayout';
 import { FormField, TextInput, PasswordInput } from '../../../components/ui/FormField';
 import { PasswordRules } from '../../../components/ui/PasswordRules';
 import { Button } from '../../../components/ui/Button';
-import { ApiError } from '../../../services/apiClient';
+import { ApiError, setSessionNotice } from '../../../services/apiClient';
 import { ORG_ROUTES } from '../../../constants/routes';
 
 export function RegisterOrgPage() {
   const { registerOrganization } = useAuth();
-  const navigate = useNavigate();
   const [serverError, setServerError] = useState(null);
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
 
   const {
@@ -49,7 +49,8 @@ export function RegisterOrgPage() {
     const { confirmPassword: _confirm, ...payload } = values;
     try {
       await registerOrganization(payload);
-      navigate(ORG_ROUTES.DASHBOARD);
+      setSessionNotice('Your organization account was created. You can now sign in.');
+      navigate(ORG_ROUTES.LOGIN, { replace: true });
     } catch (err) {
       if (!(err instanceof ApiError)) {
         setServerError('Something went wrong. Please try again.');

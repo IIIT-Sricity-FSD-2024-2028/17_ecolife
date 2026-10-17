@@ -1,7 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { IsNewPassword, OptionalText, RequiredText, trimValue } from '../../common/validation/validators';
+import {
+  IsNewPassword,
+  IsRealPhoneNumber,
+  OptionalText,
+  RequiredText,
+  formatPhoneNumber,
+  trimValue,
+} from '../../common/validation/validators';
 
 export class UpdateProfileDto {
   @ApiProperty({ required: false })
@@ -15,6 +22,8 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(30)
   @Matches(/^[+()\-\s\d]*$/, { message: 'Phone number may only contain digits, spaces, + ( ) and -' })
+  @IsRealPhoneNumber()
+  @Transform(({ value }) => formatPhoneNumber(value))
   phone?: string;
 
   @ApiProperty({ required: false, description: 'Send an empty string to clear the job title.' })

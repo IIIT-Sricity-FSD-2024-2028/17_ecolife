@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 import { OrgAuth, PlatformAuth } from '../auth/decorators/protected.decorator';
 import {
   CurrentUser,
@@ -15,13 +16,14 @@ export class PlansController {
   constructor(private readonly service: BillingService) {}
 
   @Post()
-  @PlatformAuth('PLATFORM_ADMIN', 'SUPER_ADMIN')
-  @ApiOperation({ summary: 'Create a subscription plan (Platform Admin)' })
+  @PlatformAuth('SUPER_ADMIN')
+  @ApiOperation({ summary: 'Create a subscription plan (Super Admin)' })
   create(@CurrentUser() admin: AuthenticatedPlatformAdmin, @Body() dto: CreatePlanDto) {
     const plan = this.service.createPlan(admin, dto);
     return { message: 'Plan created.', data: plan };
   }
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'List available plans (public catalog)' })
   findAll() {

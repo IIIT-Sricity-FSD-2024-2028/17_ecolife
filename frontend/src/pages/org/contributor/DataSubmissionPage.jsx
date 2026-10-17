@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PencilLine, FileUp, Plus, Trash2, Send, Save, Download, Upload, Check, History, ClipboardList, ArrowRight } from 'lucide-react';
+import { PencilLine, FileUp, Plus, Trash2, Send, Save, Download, Upload, Check, History, ClipboardList, ArrowRight, Paperclip, X, Building2 } from 'lucide-react';
+import { differenceInDays } from 'date-fns';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { Tabs } from '../../../components/ui/Tabs';
 import { Button } from '../../../components/ui/Button';
+import { ScopeBadge } from '../../../components/ui/ScopeBadge';
 import { FormField, TextInput, Select, TextArea } from '../../../components/ui/FormField';
 import { useResourceTypes } from '../../../hooks/useResourceRecords';
 import { useLocations } from '../../../hooks/useOrgData';
@@ -17,10 +19,10 @@ import { useConfirm } from '../../../components/shared/ConfirmProvider';
 import { useToast } from '../../../context/ToastContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { CONTRIBUTOR_ROUTES } from '../../../constants/routes';
-import { downloadText, fmtDateTime, fmtNumber, isoToday, toCsv } from '../../../utils/format';
+import { downloadText, fmtDateTime, fmtNumber, fmtRange, isoToday, toCsv } from '../../../utils/format';
 
 let rowSeq = 1;
-const newRow = () => ({ key: rowSeq++, resourceTypeId: '', quantity: '', unit: '', cost: '', file: null, status: 'idle', error: null });
+const newRow = () => ({ key: rowSeq++, resourceTypeId: '', quantity: '', unit: '', cost: '', file: null, marketInstrument: '', status: 'idle', error: null });
 
 export function DataSubmissionPage() {
   const [tab, setTab] = useState('manual');
@@ -54,6 +56,14 @@ function ManualEntry() {
   const [summary, setSummary] = useState(null);
 
   const typeById = useMemo(() => Object.fromEntries(types.map((t) => [t.id, t])), [types]);
+
+  const selectableTypes = useMemo(() => {
+    if (profile?.allowedResourceTypeIds && profile.allowedResourceTypeIds.length > 0) {
+      return types.filter((t) => profile.allowedResourceTypeIds.includes(t.id));
+    }
+    return types;
+  }, [types, profile?.allowedResourceTypeIds]);
+
   const patch = (key, changes) => setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...changes } : r)));
   const removeRow = async (r, i) => {
     const hasData = r.resourceTypeId || r.quantity !== '' || r.cost !== '' || r.file;
@@ -69,6 +79,15 @@ function ManualEntry() {
     const out = [];
     const p = validate(submissionPeriodSchema, { periodStart: period.start, periodEnd: period.end, notes });
     Object.values(p.errors).forEach((text) => out.push({ scope: 'period', text }));
+
+    if (period.start && period.end) {
+      const s = new Date(period.start);
+      const e = new Date(period.end);
+      if (differenceInDays(e, s) > 366) {
+        out.push({ scope: 'period', text: 'Activity period duration cannot exceed 366 days (1 year) per GHG Protocol accounting rules.' });
+      }
+    }
+
     rows.forEach((r, i) => {
       const t = typeById[r.resourceTypeId];
       const label = `Line ${i + 1}`;
@@ -83,9 +102,14 @@ function ManualEntry() {
       if (v.ok && t?.evidenceThreshold != null && v.data.quantity > t.evidenceThreshold && !r.file) {
         out.push({ scope: r.key, text: `${label}: above ${fmtNumber(t.evidenceThreshold)} ${r.unit || ''} — attach supporting evidence to submit.`, evidence: true });
       }
+      if (profile?.allowedResourceTypeIds && profile.allowedResourceTypeIds.length > 0 && r.resourceTypeId) {
+        if (!profile.allowedResourceTypeIds.includes(r.resourceTypeId)) {
+          out.push({ scope: r.key, text: `${label}: Resource "${t?.name || 'Selected'}" is outside ${profile.departmentName || 'your department'}'s authorized operational boundary.` });
+        }
+      }
     });
     return out;
-  }, [rows, period, notes, typeById]);
+  }, [rows, period, notes, typeById, profile]);
 
   const warnings = rows
     .map((r, i) => {
@@ -140,6 +164,7 @@ function ManualEntry() {
           periodStart: period.start,
           periodEnd: period.end,
           locationId: locationId || undefined,
+          marketInstrument: r.marketInstrument || undefined,
           notes: notes.trim() || undefined,
         });
         if (r.file) await resourceRecordsService.uploadEvidence(rec.id, r.file);
@@ -167,6 +192,51 @@ function ManualEntry() {
     <Card>
       <CardHeader icon={ClipboardList} title="Usage entries" subtitle="Add every resource you want to report for this period, then submit them together." />
 
+      {profile?.departmentName && (
+        <div
+          style={{
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-surface-subtle, rgba(255, 255, 255, 0.03))',
+            border: '1px solid var(--color-border)',
+            marginBottom: 'var(--space-4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-sm)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Building2 size={16} style={{ color: 'var(--color-primary)' }} />
+              <span>Operational Boundary: {profile.departmentName}</span>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 'var(--font-weight-medium)',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                  color: 'var(--color-primary)',
+                  border: '1px solid rgba(5, 150, 105, 0.2)',
+                }}
+              >
+                GHG Protocol Scope Custody
+              </span>
+            </div>
+            <p style={{ margin: '4px 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+              {selectableTypes.length < types.length
+                ? `Authorized Emission Sources: ${selectableTypes.map((t) => t.name).join(', ')}. Outside resources are restricted to maintain audit verification integrity.`
+                : 'All standard emission sources configured for this organization are available for intake.'}
+            </p>
+          </div>
+          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+            Max Activity Window: <strong>366 Days</strong>
+          </div>
+        </div>
+      )}
+
       <div className="split-2">
         <FormField label="Period start" required>
           <TextInput type="date" max={isoToday()} value={period.start} onChange={(e) => setPeriod((p) => ({ ...p, start: e.target.value }))} />
@@ -175,6 +245,9 @@ function ManualEntry() {
           <TextInput type="date" value={period.end} onChange={(e) => setPeriod((p) => ({ ...p, end: e.target.value }))} />
         </FormField>
       </div>
+      <p className="text-muted" style={{ fontSize: 'var(--font-size-xs)', margin: '-8px 0 var(--space-3)' }}>
+        Note: Activity periods must be consecutive, non-overlapping, and cannot fall within closed Executive-certified reports.
+      </p>
 
       {rows.map((r, i) => {
         const t = typeById[r.resourceTypeId];
@@ -189,7 +262,11 @@ function ManualEntry() {
                   patch(r.key, { resourceTypeId: e.target.value, unit: nt?.units?.find((u) => u.isDefault)?.unit ?? nt?.units?.[0]?.unit ?? '' });
                 }}>
                 <option value="">Select a resource…</option>
-                {types.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                {selectableTypes.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}{x.category ? ` (${x.category})` : ''}
+                  </option>
+                ))}
               </Select>
             </FormField>
             <FormField label={i === 0 ? 'Quantity' : undefined}>
@@ -208,19 +285,110 @@ function ManualEntry() {
               <Button variant="ghost" size="sm" icon={Trash2} disabled={rows.length === 1 || busy} onClick={() => removeRow(r, i)}>Remove</Button>
             </div>
 
-            {(needs || r.status !== 'idle') && (
-              <div className="entry-row__extra">
-                {needs && r.status !== 'done' && (
-                  <label>
-                    <strong>Evidence required</strong> (above {fmtNumber(t.evidenceThreshold)} {r.unit}):{' '}
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.csv,.xls,.xlsx" onChange={(e) => patch(r.key, { file: e.target.files?.[0] ?? null })} />
-                  </label>
-                )}
-                {r.status === 'working' && <span className="text-muted">Saving…</span>}
-                {r.status === 'done' && <span className="inline-icon" style={{ color: 'var(--color-success)' }}><Check size={14} aria-hidden="true" /> Saved</span>}
-                {r.status === 'error' && <span style={{ color: 'var(--color-danger)' }}>{r.error}</span>}
+            <div className="entry-row__extra" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                {t?.category && <ScopeBadge category={t.category} />}
               </div>
-            )}
+              {r.status !== 'done' && (
+                r.file ? (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid var(--color-primary)' }}>
+                    <Paperclip size={13} style={{ color: 'var(--color-primary)' }} />
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)' }}>
+                      {r.file.name}
+                    </span>
+                    <span className="text-muted" style={{ fontSize: '11px' }}>
+                      ({fmtNumber(r.file.size / 1024, 0)} KB)
+                    </span>
+                    <button
+                      type="button"
+                      title="Remove attached file"
+                      aria-label={`Remove attached file ${r.file.name}`}
+                      onClick={() => patch(r.key, { file: null })}
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        padding: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: 'var(--color-danger)',
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      fontSize: 'var(--font-size-xs)',
+                      color: needs ? 'var(--color-warning)' : 'var(--color-text-muted)',
+                      fontWeight: needs ? 'var(--font-weight-semibold)' : 'normal',
+                      padding: '4px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: needs ? '1px dashed var(--color-warning)' : '1px dashed var(--color-border)',
+                      backgroundColor: needs ? 'rgba(234, 179, 8, 0.08)' : 'transparent',
+                    }}
+                  >
+                    <Paperclip size={13} />
+                    <span>
+                      {needs ? (
+                        <>
+                          <strong>Evidence required</strong> (above {fmtNumber(t?.evidenceThreshold)} {r.unit}): Click to attach
+                        </>
+                      ) : (
+                        'Attach supporting evidence (optional)'
+                      )}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.csv,.xls,.xlsx"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] ?? null;
+                        patch(r.key, { file: f });
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                )
+              )}
+              {t?.category === 'ELECTRICITY' && r.status !== 'done' && (
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: 'var(--font-size-xs)' }}>
+                  <span className="text-muted">Market attribute:</span>
+                  <select
+                    aria-label={`Line ${i + 1} Scope 2 market attribute`}
+                    value={r.marketInstrument || ''}
+                    onChange={(e) => patch(r.key, { marketInstrument: e.target.value })}
+                    style={{
+                      padding: '2px 8px',
+                      fontSize: 'var(--font-size-xs)',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--color-border)',
+                      background: 'var(--color-surface)',
+                      color: 'var(--color-text)',
+                    }}
+                  >
+                    <option value="">Grid default (Standard mix)</option>
+                    <option value="REC">REC (100% Renewable)</option>
+                    <option value="PPA">PPA (Power Purchase Agreement)</option>
+                    <option value="GREEN_TARIFF">Green Tariff (Low carbon)</option>
+                  </select>
+                </label>
+              )}
+              {r.status === 'working' && <span className="text-muted" style={{ fontSize: 'var(--font-size-xs)' }}>Saving…</span>}
+              {r.status === 'done' && (
+                <span className="inline-icon" style={{ color: 'var(--color-success)', fontSize: 'var(--font-size-xs)' }}>
+                  <Check size={14} aria-hidden="true" /> Saved
+                </span>
+              )}
+              {r.status === 'error' && (
+                <span style={{ color: 'var(--color-danger)', fontSize: 'var(--font-size-xs)' }}>{r.error}</span>
+              )}
+            </div>
           </div>
         );
       })}
@@ -280,9 +448,11 @@ function CsvUpload() {
   const { data: batches = [] } = useImportBatches();
   const { showToast } = useToast();
   const confirm = useConfirm();
+  const qc = useQueryClient();
   const [file, setFile] = useState(null);
   const [fileError, setFileError] = useState(null);
   const [result, setResult] = useState(null);
+  const [submittingAll, setSubmittingAll] = useState(false);
 
   const template = toCsv([
     ['resourceTypeName', 'quantity', 'unit', 'cost', 'periodStart', 'periodEnd', 'notes'],
@@ -304,6 +474,36 @@ function CsvUpload() {
     }
   };
 
+  const handleSubmitAll = async () => {
+    if (!result?.createdRecordIds?.length) return;
+    const count = result.createdRecordIds.length;
+    const ok = await confirm({
+      title: `Submit all ${count} entries for review?`,
+      message: 'Each valid entry will be submitted to the Reviewer queue. Any entries requiring mandatory evidence attachments must have files attached before submission.',
+      confirmLabel: 'Submit all for review',
+      icon: Send,
+    });
+    if (!ok) return;
+    setSubmittingAll(true);
+    let successCount = 0;
+    let failCount = 0;
+    for (const id of result.createdRecordIds) {
+      try {
+        await resourceRecordsService.submit(id);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+    setSubmittingAll(false);
+    qc.invalidateQueries({ queryKey: ['resource-records'] });
+    if (failCount > 0) {
+      showToast(`${successCount} submitted; ${failCount} require evidence attachment before submitting.`, 'info');
+    } else {
+      showToast(`All ${successCount} entries submitted for review!`, 'success');
+    }
+  };
+
   return (
     <div className="stack">
       <Card>
@@ -314,10 +514,32 @@ function CsvUpload() {
           actions={<Button variant="secondary" size="sm" icon={Download} onClick={() => downloadText('tropos-usage-template.csv', template)}>Download template</Button>}
         />
         <p className="text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-          Columns: <code>resourceTypeName, quantity, unit, cost, periodStart, periodEnd, notes</code> (cost and notes optional, dates as YYYY-MM-DD). Max 5 MB.
+          Columns: <code>resourceTypeName, quantity, unit, cost, periodStart, periodEnd, notes</code> (cost and notes optional). Max 5 MB and 1000 rows per file.
         </p>
+        <ul className="text-muted" style={{ fontSize: 'var(--font-size-sm)', margin: 'var(--space-2) 0 0', paddingLeft: 'var(--space-5)' }}>
+          <li><code>quantity</code> must be a positive plain number with up to 4 decimals (<code>1200</code>, <code>45.5</code>); <code>cost</code> up to 2 decimals. Both are capped at 1,000,000,000. Signs, thousands separators and scientific notation (<code>1e5</code>) are rejected.</li>
+          <li>Dates must be written <code>YYYY-MM-DD</code> (for example <code>2026-09-30</code>). Formats like <code>5/1/2026</code> are rejected.</li>
+          <li><code>unit</code> can be at most 30 characters and <code>notes</code> at most 1000.</li>
+        </ul>
         <div style={{ margin: 'var(--space-4) 0' }}>
-          <input type="file" accept=".csv,text/csv" aria-label="CSV file" onChange={(e) => { const f = e.target.files?.[0] ?? null; setFile(f); setFileError(f ? csvFileError(f) : null); }} />
+          {file ? (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid var(--color-primary)' }}>
+              <FileUp size={16} style={{ color: 'var(--color-primary)' }} />
+              <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)' }}>{file.name}</span>
+              <span className="text-muted" style={{ fontSize: 'var(--font-size-xs)' }}>({fmtNumber(file.size / 1024, 0)} KB)</span>
+              <button
+                type="button"
+                title="Remove file"
+                aria-label="Remove selected CSV file"
+                onClick={() => { setFile(null); setFileError(null); }}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', padding: '2px' }}
+              >
+                <X size={15} />
+              </button>
+            </div>
+          ) : (
+            <input type="file" accept=".csv,text/csv" aria-label="CSV file" onChange={(e) => { const f = e.target.files?.[0] ?? null; setFile(f); setFileError(f ? csvFileError(f) : null); }} />
+          )}
           {fileError && <p className="form-field__error" role="alert">{fileError}</p>}
         </div>
         <Button icon={Upload} onClick={upload} disabled={!file || !!fileError} loading={importCsv.isPending}>Upload and validate</Button>
@@ -325,19 +547,89 @@ function CsvUpload() {
         {result && (
           <div style={{ marginTop: 'var(--space-5)' }}>
             <div className={`callout ${result.batch.errorRows ? 'callout--warning' : 'callout--success'}`}>
-              {result.batch.successRows} of {result.batch.totalRows} rows imported as drafts
-              {result.batch.errorRows ? `; ${result.batch.errorRows} need fixing.` : '.'}{' '}
-              <Link to={CONTRIBUTOR_ROUTES.HISTORY} className="inline-icon">Review and submit them <ArrowRight size={14} aria-hidden="true" /></Link>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                <div>
+                  <strong>{result.batch.successRows} of {result.batch.totalRows} rows imported</strong> as drafts
+                  {result.batch.errorRows ? `; ${result.batch.errorRows} need fixing.` : '.'}
+                </div>
+                {result.batch.successRows > 0 && (
+                  <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                    <Button
+                      size="sm"
+                      icon={Send}
+                      onClick={handleSubmitAll}
+                      loading={submittingAll}
+                    >
+                      Submit all ({result.batch.successRows}) for review
+                    </Button>
+                    <Link to={CONTRIBUTOR_ROUTES.HISTORY}>
+                      <Button variant="secondary" size="sm" icon={ArrowRight}>
+                        View in history
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Extracted Booking / Entry Details Table */}
+            {result.importedRows && result.importedRows.length > 0 && (
+              <div style={{ marginTop: 'var(--space-4)' }}>
+                <h4 style={{ fontSize: 'var(--font-size-md)', fontWeight: 600, marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <ClipboardList size={16} /> Extracted Booking Details ({result.importedRows.length} entries taken)
+                </h4>
+                <div className="table-scroll">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Row</th>
+                        <th>Resource</th>
+                        <th className="num">Quantity</th>
+                        <th>Period</th>
+                        <th className="num">Cost</th>
+                        <th>Notes / Booking Ref</th>
+                        <th>Staged As</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.importedRows.map((r) => (
+                        <tr key={r.row}>
+                          <td><strong>#{r.row}</strong></td>
+                          <td><strong>{r.resourceTypeName}</strong></td>
+                          <td className="num">{fmtNumber(r.quantity, 2)} {r.unit}</td>
+                          <td>{fmtRange(r.periodStart, r.periodEnd)}</td>
+                          <td className="num">{r.cost != null ? `$${fmtNumber(r.cost, 2)}` : '—'}</td>
+                          <td className="text-muted" style={{ maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {r.notes || '—'}
+                          </td>
+                          <td>
+                            <span style={{ fontSize: '11px', padding: '2px 6px', borderRadius: 4, background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary-color)', fontWeight: 500 }}>
+                              Draft Staged
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Skipped rows / errors if any */}
             {result.batch.errorsJson?.length > 0 && (
-              <table className="data-table">
-                <thead><tr><th>Row</th><th>Problem</th></tr></thead>
-                <tbody>
-                  {result.batch.errorsJson.map((e) => (
-                    <tr key={e.row}><td>{e.row}</td><td>{e.errors.join('; ')}</td></tr>
-                  ))}
-                </tbody>
-              </table>
+              <div style={{ marginTop: 'var(--space-4)' }}>
+                <h4 style={{ fontSize: 'var(--font-size-md)', fontWeight: 600, marginBottom: 'var(--space-2)', color: 'var(--color-danger)' }}>
+                  Skipped Rows ({result.batch.errorsJson.length})
+                </h4>
+                <table className="data-table">
+                  <thead><tr><th>Row</th><th>Problem</th></tr></thead>
+                  <tbody>
+                    {result.batch.errorsJson.map((e) => (
+                      <tr key={e.row}><td><strong>#{e.row}</strong></td><td>{e.errors.join('; ')}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}
@@ -359,4 +651,3 @@ function CsvUpload() {
     </div>
   );
 }
-

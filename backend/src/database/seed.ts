@@ -18,6 +18,17 @@ const SALT_ROUNDS = 10;
 const now = () => new Date().toISOString();
 
 async function main() {
+  const isProd = process.env.NODE_ENV === 'production';
+  // The documented default password is for local development only.
+  const superAdminPassword = process.env.SEED_SUPERADMIN_PASSWORD ?? (isProd ? '' : 'SuperAdmin1!');
+  if (!superAdminPassword) {
+    throw new Error(
+      'Refusing to seed a default Super Admin password in production. Set SEED_SUPERADMIN_PASSWORD to a strong, unique password.',
+    );
+  }
+  // Demo accounts all share a well-known password, so they are skipped in production unless explicitly requested.
+  const seedDemo = !isProd || process.env.SEED_DEMO_DATA === 'true';
+
   const store = loadStore();
   console.log('Seeding Tropos...\n');
 
@@ -26,7 +37,7 @@ async function main() {
     store.platformAdmins.push({
       id: uuidv4(),
       email: 'superadmin@tropos.dev',
-      passwordHash: await bcrypt.hash('SuperAdmin1!', SALT_ROUNDS),
+      passwordHash: await bcrypt.hash(superAdminPassword, SALT_ROUNDS),
       fullName: 'Platform Super Admin',
       role: 'SUPER_ADMIN',
       isActive: true,
@@ -35,7 +46,7 @@ async function main() {
       updatedAt: now(),
       lastLogin: null,
     });
-    console.log('Created Super Admin: superadmin@tropos.dev / SuperAdmin1!');
+    console.log(`Created Super Admin: superadmin@tropos.dev${process.env.SEED_SUPERADMIN_PASSWORD ? ' (password from SEED_SUPERADMIN_PASSWORD)' : ' / ' + superAdminPassword}`);
   } else {
     console.log('Super Admin already exists, skipping.');
   }
@@ -150,7 +161,9 @@ async function main() {
 
   // 5. Demo organization with one user per role
   const demoSlug = 'demo-organization';
-  if (!store.organizations.some((o) => o.slug === demoSlug)) {
+  if (!seedDemo) {
+    console.log('Skipping demo organization and demo accounts (production).');
+  } else if (!store.organizations.some((o) => o.slug === demoSlug)) {
     const org = {
       id: uuidv4(),
       name: 'Demo Organization',
@@ -219,7 +232,7 @@ async function main() {
     console.log('Demo organization already exists, skipping.');
   }
 
-  await seedDemoActivity(store);
+  if (seedDemo) await seedDemoActivity(store);
 
   saveStore(store);
   // saveStore is debounced — give it a moment to flush before exiting.

@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Gauge, Receipt, Check, ArrowRightLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useSubscription, usePlans, useDepartments, useOrgUsers } from '../../../../../../tropos new/frontend/src/hooks/useOrgData';
-import { useResourceTypes } from '../../../../../../tropos new/frontend/src/hooks/useResourceRecords';
-import { billingService } from '../../../../../../tropos new/frontend/src/services/miscServices';
+import { useSubscription, usePlans, useDepartments, useOrgUsers } from '../../../hooks/useOrgData';
+import { useResourceTypes } from '../../../hooks/useResourceRecords';
+import { billingService } from '../../../services/miscServices';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { Button } from '../../../components/ui/Button';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { ProgressBar } from '../../../components/ui/charts';
 import { useConfirm } from '../../../components/shared/ConfirmProvider';
-import { useToast } from '../../../../../../tropos new/frontend/src/context/ToastContext';
-import { ApiError } from '../../../../../../tropos new/frontend/src/services/apiClient';
-import { fmtDate, fmtMoney, fmtRange } from '../../../../../../tropos new/frontend/src/utils/format';
+import { useToast } from '../../../context/ToastContext';
+import { ApiError } from '../../../services/apiClient';
+import { fmtDate, fmtMoney, fmtRange } from '../../../utils/format';
 
 const PAGE_SIZE = 10;
 

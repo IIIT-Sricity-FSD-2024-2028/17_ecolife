@@ -74,8 +74,9 @@ export class AuditLogsReadService {
       actorType = 'ORG_USER';
     } else if (log.platformAdminId) {
       const a = this.db.store.platformAdmins.find((x) => x.id === log.platformAdminId);
-      actorName = a?.fullName ?? 'Unknown admin';
-      actorEmail = a?.email ?? '';
+      // Organizations see that Tropos staff acted, not who they are.
+      actorName = includeOrg ? (a?.fullName ?? 'Unknown admin') : 'Tropos Support';
+      actorEmail = includeOrg ? (a?.email ?? '') : '';
       actorType = 'PLATFORM_ADMIN';
     }
 

@@ -11,12 +11,13 @@ import { useConfirm } from '../../../components/shared/ConfirmProvider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { profileService, adminProfileService } from '../../../services/profileService';
 import { useToast } from '../../../context/ToastContext';
-import { ApiError } from '../../../services/apiClient';
+import { useAuth } from '../../../context/AuthContext';
+import { useAdminAuth } from '../../../context/AdminAuthContext';
+import { ApiError, replaceAdminToken, replaceOrgToken } from '../../../services/apiClient';
 import { ORG_ROLE_LABELS, PLATFORM_ROLE_LABELS } from '../../../constants/roles';
 import { fmtDate, fmtDateTime } from '../../../utils/format';
 
 const initialsOf = (name = '') => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?';
-
 
 /** Same page for every role: name/phone, read-only email & role, change password.
  * `variant="admin"` talks to the platform-admin endpoints instead of the org ones. */
@@ -24,6 +25,8 @@ export function ProfilePage({ variant = 'org' }) {
   const svc = variant === 'admin' ? adminProfileService : profileService;
   const key = variant === 'admin' ? ['admin-me'] : ['me'];
   const qc = useQueryClient();
+  const { updateUser } = useAuth();
+  const { updateAdmin } = useAdminAuth();
   const { data: profile, isLoading } = useQuery({ queryKey: key, queryFn: svc.get });
   const update = useMutation({ mutationFn: svc.update, onSuccess: () => qc.invalidateQueries({ queryKey: key }) });
   const changePassword = useMutation({ mutationFn: svc.changePassword });
@@ -38,6 +41,16 @@ export function ProfilePage({ variant = 'org' }) {
   const [pwError, setPwError] = useState(null);
   const pw = useZodForm(changePasswordSchema, { currentPassword: '', newPassword: '', confirmPassword: '' });
   const newPassword = pw.watch('newPassword');
+  const confirmPassword = pw.watch('confirmPassword');
+  const matchStatus = confirmPassword
+    ? confirmPassword === newPassword
+      ? { tone: 'success', text: 'Passwords match' }
+      : { tone: 'error', text: 'Passwords do not match' }
+    : undefined;
+
+  useEffect(() => {
+    if (pwError) setPwError(null);
+  }, [newPassword, pw.watch('currentPassword'), confirmPassword]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading || !profile) return <p className="text-muted">Loading…</p>;
 
@@ -45,9 +58,26 @@ export function ProfilePage({ variant = 'org' }) {
     const ok = await confirm({ title: 'Save your profile changes?', message: 'Your name, job title and phone number will be updated.', confirmLabel: 'Save changes', icon: Save });
     if (!ok) return;
     try {
-      await update.mutateAsync({ fullName: values.fullName.trim(), jobTitle: (values.jobTitle ?? '').trim(), phone: values.phone.trim() });
+      const trimmed = {
+        fullName: (values.fullName ?? '').trim(),
+        jobTitle: (values.jobTitle ?? '').trim(),
+        phone: (values.phone ?? '').trim(),
+      };
+      await update.mutateAsync(trimmed);
+      if (variant === 'admin') {
+        updateAdmin?.({ fullName: trimmed.fullName });
+      } else {
+        updateUser?.({ fullName: trimmed.fullName });
+      }
       showToast('Profile updated.', 'success');
     } catch (err) {
+      if (err instanceof ApiError && err.fieldErrors?.length) {
+        err.fieldErrors.forEach((fe) => {
+          if (fe.field && details.setError) {
+            details.setError(fe.field, { type: 'server', message: fe.message });
+          }
+        });
+      }
       showToast(err instanceof ApiError ? err.message : 'Something went wrong.', 'error');
     }
   };
@@ -57,11 +87,35 @@ export function ProfilePage({ variant = 'org' }) {
     const ok = await confirm({ title: 'Change your password?', message: 'You will use the new password the next time you sign in.', confirmLabel: 'Update password', icon: KeyRound });
     if (!ok) return;
     try {
-      await changePassword.mutateAsync({ currentPassword: values.currentPassword, newPassword: values.newPassword });
+      const result = await changePassword.mutateAsync({ currentPassword: values.currentPassword, newPassword: values.newPassword });
+      // Other sessions were signed out by the server; swap in the fresh token so this one stays signed in.
+      if (result?.token) (variant === 'admin' ? replaceAdminToken : replaceOrgToken)(result.token);
       showToast('Password changed.', 'success');
       pw.reset();
     } catch (err) {
-      setPwError(err instanceof ApiError ? err.message : 'Something went wrong.');
+      if (err instanceof ApiError) {
+        let mapped = false;
+        if (err.fieldErrors?.length) {
+          err.fieldErrors.forEach((fe) => {
+            if (fe.field && pw.setError) {
+              pw.setError(fe.field, { type: 'server', message: fe.message });
+              mapped = true;
+            }
+          });
+        }
+        const msg = err.message || 'Something went wrong.';
+        if (!mapped) {
+          if (msg.toLowerCase().includes('current password')) {
+            pw.setError('currentPassword', { type: 'server', message: msg });
+          } else if (msg.toLowerCase().includes('new password')) {
+            pw.setError('newPassword', { type: 'server', message: msg });
+          } else {
+            setPwError(msg);
+          }
+        }
+      } else {
+        setPwError('Something went wrong.');
+      }
     }
   };
 
@@ -101,8 +155,12 @@ export function ProfilePage({ variant = 'org' }) {
           <FormField label="Email Address" hint="Your email is your sign-in and can't be changed here.">
             <TextInput value={profile.email} readOnly disabled />
           </FormField>
-          <FormField label="Phone">
-            <TextInput type="tel" autoComplete="tel" placeholder="+91 98765 43210" {...details.register('phone')} />
+          <FormField
+            label="Phone"
+            error={details.formState.errors.phone}
+            hint="Enter an international format (e.g. +91 98451 23456) or 10-digit mobile number (e.g. 9845123456)."
+          >
+            <TextInput type="tel" autoComplete="tel" placeholder="+91 98451 23456" error={details.formState.errors.phone} {...details.register('phone')} />
           </FormField>
           <p className="text-muted inline-icon" style={{ fontSize: 'var(--font-size-xs)', display: 'flex', marginBottom: 'var(--space-3)' }}><Clock size={13} aria-hidden="true" /> Last sign-in {fmtDateTime(profile.lastLogin)}</p>
           <Button type="submit" icon={Save} loading={update.isPending}>Save changes</Button>
@@ -119,7 +177,7 @@ export function ProfilePage({ variant = 'org' }) {
             <PasswordInput autoComplete="new-password" placeholder="Create a new password" error={pw.formState.errors.newPassword} {...pw.register('newPassword')} />
           </FormField>
           <PasswordRules value={newPassword} />
-          <FormField label="Confirm New Password" error={pw.formState.errors.confirmPassword} required>
+          <FormField label="Confirm New Password" error={pw.formState.errors.confirmPassword} status={matchStatus} required>
             <PasswordInput autoComplete="new-password" placeholder="Re-enter the new password" error={pw.formState.errors.confirmPassword} {...pw.register('confirmPassword')} />
           </FormField>
           {pwError && <p className="auth-error" role="alert">{pwError}</p>}

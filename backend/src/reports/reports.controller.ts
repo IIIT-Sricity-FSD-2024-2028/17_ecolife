@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Post, ParseUUIDPipe } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, ParseUUIDPipe, Query, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrgAuth } from '../auth/decorators/protected.decorator';
 import { CurrentUser, AuthenticatedOrgUser } from '../auth/decorators/current-user.decorator';
 import { ReportsService } from './reports.service';
-import { GenerateReportDto, ReportDecisionDto, SubmitReportDto } from './dto/report.dto';
+import { GenerateReportDto, ReportDecisionDto, SubmitReportDto, UpdateReportDto } from './dto/report.dto';
 
 @ApiTags('Reports')
 @Controller('reports')
@@ -18,18 +19,53 @@ export class ReportsController {
     return { message: 'Report draft generated.', data: report };
   }
 
+  @Patch(':id')
+  @OrgAuth('REVIEWER')
+  @ApiOperation({ summary: 'Update a draft report (Reviewer)' })
+  update(
+    @CurrentUser() user: AuthenticatedOrgUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateReportDto,
+  ) {
+    const report = this.service.update(user, id, dto);
+    return { message: 'Report updated.', data: report };
+  }
+
   @Get()
-  @OrgAuth()
+  @OrgAuth('REVIEWER', 'EXECUTIVE', 'ORG_ADMIN')
   @ApiOperation({ summary: 'List reports' })
   findAll(@CurrentUser() user: AuthenticatedOrgUser) {
     return this.service.findAll(user);
   }
 
+  @Get('preview')
+  @OrgAuth('REVIEWER')
+  @ApiOperation({ summary: 'Preview report breakdown and emissions for a period (Reviewer)' })
+  preview(
+    @CurrentUser() user: AuthenticatedOrgUser,
+    @Query('periodStart') periodStart: string,
+    @Query('periodEnd') periodEnd: string,
+  ) {
+    if (!periodStart || !periodEnd) {
+      throw new BadRequestException('Both periodStart and periodEnd are required for preview.');
+    }
+    return this.service.previewContent(user, periodStart, periodEnd);
+  }
+
   @Get(':id')
-  @OrgAuth()
+  @OrgAuth('REVIEWER', 'EXECUTIVE', 'ORG_ADMIN')
   @ApiOperation({ summary: 'Get a single report' })
   findOne(@CurrentUser() user: AuthenticatedOrgUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.service.findOne(user, id);
+  }
+
+  @Get(':id/export/pdf')
+  @OrgAuth('REVIEWER', 'EXECUTIVE', 'ORG_ADMIN')
+  @ApiOperation({ summary: 'Export an authorized report snapshot or revision as PDF' })
+  exportPdf(@CurrentUser() user: AuthenticatedOrgUser, @Param('id', ParseUUIDPipe) id: string, @Res() response: Response) {
+    response.setHeader('Content-Type', 'application/pdf');
+    response.setHeader('Content-Disposition', `attachment; filename="tropos-report-${id}.pdf"`);
+    response.send(this.service.exportPdf(user, id));
   }
 
   @Post(':id/submit')
@@ -65,5 +101,13 @@ export class ReportsController {
   newVersion(@CurrentUser() user: AuthenticatedOrgUser, @Param('id', ParseUUIDPipe) id: string) {
     const report = this.service.createNewVersion(user, id);
     return { message: 'New report version created.', data: report };
+  }
+
+  @Delete(':id')
+  @OrgAuth('REVIEWER')
+  @ApiOperation({ summary: 'Delete an unapproved draft report (Reviewer)' })
+  remove(@CurrentUser() user: AuthenticatedOrgUser, @Param('id', ParseUUIDPipe) id: string) {
+    this.service.remove(user, id);
+    return { message: 'Draft report deleted.' };
   }
 }

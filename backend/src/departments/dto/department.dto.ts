@@ -10,6 +10,10 @@ export class CreateDepartmentDto {
   @ApiProperty({ required: false })
   @OptionalText(500)
   description?: string;
+
+  @ApiProperty({ required: false, type: [String], description: 'Permitted resource type IDs under this department’s operational boundary' })
+  @IsOptional()
+  allowedResourceTypeIds?: string[];
 }
 
 export class UpdateDepartmentDto {
@@ -21,4 +25,8 @@ export class UpdateDepartmentDto {
   @ApiProperty({ required: false })
   @OptionalText(500)
   description?: string;
+
+  @ApiProperty({ required: false, type: [String], description: 'Permitted resource type IDs under this department’s operational boundary' })
+  @IsOptional()
+  allowedResourceTypeIds?: string[];
 }

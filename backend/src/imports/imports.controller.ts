@@ -11,6 +11,26 @@ import { ImportsService } from './imports.service';
 export class ImportsController {
   constructor(private readonly service: ImportsService) {}
 
+  @Post('resource-records/preview')
+  @OrgAuth('CONTRIBUTOR')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Validate and classify a resource-record CSV without creating drafts' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      fileFilter: (_req, file, cb) => {
+        const isCsv = file.mimetype === 'text/csv' || file.originalname.toLowerCase().endsWith('.csv');
+        if (!isCsv) return cb(new BadRequestException('Only CSV files are accepted.'), false);
+        cb(null, true);
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  previewCsv(@CurrentUser() user: AuthenticatedOrgUser, @UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No file was uploaded.');
+    return { data: this.service.previewCsv(user, file) };
+  }
+
   @Post('resource-records')
   @OrgAuth('CONTRIBUTOR')
   @ApiConsumes('multipart/form-data')

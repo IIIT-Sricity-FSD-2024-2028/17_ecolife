@@ -1,3 +1,4 @@
+import { assertWithinPlan } from '../billing/plan-limits';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { DbService } from '../database/db.service';
@@ -13,6 +14,7 @@ export class OrgUsersService {
   constructor(private readonly db: DbService, private readonly auditLog: AuditLogService) {}
 
   async invite(actor: AuthenticatedOrgUser, dto: InviteOrgUserDto) {
+    assertWithinPlan(this.db, actor.organizationId, 'users');
     if (dto.role === 'CONTRIBUTOR' && !dto.departmentId) {
       throw new BadRequestException(
         'departmentId is required when inviting a Contributor — they must be scoped to exactly one department.',
@@ -95,8 +97,44 @@ export class OrgUsersService {
       throw new ForbiddenException('The organization Owner cannot be deactivated by another Org Admin.');
     }
 
-    if (dto.role === 'CONTRIBUTOR' && !dto.departmentId && !target.departmentId) {
+    const effectiveRole = (dto.role ?? target.role) as OrgRole;
+    const effectiveDepartmentId =
+      dto.departmentId !== undefined ? dto.departmentId : target.departmentId;
+
+    if (effectiveRole === 'CONTRIBUTOR' && !effectiveDepartmentId) {
       throw new BadRequestException('A Contributor must be assigned to a department.');
+    }
+
+    // The department must belong to the caller's organization (invite already checks this).
+    if (dto.departmentId) {
+      const dept = this.db.store.departments.find(
+        (d) => d.id === dto.departmentId && d.organizationId === actor.organizationId,
+      );
+      if (!dept) throw new BadRequestException('departmentId does not belong to your organization.');
+    }
+
+    // The Owner is the accountable account holder and must stay an Org Admin.
+    if (target.isOwner && dto.role !== undefined && dto.role !== 'ORG_ADMIN') {
+      throw new ForbiddenException('The organization Owner must remain an Org Admin.');
+    }
+
+    // Never leave the organization without an active Org Admin.
+    const losesAdminRights =
+      target.role === 'ORG_ADMIN' &&
+      target.isActive &&
+      ((dto.role !== undefined && dto.role !== 'ORG_ADMIN') || dto.isActive === false);
+    if (losesAdminRights) {
+      const otherAdmins = this.db.store.orgUsers.filter(
+        (u) => u.organizationId === actor.organizationId && u.id !== target.id && u.role === 'ORG_ADMIN' && u.isActive,
+      ).length;
+      if (otherAdmins === 0) {
+        throw new ForbiddenException('Your organization must keep at least one active Org Admin.');
+      }
+    }
+
+    // Re-activating a user counts against the plan's user limit again.
+    if (dto.isActive === true && !target.isActive) {
+      assertWithinPlan(this.db, actor.organizationId, 'users');
     }
 
     if (dto.fullName !== undefined) target.fullName = dto.fullName;
@@ -126,6 +164,7 @@ export class OrgUsersService {
 
   private sanitize(user: any) {
     const { passwordHash, ...safe } = user;
+    void passwordHash;
     return safe;
   }
 }

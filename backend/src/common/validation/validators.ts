@@ -1,4 +1,5 @@
 import { applyDecorators } from '@nestjs/common';
+import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
@@ -96,3 +97,57 @@ export function IsNotBefore(property: string, options?: ValidationOptions) {
 
 /** Strict ISO date options: rejects impossible dates such as 2026-02-30. */
 export const STRICT_DATE = { strict: true } as const;
+
+export function isValidRealPhone(val: unknown): boolean {
+  if (val === undefined || val === null || val === '') return true;
+  if (typeof val !== 'string') return false;
+  const trimmed = val.trim();
+  if (!trimmed) return true;
+
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length < 7 || digits.length > 15) return false;
+  if (/^(\d)\1+$/.test(digits)) return false;
+
+  if (trimmed.startsWith('+')) {
+    const p = parsePhoneNumberFromString(trimmed);
+    return Boolean(p && p.isValid());
+  }
+
+  const pIn = parsePhoneNumberFromString(trimmed, 'IN');
+  if (pIn && pIn.isValid()) return true;
+
+  const pUs = parsePhoneNumberFromString(trimmed, 'US');
+  if (pUs && pUs.isValid()) return true;
+
+  return false;
+}
+
+export function formatPhoneNumber(val: unknown): unknown {
+  if (typeof val !== 'string') return val;
+  const trimmed = val.trim();
+  if (!trimmed) return '';
+  const p = trimmed.startsWith('+')
+    ? parsePhoneNumberFromString(trimmed)
+    : parsePhoneNumberFromString(trimmed, 'IN') || parsePhoneNumberFromString(trimmed, 'US');
+  return p && p.isValid() ? p.formatInternational() : trimmed;
+}
+
+export function IsRealPhoneNumber(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'isRealPhoneNumber',
+      target: object.constructor,
+      propertyName,
+      options: {
+        message: 'Please enter a valid phone number (e.g. +91 98451 23456 or 10-digit mobile)',
+        ...validationOptions,
+      },
+      validator: {
+        validate(value: unknown) {
+          return isValidRealPhone(value);
+        },
+      },
+    });
+  };
+}
+

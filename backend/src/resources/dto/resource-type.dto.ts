@@ -4,6 +4,7 @@ import {
   ArrayMinSize,
   ArrayUnique,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsIn,
   IsNotEmpty,
@@ -11,12 +12,12 @@ import {
   IsOptional,
   IsPositive,
   IsString,
-  IsUUID,
   Max,
   MaxLength,
   Min,
 } from 'class-validator';
 import { OptionalText, RequiredText, STRICT_DATE, TrimEach } from '../../common/validation/validators';
+export { UpdateFactorSourceDto } from '../../platform-admin/dto/platform-admin.dto';
 
 const CATEGORIES = ['FUEL', 'ELECTRICITY', 'WATER', 'WASTE', 'TRAVEL', 'OTHER'];
 
@@ -56,18 +57,66 @@ export class CreateResourceTypeDto {
   defaultUnit!: string;
 }
 
+export class UpdateResourceTypeDto {
+  @ApiProperty({ required: false, example: 'Natural Gas' })
+  @IsOptional()
+  @RequiredText(120, 'Resource type name cannot be empty')
+  name?: string;
+
+  @ApiProperty({ enum: CATEGORIES, required: false })
+  @IsOptional()
+  @IsIn(CATEGORIES, { message: 'Category must be one of: ' + CATEGORIES.join(', ') })
+  category?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @OptionalText(500)
+  description?: string;
+
+  @ApiProperty({ required: false, description: 'Usage above this quantity requires supporting evidence.' })
+  @IsOptional()
+  @IsNumber({}, { message: 'Evidence threshold must be a number' })
+  @Min(0, { message: 'Evidence threshold cannot be negative' })
+  @Max(1_000_000_000)
+  evidenceThreshold?: number | null;
+
+  @ApiProperty({ required: false, example: ['m3', 'kWh'] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1, { message: 'At least one unit must be defined' })
+  @ArrayMaxSize(20, { message: 'At most 20 units are allowed' })
+  @ArrayUnique({ message: 'Units must be unique' })
+  @TrimEach()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true, message: 'Units cannot be empty' })
+  @MaxLength(30, { each: true, message: 'A unit must be at most 30 characters' })
+  units?: string[];
+
+  @ApiProperty({ required: false, example: 'm3' })
+  @IsOptional()
+  @RequiredText(30, 'Default unit cannot be empty')
+  defaultUnit?: string;
+
+  @ApiProperty({ required: false, example: true })
+  @IsOptional()
+  @IsBoolean({ message: 'isActive must be true or false' })
+  isActive?: boolean;
+}
+
 export class CreateFactorVersionDto {
   @ApiProperty()
-  @IsUUID('4', { message: 'resourceTypeId must be a valid UUID' })
+  @IsNotEmpty({ message: 'resourceTypeId is required' })
+  @IsString()
   resourceTypeId!: string;
 
   @ApiProperty()
-  @IsUUID('4', { message: 'sourceId must be a valid UUID' })
+  @IsNotEmpty({ message: 'sourceId is required' })
+  @IsString()
   sourceId!: string;
 
   @ApiProperty({ required: false, description: 'Omit for a global default; set for an org-specific override' })
   @IsOptional()
-  @IsUUID('4', { message: 'organizationId must be a valid UUID' })
+  @IsString()
   organizationId?: string;
 
   @ApiProperty({ example: 'CO2' })
@@ -97,4 +146,46 @@ export class CreateFactorVersionDto {
   @ApiProperty({ required: false, description: 'Why this factor is used / where it comes from. Required for organization overrides.' })
   @OptionalText(500)
   notes?: string;
+}
+
+export class UpdateFactorVersionDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  sourceId?: string;
+
+  @ApiProperty({ required: false, example: 'CO2' })
+  @IsOptional()
+  @RequiredText(20, 'Gas cannot be empty')
+  gas?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 8 }, { message: 'Factor value must be a number' })
+  @Min(0, { message: 'Factor value cannot be negative' })
+  @Max(1_000_000, { message: 'Factor value is unrealistically large' })
+  factorValue?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 4 }, { message: 'GWP must be a number' })
+  @IsPositive({ message: 'GWP must be greater than 0' })
+  @Max(100_000, { message: 'GWP is unrealistically large' })
+  gwp?: number;
+
+  @ApiProperty({ required: false, example: 'kg CO2 per kWh' })
+  @IsOptional()
+  @RequiredText(50, 'Unit cannot be empty')
+  unit?: string;
+
+  @ApiProperty({ required: false, example: '2026-01-01' })
+  @IsOptional()
+  @IsDateString(STRICT_DATE, { message: 'effectiveFrom must be a valid date' })
+  effectiveFrom?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @OptionalText(500)
+  notes?: string | null;
 }

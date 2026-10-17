@@ -18,10 +18,37 @@ export class AlertsController {
   }
 
   @Post(':id/respond')
-  @OrgAuth('CONTRIBUTOR', 'ORG_ADMIN')
-  @ApiOperation({ summary: 'Respond to and resolve an alert (Contributor or Org Admin)' })
-  respond(@CurrentUser() user: AuthenticatedOrgUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: RespondToAlertDto) {
+  @OrgAuth('CONTRIBUTOR', 'REVIEWER', 'ORG_ADMIN')
+  @ApiOperation({ summary: 'Respond to and resolve an alert (Contributor, Reviewer, or Org Admin)' })
+  respond(
+    @CurrentUser() user: AuthenticatedOrgUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RespondToAlertDto,
+  ) {
     const response = this.service.respond(user, id, dto);
     return { message: 'Alert resolved.', data: response };
+  }
+
+  @Post(':id/acknowledge')
+  @OrgAuth('REVIEWER', 'ORG_ADMIN')
+  @ApiOperation({ summary: 'Acknowledge an alert (Reviewer or Org Admin)' })
+  acknowledge(
+    @CurrentUser() user: AuthenticatedOrgUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const alert = this.service.acknowledge(user, id);
+    return { message: 'Alert acknowledged.', data: alert };
+  }
+
+  @Post(':id/close')
+  @OrgAuth('REVIEWER', 'ORG_ADMIN')
+  @ApiOperation({ summary: 'Close/dismiss an alert (Reviewer or Org Admin)' })
+  close(
+    @CurrentUser() user: AuthenticatedOrgUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('comment') comment?: string,
+  ) {
+    const alert = this.service.close(user, id, comment);
+    return { message: 'Alert closed.', data: alert };
   }
 }

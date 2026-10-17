@@ -106,10 +106,10 @@ export async function seedDemoActivity(store: DataStore) {
   const contributorMain = store.orgUsers.find((u) => u.email === 'contributor@demo.tropos.dev')!;
   const reviewer = store.orgUsers.find((u) => u.email === 'reviewer@demo.tropos.dev')!;
   const executive = store.orgUsers.find((u) => u.email === 'executive@demo.tropos.dev')!;
-  const contributorFleet = mkUser('fleet@demo.tropos.dev', 'Fiona Fleet', 'CONTRIBUTOR', fleet.id, true, '+1 555 0142');
+  const contributorFleet = mkUser('fleet@demo.tropos.dev', 'Fiona Fleet', 'CONTRIBUTOR', fleet.id, true, '+91 98201 23456');
   const contributorOffice = mkUser('office@demo.tropos.dev', 'Oscar Office', 'CONTRIBUTOR', office.id);
   mkUser('former@demo.tropos.dev', 'Frank Former', 'CONTRIBUTOR', main.id, false);
-  contributorMain.phone = '+1 555 0101';
+  contributorMain.phone = '+91 98451 23456';
   const contributorOf = (dept: string) => (dept === 'Main Facility' ? contributorMain : dept === 'Fleet & Logistics' ? contributorFleet : contributorOffice);
   console.log('Created departments, locations and users (fleet@ / office@ / former@demo.tropos.dev, password DemoPass1!)');
 
@@ -294,7 +294,7 @@ export async function seedDemoActivity(store: DataStore) {
     const byResourceType: Record<string, any> = {};
     const sum = { totalCo2eKg: 0, totalCost: 0, totalSavings: 0, totalCarbonExposure: 0, entryCount: 0 };
     for (const r of records) {
-      const c = store.calculationResults.find((x) => x.resourceRecordId === r.id);
+      const c = store.calculationResults.find((x) => x.resourceRecordId === r.id && !x.supersededAt);
       if (!c) continue;
       sum.entryCount++; sum.totalCo2eKg += c.co2eKg; sum.totalCost += c.costOfUsage ?? 0; sum.totalSavings += c.savingsVsBaseline ?? 0; sum.totalCarbonExposure += c.carbonExposure ?? 0;
       const dn = store.departments.find((d) => d.id === r.departmentId)?.name ?? 'Unknown';

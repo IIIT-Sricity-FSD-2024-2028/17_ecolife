@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Patch, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { OrgAuth, PlatformAuth } from '../auth/decorators/protected.decorator';
 import {
   AuthenticatedOrgUser,
@@ -30,11 +31,12 @@ export class OrgProfileController {
 
   @Post('change-password')
   @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @OrgAuth()
   @ApiOperation({ summary: 'Change your own password (requires the current password)' })
   async changePassword(@CurrentUser() user: AuthenticatedOrgUser, @Body() dto: ChangePasswordDto) {
-    await this.service.changeOrgPassword(user, dto);
-    return { message: 'Password changed.', data: null };
+    const data = await this.service.changeOrgPassword(user, dto);
+    return { message: 'Password changed.', data };
   }
 }
 
@@ -59,10 +61,11 @@ export class PlatformProfileController {
 
   @Post('change-password')
   @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @PlatformAuth('SUPER_ADMIN', 'PLATFORM_ADMIN')
   @ApiOperation({ summary: 'Change your own password (requires the current password)' })
   async changePassword(@CurrentUser() admin: AuthenticatedPlatformAdmin, @Body() dto: ChangePasswordDto) {
-    await this.service.changeAdminPassword(admin, dto);
-    return { message: 'Password changed.', data: null };
+    const data = await this.service.changeAdminPassword(admin, dto);
+    return { message: 'Password changed.', data };
   }
 }

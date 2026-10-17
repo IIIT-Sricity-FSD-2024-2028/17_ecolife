@@ -31,3 +31,23 @@ export class UpdatePlanDto {
   @IsBoolean()
   isActive?: boolean;
 }
+
+export class AdminUpdateSubscriptionDto {
+  @ApiProperty({ required: false, description: 'Plan ID to assign' })
+  @IsOptional()
+  planId?: string;
+
+  @ApiProperty({ required: false, enum: ['MONTHLY', 'ANNUAL'] })
+  @IsOptional()
+  @IsIn(['MONTHLY', 'ANNUAL'], { message: 'Cycle must be MONTHLY or ANNUAL' })
+  cycle?: 'MONTHLY' | 'ANNUAL';
+
+  @ApiProperty({ required: false, enum: ['TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELLED', 'EXPIRED'] })
+  @IsOptional()
+  @IsIn(['TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELLED', 'EXPIRED'], { message: 'Invalid status' })
+  status?: string;
+
+  @ApiProperty({ required: false, description: 'ISO date for next renewal' })
+  @IsOptional()
+  renewalDate?: string;
+}

@@ -18,6 +18,58 @@ export class InvitePlatformAdminDto {
   @ApiProperty({ description: 'Initial password. Same strength rules as any password.' })
   @IsNewPassword()
   temporaryPassword!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @OptionalText(50)
+  phone?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @OptionalText(100)
+  jobTitle?: string;
+}
+
+export class UpdatePlatformAdminDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsEmailAddress()
+  email?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @RequiredText(120, 'Full name cannot be empty')
+  fullName?: string;
+
+  @ApiProperty({ enum: ['SUPER_ADMIN', 'PLATFORM_ADMIN'], required: false })
+  @IsOptional()
+  @IsIn(['SUPER_ADMIN', 'PLATFORM_ADMIN'], { message: 'Role must be SUPER_ADMIN or PLATFORM_ADMIN' })
+  role?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean({ message: 'isActive must be true or false' })
+  isActive?: boolean;
+
+  @ApiProperty({ required: false, description: 'Optional new temporary password' })
+  @IsOptional()
+  @IsNewPassword()
+  temporaryPassword?: string;
+
+  @ApiProperty({ required: false, description: 'Reset failed logins and unlock' })
+  @IsOptional()
+  @IsBoolean()
+  unlock?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @OptionalText(50)
+  phone?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @OptionalText(100)
+  jobTitle?: string;
 }
 
 export class UpdateOrgStatusDto {
@@ -86,4 +138,165 @@ export class CreateFactorSourceDto {
   @OptionalText(500)
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true }, { message: 'Reference must be a valid http(s) URL' })
   referenceUrl?: string;
+}
+
+export class UpdateFactorSourceDto {
+  @ApiProperty({ required: false, example: 'DEFRA 2026 Conversion Factors (Updated)' })
+  @IsOptional()
+  @RequiredText(200, 'Source name cannot be empty')
+  name?: string;
+
+  @ApiProperty({ required: false, example: 'UK Government' })
+  @IsOptional()
+  @RequiredText(200, 'Publisher cannot be empty')
+  publisher?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @OptionalText(500)
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true }, { message: 'Reference must be a valid http(s) URL' })
+  referenceUrl?: string | null;
+}
+
+export class CreateOrganizationDto {
+  @ApiProperty({ example: 'Acme Corporation' })
+  @RequiredText(150, 'Organization name is required')
+  name!: string;
+
+  @ApiProperty({ example: 'John Owner' })
+  @RequiredText(120, 'Owner full name is required')
+  ownerName!: string;
+
+  @ApiProperty({ example: 'owner@acme.com' })
+  @IsEmailAddress()
+  ownerEmail!: string;
+
+  @ApiProperty({ required: false, description: 'Optional initial password. Defaults to Welcome123! if omitted.' })
+  @IsOptional()
+  @IsNewPassword()
+  password?: string;
+
+  @ApiProperty({ required: false, description: 'Plan ID to assign' })
+  @IsOptional()
+  planId?: string;
+
+  @ApiProperty({ required: false, example: 2024 })
+  @IsOptional()
+  @IsInt({ message: 'Baseline year must be an integer' })
+  @Min(1990)
+  @Max(2050)
+  baselineYear?: number;
+
+  @ApiProperty({ required: false, example: 'USD' })
+  @IsOptional()
+  @OptionalText(5)
+  currency?: string;
+
+  @ApiProperty({ required: false, example: 50 })
+  @IsOptional()
+  carbonPricePerTon?: number;
+}
+
+export class UpdateOrganizationDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @RequiredText(150, 'Organization name cannot be empty')
+  name?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  planId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt({ message: 'Baseline year must be an integer' })
+  @Min(1990)
+  @Max(2050)
+  baselineYear?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @OptionalText(5)
+  currency?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  carbonPricePerTon?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt({ message: 'Session timeout must be an integer' })
+  @Min(5)
+  @Max(1440)
+  sessionTimeoutOverrideMin?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  maintenanceMode?: boolean;
+}
+
+export class AdminCreateDepartmentDto {
+  @ApiProperty({ example: 'Facilities & Fleet' })
+  @RequiredText(120, 'Department name is required')
+  name!: string;
+
+  @ApiProperty({ required: false })
+  @OptionalText(500)
+  description?: string;
+}
+
+export class AdminUpdateDepartmentDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @RequiredText(120, 'Department name cannot be empty')
+  name?: string;
+
+  @ApiProperty({ required: false })
+  @OptionalText(500)
+  description?: string;
+}
+
+export class AdminCreateOrgUserDto {
+  @ApiProperty({ example: 'user@acme.com' })
+  @IsEmailAddress()
+  email!: string;
+
+  @ApiProperty({ example: 'Jane Doe' })
+  @RequiredText(120, 'Full name is required')
+  fullName!: string;
+
+  @ApiProperty({ enum: ['ORG_ADMIN', 'REVIEWER', 'CONTRIBUTOR', 'EXECUTIVE'] })
+  @IsIn(['ORG_ADMIN', 'REVIEWER', 'CONTRIBUTOR', 'EXECUTIVE'], { message: 'Valid role required' })
+  role!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  departmentId?: string;
+
+  @ApiProperty({ required: false, description: 'Optional initial password. Defaults to Welcome123! if omitted.' })
+  @IsOptional()
+  @IsNewPassword()
+  temporaryPassword?: string;
+}
+
+export class AdminUpdateOrgUserDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @RequiredText(120, 'Full name cannot be empty')
+  fullName?: string;
+
+  @ApiProperty({ required: false, enum: ['ORG_ADMIN', 'REVIEWER', 'CONTRIBUTOR', 'EXECUTIVE'] })
+  @IsOptional()
+  @IsIn(['ORG_ADMIN', 'REVIEWER', 'CONTRIBUTOR', 'EXECUTIVE'], { message: 'Valid role required' })
+  role?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  departmentId?: string | null;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

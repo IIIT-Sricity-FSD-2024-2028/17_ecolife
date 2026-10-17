@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsInt, IsNumber, IsUUID, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsNotEmpty, IsNumber, IsString, Max, Min } from 'class-validator';
 import { OptionalText, RequiredText } from '../../common/validation/validators';
 
 const MAX_PRICE = 1_000_000;
@@ -40,6 +40,7 @@ export class CreatePlanDto {
 
 export class ChangePlanDto {
   @ApiProperty()
-  @IsUUID('4', { message: 'planId must be a valid UUID' })
+  @IsNotEmpty({ message: 'planId is required' })
+  @IsString({ message: 'planId must be a string' })
   planId!: string;
 }
