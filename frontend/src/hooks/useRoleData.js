@@ -38,16 +38,15 @@ export function useFactorSources() {
 }
 export function useFactorVersions(resourceTypeId) {
   return useQuery({
-    queryKey: ['factor-versions', resourceTypeId],
+    queryKey: ['factor-versions', resourceTypeId || 'all'],
     queryFn: () => factorsService.listVersions(resourceTypeId),
-    enabled: !!resourceTypeId,
   });
 }
 export function useCreateFactorOverride() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: factorsService.createOverride,
-    onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ['factor-versions', v.resourceTypeId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['factor-versions'] }),
   });
 }
 

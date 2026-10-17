@@ -49,6 +49,20 @@ export function useRespondToAlert() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['alerts'] }),
   });
 }
+export function useAcknowledgeAlert() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => alertsService.acknowledge(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['alerts'] }),
+  });
+}
+export function useCloseAlert() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, comment }) => alertsService.close(id, comment),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['alerts'] }),
+  });
+}
 
 export function useTargets() {
   return useQuery({ queryKey: ['targets'], queryFn: targetsService.list });
@@ -57,6 +71,20 @@ export function useCreateTarget() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: targetsService.create,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['targets'] }),
+  });
+}
+export function useUpdateTarget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }) => targetsService.update(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['targets'] }),
+  });
+}
+export function useDeleteTarget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => targetsService.remove(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['targets'] }),
   });
 }
@@ -74,6 +102,25 @@ export function useGenerateReport() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['reports'] }),
   });
 }
+export function useUpdateReport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }) => reportsService.update(id, payload),
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: ['reports'] });
+      qc.invalidateQueries({ queryKey: ['reports', id] });
+    },
+  });
+}
+export function useDeleteReport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: reportsService.delete,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+}
 export function useReportActions() {
   const qc = useQueryClient();
   const invalidate = (id) => {
@@ -89,7 +136,11 @@ export function useReportActions() {
     mutationFn: ({ id, comment }) => reportsService.requestRevision(id, comment),
     onSuccess: (_, { id }) => invalidate(id),
   });
-  return { submit, approve, requestRevision };
+  const remove = useMutation({
+    mutationFn: (id) => reportsService.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['reports'] }),
+  });
+  return { submit, approve, requestRevision, remove };
 }
 
 export function useSubscription() {

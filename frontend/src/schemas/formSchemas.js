@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 
 /**
  * One place for every form's validation rules. They mirror the backend DTOs
@@ -47,11 +48,50 @@ export const signInPasswordField = z
   .min(1, 'Password is required')
   .max(128, 'Password is too long');
 
+export function isValidRealPhone(val) {
+  if (!val) return true;
+  const trimmed = typeof val === 'string' ? val.trim() : '';
+  if (!trimmed) return true;
+
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length < 7 || digits.length > 15) return false;
+
+  // Reject dummy numbers where all digits are identical e.g. 0000000000, 9999999999
+  if (/^(\d)\1+$/.test(digits)) return false;
+
+  // If starts with +, parse as international
+  if (trimmed.startsWith('+')) {
+    const p = parsePhoneNumberFromString(trimmed);
+    return Boolean(p && p.isValid());
+  }
+
+  // Without +, check IN or US standard numbering
+  const pIn = parsePhoneNumberFromString(trimmed, 'IN');
+  if (pIn && pIn.isValid()) return true;
+
+  const pUs = parsePhoneNumberFromString(trimmed, 'US');
+  if (pUs && pUs.isValid()) return true;
+
+  return false;
+}
+
+export function formatPhoneNumber(val) {
+  if (!val) return '';
+  const trimmed = typeof val === 'string' ? val.trim() : '';
+  if (!trimmed) return '';
+  const p = trimmed.startsWith('+')
+    ? parsePhoneNumberFromString(trimmed)
+    : parsePhoneNumberFromString(trimmed, 'IN') || parsePhoneNumberFromString(trimmed, 'US');
+  return p && p.isValid() ? p.formatInternational() : trimmed;
+}
+
 export const phoneField = z
   .string()
   .trim()
   .max(30, 'Phone number must be at most 30 characters')
   .regex(/^[+()\-\s\d]*$/, 'Use digits, spaces, + ( ) and - only')
+  .refine(isValidRealPhone, 'Please enter a valid phone number (e.g. +91 98451 23456 or 10-digit mobile)')
+  .transform((val) => formatPhoneNumber(val))
   .optional()
   .default('');
 
@@ -117,7 +157,7 @@ export const loginSchema = z.object({
 });
 
 const confirmMatches = (field) => (d, ctx) => {
-  if (d[field] !== d.confirmPassword) {
+  if (d.confirmPassword && d[field] !== d.confirmPassword) {
     ctx.addIssue({ code: 'custom', path: ['confirmPassword'], message: 'Passwords do not match' });
   }
 };
@@ -137,6 +177,22 @@ export const forgotPasswordSchema = z.object({ email: emailField });
 
 export const resetPasswordSchema = z
   .object({ newPassword: newPasswordField, confirmPassword: confirmField })
+  .superRefine(confirmMatches('newPassword'));
+
+export const announcementSchema = z.object({
+  title: text('Title', 100),
+  body: text('Message', 1000),
+  departmentId: z.string().optional().default(''), // '' = whole organization
+  expiresInDays: z.coerce.number({ invalid_type_error: 'Enter a number of days' }).int('Whole days only').min(1, 'At least 1 day').max(60, 'At most 60 days'),
+});
+
+/** Demo mode: reset with the on-screen 6-digit code instead of an emailed link. */
+export const resetWithCodeSchema = z
+  .object({
+    code: z.string({ required_error: 'Enter the 6-digit code' }).trim().regex(/^\d{6}$/, 'The code must be 6 digits'),
+    newPassword: newPasswordField,
+    confirmPassword: confirmField,
+  })
   .superRefine(confirmMatches('newPassword'));
 
 // ---- Profile ---------------------------------------------------------------------
@@ -161,6 +217,7 @@ export const changePasswordSchema = z
 export const departmentSchema = z.object({
   name: text('Department name'),
   description: optionalText('Description', 500),
+  allowedResourceTypeIds: z.array(z.string()).optional(),
 });
 
 export const ORG_ROLES = ['ORG_ADMIN', 'CONTRIBUTOR', 'REVIEWER', 'EXECUTIVE'];
@@ -171,6 +228,28 @@ export const inviteUserSchema = z
     role: z.enum(ORG_ROLES, { errorMap: () => ({ message: 'Choose a role' }) }),
     departmentId: z.string().optional().default(''),
     temporaryPassword: newPasswordField,
+  })
+  .superRefine((d, ctx) => {
+    if (d.role === 'CONTRIBUTOR' && !d.departmentId) {
+      ctx.addIssue({ code: 'custom', path: ['departmentId'], message: 'Choose a department for a contributor' });
+    }
+  });
+
+export const adminCreateOrgUserSchema = z.object({
+  fullName: text('Full name'),
+  email: emailField,
+  role: z.enum(ORG_ROLES, { errorMap: () => ({ message: 'Choose a role' }) }),
+  departmentId: z.string().optional().default(''),
+  temporaryPassword: z.string().trim().optional().refine((val) => !val || (val.length >= 8 && /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(val)), {
+    message: 'Password must be at least 8 characters and include uppercase, lowercase, and a number',
+  }),
+});
+
+export const editUserSchema = z
+  .object({
+    fullName: text('Full name'),
+    role: z.enum(ORG_ROLES, { errorMap: () => ({ message: 'Choose a role' }) }),
+    departmentId: z.string().optional().default(''),
   })
   .superRefine((d, ctx) => {
     if (d.role === 'CONTRIBUTOR' && !d.departmentId) {
@@ -202,11 +281,16 @@ export const targetSchema = z
   .superRefine(periodOrder);
 
 export const reportSchema = z
-  .object({ title: text('Title', 200), periodStart: dateField('Period start'), periodEnd: dateField('Period end') })
+  .object({
+    title: text('Title', 200),
+    periodStart: dateField('Period start'),
+    periodEnd: dateField('Period end'),
+    notes: optionalText('Notes', 5000),
+  })
   .superRefine(periodOrder);
 
 export const factorSchema = z.object({
-  sourceId: uuidField('Choose a source'),
+  sourceId: z.string({ required_error: 'Choose a source' }).min(1, 'Choose a source'),
   gas: text('Gas', 20),
   factorValue: numberField('Factor value', { min: 0, max: 1e6, decimals: 8 }),
   gwp: numberField('GWP', { gt: 0, max: 1e5, decimals: 4 }),
@@ -225,6 +309,44 @@ export const adminInviteSchema = z.object({
   fullName: text('Full name'),
   role: z.enum(['SUPER_ADMIN', 'PLATFORM_ADMIN'], { errorMap: () => ({ message: 'Choose a role' }) }),
   temporaryPassword: newPasswordField,
+  phone: optionalText('Phone', 50),
+  jobTitle: optionalText('Job title', 100),
+});
+
+export const adminUpdateSchema = z.object({
+  fullName: text('Full name'),
+  email: emailField,
+  role: z.enum(['SUPER_ADMIN', 'PLATFORM_ADMIN'], { errorMap: () => ({ message: 'Choose a role' }) }),
+  phone: optionalText('Phone', 50),
+  jobTitle: optionalText('Job title', 100),
+  isActive: z.boolean().default(true),
+});
+
+export const adminResetPasswordSchema = z.object({
+  temporaryPassword: newPasswordField,
+});
+
+export const createOrgSchema = z.object({
+  name: text('Organization name', 150),
+  ownerName: text('Owner full name', 120),
+  ownerEmail: emailField,
+  temporaryPassword: z.string().trim().optional().refine((val) => !val || (val.length >= 8 && /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(val)), {
+    message: 'Password must be at least 8 characters and include uppercase, lowercase, and a number',
+  }),
+  planId: z.string().optional().default(''),
+  baselineYear: optionalNumberField('Baseline year', { min: 1990, max: 2050, decimals: 0 }),
+  currency: optionalText('Currency', 5),
+  carbonPricePerTon: optionalNumberField('Carbon price per ton', { min: 0, max: 1e6, decimals: 2 }),
+});
+
+export const updateOrgSchema = z.object({
+  name: text('Organization name', 150),
+  planId: z.string().optional().default(''),
+  baselineYear: optionalNumberField('Baseline year', { min: 1990, max: 2050, decimals: 0 }),
+  currency: optionalText('Currency', 5),
+  carbonPricePerTon: optionalNumberField('Carbon price per ton', { min: 0, max: 1e6, decimals: 2 }),
+  sessionTimeoutOverrideMin: optionalNumberField('Session timeout override (minutes)', { min: 5, max: 1440, decimals: 0 }),
+  maintenanceMode: z.boolean().optional().default(false),
 });
 
 export const sourceSchema = z.object({
@@ -295,6 +417,7 @@ export const commentSchema = (required, requiredMessage = 'A comment is required
 
 export const recordEditSchema = z.object({
   quantity: numberField('Quantity', { gt: 0, max: 1e9, decimals: 4 }),
+  unit: z.string().trim().min(1, 'Unit cannot be empty').max(30, 'Unit must be at most 30 characters').optional(),
   cost: optionalNumberField('Cost', { min: 0, max: 1e9, decimals: 2 }),
   notes: optionalText('Notes', LIMITS.note),
 });

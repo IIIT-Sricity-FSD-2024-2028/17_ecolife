@@ -36,6 +36,16 @@ export function useUpdateResourceRecord() {
   });
 }
 
+export function useDeleteResourceRecord() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => resourceRecordsService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resource-records'] });
+    },
+  });
+}
+
 export function useSubmitResourceRecord() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -65,5 +75,13 @@ export function useReviewResourceRecord() {
     mutationFn: ({ id, comment }) => resourceRecordsService.requestChanges(id, comment),
     onSuccess: (_, { id }) => invalidate(id),
   });
-  return { approve, reject, requestChanges };
+  const claim = useMutation({
+    mutationFn: (id) => resourceRecordsService.claim(id),
+    onSuccess: (_, id) => invalidate(id),
+  });
+  const release = useMutation({
+    mutationFn: (id) => resourceRecordsService.release(id),
+    onSuccess: (_, id) => invalidate(id),
+  });
+  return { approve, reject, requestChanges, claim, release };
 }

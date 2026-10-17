@@ -17,6 +17,6 @@ export const amendmentsService = {
 
 export const factorsService = {
   listSources: () => orgApi.get('/factors/sources'),
-  listVersions: (resourceTypeId) => orgApi.get(`/factors/versions/${resourceTypeId}`),
+  listVersions: (resourceTypeId) => orgApi.get(resourceTypeId ? `/factors/versions/${resourceTypeId}` : '/factors/versions'),
   createOverride: (payload) => orgApi.post('/factors/versions/override', payload),
 };

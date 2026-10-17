@@ -1,5 +1,8 @@
 const LABELS = {
   'auth.login': 'Signed in',
+  'comment.created': 'Posted a comment',
+  'announcement.created': 'Posted an announcement',
+  'announcement.removed': 'Removed an announcement',
   'auth.admin_login': 'Signed in (admin portal)',
   'auth.account_locked': 'Account locked after too many failed sign-ins',
   'organization.registered': 'Registered the organization',
