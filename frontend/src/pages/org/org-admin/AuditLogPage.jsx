@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Download, FilterX, ChevronLeft, ChevronRight, SearchX } from 'lucide-react';
-import { useAuditLogs, useAuditActions } from '../../../hooks/useRoleData';
-import { auditLogService } from '../../../services/auditLogService';
+import { useAuditLogs, useAuditActions } from '../../../../../../tropos new/frontend/src/hooks/useRoleData';
+import { auditLogService } from '../../../../../../tropos new/frontend/src/services/auditLogService';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { Button } from '../../../components/ui/Button';
@@ -11,9 +11,9 @@ import { Drawer } from '../../../components/ui/Drawer';
 import { DetailList } from '../../../components/shared/DetailList';
 import { rowProps } from '../../../components/shared/rowProps';
 import { useConfirm } from '../../../components/shared/ConfirmProvider';
-import { useToast } from '../../../context/ToastContext';
-import { describeAction } from '../../../utils/auditLabels';
-import { downloadText, fmtDateTime, toCsv } from '../../../utils/format';
+import { useToast } from '../../../../../../tropos new/frontend/src/context/ToastContext';
+import { describeAction } from '../../../../../../tropos new/frontend/src/utils/auditLabels';
+import { downloadText, fmtDateTime, toCsv } from '../../../../../../tropos new/frontend/src/utils/format';
 
 const PAGE = 25;
 const empty = { action: '', actor: '', from: '', to: '' };

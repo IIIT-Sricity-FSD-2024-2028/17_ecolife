@@ -1,18 +1,20 @@
 import { Link } from 'react-router-dom';
-import { Building, Users, BellRing, CreditCard, AlertTriangle, UsersRound, Activity, ArrowRight } from 'lucide-react';
-import { useDepartments, useOrgUsers, useAlerts, useSubscription } from '../../../hooks/useOrgData';
-import { useResourceTypes } from '../../../hooks/useResourceRecords';
-import { useAuditLogs } from '../../../hooks/useRoleData';
+import { Building, MapPin, Users, BellRing, CreditCard, AlertTriangle, UsersRound, Activity, ArrowRight } from 'lucide-react';
+import { useDepartments, useLocations, useOrgUsers, useAlerts, useSubscri../../../../../../tropos new/frontend/src/hooks/useOrgDataoks/useOrgData';
+import { useResourceTypes } from '../../../../../../tropos new/frontend/src/hooks/useResourceRecords';
+import { useAuditLogs } from '../../../../../../tropos new/frontend/src/hooks/useRoleData';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { SummaryCard } from '../../../components/ui/SummaryCard';
 import { PageHeader } from '../../../components/ui/PageHeader';
+import { AnnouncementsManager } from './AnnouncementsManager';
 import { ORG_ROLE_LABELS } from '../../../constants/roles';
-import { ORG_ADMIN_ROUTES } from '../../../constants/routes';
-import { fmtDateTime } from '../../../utils/format';
+import { ORG_ADMIN_ROUTES } f../../../../../../tropos new/frontend/src/utils/formatts/routes';
+import { fmtDateTime } from '../../../../../../../tropos new/frontend/src/utils/auditLabels
 import { describeAction } from '../../../utils/auditLabels';
 
 export function OrgAdminDashboardPage() {
   const { data: departments = [] } = useDepartments();
+  const { data: locations = [] } = useLocations();
   const { data: users = [] } = useOrgUsers();
   const { data: alerts = [] } = useAlerts();
   const { data: sub } = useSubscription();
@@ -29,6 +31,7 @@ export function OrgAdminDashboardPage() {
       <PageHeader subtitle="People, activity, and plan status for your organization." />
       <div className="summary-grid">
         <SummaryCard icon={Building} label="Departments" value={departments.length} />
+        <SummaryCard icon={MapPin} label="Locations" value={locations.length} />
         <SummaryCard icon={Users} label="Active staff" value={active.length} />
         <SummaryCard icon={BellRing} label="Open alerts" value={openAlerts.length} />
         <SummaryCard icon={CreditCard} label="Plan" value={sub?.plan?.name ?? '—'} />
@@ -61,8 +64,8 @@ export function OrgAdminDashboardPage() {
 
           <Card>
             <CardHeader icon={Activity} title="Recent activity" actions={<Link to={ORG_ADMIN_ROUTES.AUDIT_LOG} className="inline-icon">Audit log <ArrowRight size={14} aria-hidden="true" /></Link>} />
-            {audit?.items.length === 0 && <p className="text-muted">No activity yet.</p>}
-            {audit?.items.map((l) => (
+            {(!audit?.items || audit.items.length === 0) && <p className="text-muted">No activity yet.</p>}
+            {audit?.items?.map((l) => (
               <div key={l.id} style={{ padding: 'var(--space-2) 0', borderBottom: '1px solid var(--color-border)', fontSize: 'var(--font-size-sm)' }}>
                 <strong>{l.actorName}</strong> {describeAction(l.action).toLowerCase()}
                 <div className="text-muted">{fmtDateTime(l.createdAt)}</div>
@@ -70,6 +73,9 @@ export function OrgAdminDashboardPage() {
             ))}
           </Card>
         </div>
+      </div>
+      <div style={{ marginTop: 'var(--space-5)' }}>
+        <AnnouncementsManager />
       </div>
     </div>
   );
