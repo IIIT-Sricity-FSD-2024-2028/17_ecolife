@@ -85,13 +85,6 @@ Open http://localhost:5173 and log in with the demo accounts below.
 
 More accounts and a per-role tour are in `DEMO-DATA.md`.
 
-### Production-style run (optional)
-
-```bash
-cd backend  && npm run build && npm run start:prod
-cd frontend && npm run build && npm run preview
-```
-
 ### Resetting data / recovering access
 - Reset demo data: stop the backend, delete `backend/data.json`, run `npm run seed`.
 - Password reset runs in demo mode: the 6-digit code is shown on the Forgot Password page instead of being emailed.
