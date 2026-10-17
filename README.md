@@ -1,133 +1,255 @@
-# Team name : 17_ecolife
+# Tropos — Resource Usage & Impact Analytics Platform
 
-# Domain : Sustainability and Green Economy
+Tropos is a multi-tenant web platform where organizations record resource usage (electricity, gas, fuel, etc.),
+convert it into emissions using versioned emission factors, and run it through a review workflow
+(Contributor → Reviewer → Executive) with alerts, targets, reports, amendments, billing and audit logging.
+A separate admin portal lets platform staff manage organizations, plans, resource types and global factors.
 
-# Problem Statement : **Fuel Resource Consumption Monitoring and Carbon Emission Analytics Platform**
+## 1. Project structure
 
-Fuel resource consumption represents a significant operational expense for organizations, yet many mid-sized organizations lack a centralized system to effectively monitor, analyze, and report this usage across departments. Most organizations still depend on manual spreadsheets and traditional processes to record fuel consumption from procurement invoices. These manual methods lead to several operational challenges:
+```
+tropos/
+├── backend/        NestJS (TypeScript) REST API, port 3000, JSON-file data store
+│   ├── src/        Feature modules (auth, resource-records, reports, billing, ...)
+│   ├── .env        Local configuration (ready to use for development)
+│   └── data.json   Demo data store (created/refreshed by `npm run seed`)
+├── frontend/       React 19 + Vite single-page app, port 5173
+│   └── src/        pages, components, services, hooks, schemas, tests
+├── docs/codex/     Architecture map, business rules, test baseline, issue log
+├── scratch/        Ad-hoc API verification script
+├── DEMO-DATA.md    Demo logins and what to look at per role
+├── SECURITY-CHANGES.md   Log of security hardening changes
+└── README.md       This file
+```
 
-* **Limited visibility of fuel consumption:** Departments track fuel usage independently, making it difficult for leadership to obtain a consolidated view of organization-wide resource consumption.
+## 2. Prerequisites
 
-* **High risk of data errors and inefficiencies:** Manual data entry through spreadsheets increases the risk of inconsistencies, duplication, and reporting delays.
+| Tool | Version |
+|---|---|
+| Node.js | **20.19.0 or newer** (22 LTS works) |
+| npm | 10+ (bundled with Node) |
+| Browser | Any current Chrome / Edge / Firefox |
 
-* **Delayed detection of abnormal consumption:** Without automated monitoring and alerts, unusual consumption patterns or inefficiencies remain unnoticed for long periods.
+No database server is needed: the backend persists to `backend/data.json`.
 
-* **Difficulty in environmental compliance reporting:** Organizations increasingly need to monitor and report carbon emissions due to regulatory requirements and sustainability initiatives. Without a centralized platform, collecting and analyzing fuel consumption data for emission reporting becomes time-consuming and inefficient.
+## 3. Setup & dependencies
 
-This platform addresses these challenges by providing a centralized, role-based web system that enables organizations to track fuel resource consumption, automatically calculate carbon emissions, monitor department performance, and generate sustainability reports for regulatory compliance and environmental management.
+Dependencies are not bundled in the ZIP; install them once per package (needs internet access).
 
----
+```bash
+# Backend
+cd backend
+npm install
 
-# Identified Actors
+# Frontend (new terminal)
+cd frontend
+npm install
+```
 
-The system supports five primary user roles:
+Key dependencies
+- **Backend:** NestJS 11, Passport + JWT, class-validator, bcryptjs, helmet, @nestjs/throttler, @nestjs/swagger,
+  multer (evidence uploads), csv-parse (CSV import), winston (logging); dev: Jest + ts-jest, supertest, ESLint, TypeScript.
+- **Frontend:** React 19, react-router-dom 7, @tanstack/react-query, react-hook-form + zod, lucide-react, date-fns;
+  dev: Vite 7, Vitest, Testing Library, jsdom.
 
-* **Platform Administrator:** Responsible for maintaining system health, monitoring audit logs, and ensuring platform reliability and security.
+### Configuration
 
-* **Chief Operations Officer (COO):** Responsible for registering the organization, managing departments, assigning roles to staff, monitoring organization-wide consumption dashboards, setting consumption targets, and approving sustainability reports.
+`backend/.env` is included and works as-is for local development (ports 3000 / 5173, `DEMO_OTP_RESET=true`).
+`backend/.env.example` documents every variable. If `.env` is missing, copy `.env.example` to `.env` and set
+`JWT_SECRET` and `JWT_ADMIN_SECRET` to two different long random strings.
+To point the frontend at another API address, set `VITE_API_URL` (default `http://localhost:3000`).
 
-* **Department Manager:** Responsible for submitting monthly fuel consumption data based on procurement invoices and validating departmental submissions before processing.
+## 4. Running the project
 
-* **Sustainability Analyst:** Responsible for reviewing processed consumption data, analyzing trends, calculating environmental impact, and generating sustainability reports.
+```bash
+# Terminal 1 — backend
+cd backend
+npm run seed         # creates the demo workspace (safe to re-run)
+npm run start:dev    # API on http://localhost:3000  (Swagger UI: http://localhost:3000/api/docs)
 
----
+# Terminal 2 — frontend
+cd frontend
+npm run dev          # App on http://localhost:5173
+```
 
-# Actor Features
+Open http://localhost:5173 and log in with the demo accounts below.
 
-## Department Manager Features
+| Portal | URL | Email | Password | Role |
+|---|---|---|---|---|
+| Admin | `/admin/login` | superadmin@tropos.dev | SuperAdmin1! | Super Admin |
+| Admin | `/admin/login` | admin@tropos.dev | PlatformAdmin1! | Platform Admin |
+| Organization | `/login` | owner@demo.tropos.dev | DemoPass1! | Org Admin (Owner) |
+| Organization | `/login` | contributor@demo.tropos.dev | DemoPass1! | Contributor |
+| Organization | `/login` | reviewer@demo.tropos.dev | DemoPass1! | Reviewer |
+| Organization | `/login` | executive@demo.tropos.dev | DemoPass1! | Executive |
 
-**1. Submit Monthly Resource Consumption**
+More accounts and a per-role tour are in `DEMO-DATA.md`.
 
-* Record monthly fuel resource consumption derived from procurement invoices
-* Submit department-wise consumption records for processing
-* Validate data entries before final submission
-* Upload invoice documents for verification and record keeping
+### Production-style run (optional)
 
-**2. Monitor Department Consumption**
+```bash
+cd backend  && npm run build && npm run start:prod
+cd frontend && npm run build && npm run preview
+```
 
-* View historical fuel consumption trends within the department
-* Compare current usage with previous months
-* Monitor department consumption against assigned targets
+### Resetting data / recovering access
+- Reset demo data: stop the backend, delete `backend/data.json`, run `npm run seed`.
+- Password reset runs in demo mode: the 6-digit code is shown on the Forgot Password page instead of being emailed.
+- Locked-out platform admin (backend stopped): `npm run reset-admin -- <email>` in `backend/`.
 
-**3. Respond to Alerts**
+## 5. Testing
 
-* Receive alerts when departmental consumption exceeds defined thresholds
-* Provide explanations and corrective actions for abnormal usage
-* Track alert resolution status
+### Backend (Jest — 13 spec files, isolated, in-memory fixtures)
+```bash
+cd backend
+npm test                 # runs every *.spec.ts under src/
+npm run lint             # ESLint (non-mutating); `npm run lint:fix` applies fixes
+npx tsc --noEmit         # TypeScript type check
+```
+The specs cover calculations and unit conversion, resource-record workflow, targets, imports, amendments,
+organization isolation/authorization (including HTTP-level guard tests), reporting, collaboration and platform-admin team rules.
+They use temporary data/upload locations and do **not** touch `data.json`.
 
----
+### Frontend (Vitest + Testing Library — end-to-end UI against the real API)
+The frontend suite renders the real app and calls a **real, seeded backend**, so start the backend first:
+```bash
+cd backend  && npm run seed && npm run start:dev      # terminal 1
+cd frontend && npx vitest run                         # terminal 2
+```
+If the API is not running, these tests fail by design.
 
-## Sustainability Analyst Features
+### Manual API check (optional)
+With the backend running: `node scratch/verify_all_actors_crud_and_boundaries.mjs`
 
-**1. Analyze Consumption Data**
+## 6. System workflow
 
-* Review validated fuel consumption data from all departments
-* Analyze trends and patterns across reporting periods
-* Compare departmental consumption performance
+How data and approvals move through Tropos, based on the status types in `backend/src/database/types.ts` and the record, report and amendment services. Diagrams use Mermaid (they render on GitHub and in VS Code); a plain-text version follows the overview.
 
-**2. Calculate Carbon Emissions**
+### 6.1 Actors and what they do
 
-* Automatically calculate CO₂ emissions based on standard emission factors
-* View emission breakdowns by department and resource type
-* Monitor environmental impact across the organization
+| Actor | Portal | Main responsibilities |
+|---|---|---|
+| **Super Admin / Platform Admin** | `/admin/login` | Manage organizations, plans, resource types, emission factors, platform settings, platform audit log (security settings and plan editing are Super Admin only) |
+| **Org Admin** | `/login` | Departments, locations, staff, billing, announcements, organization audit log |
+| **Contributor** | `/login` | Enter / import resource usage, attach evidence, submit for review, respond to alerts |
+| **Reviewer** | `/login` | Review submissions, manage alerts and targets, analyse emissions, draft reports, propose amendments |
+| **Executive** | `/login` | Approve or reject reports and amendments |
 
-**3. Generate Sustainability Reports**
+### 6.2 End-to-end overview
 
-* Generate compliance-ready sustainability reports
-* Produce environmental performance summaries for leadership
-* Export reports for regulatory submissions or sustainability initiatives
+```mermaid
+flowchart LR
+    V[Visitor] -->|Register organization + verify email| OA[Org Admin]
+    PA[Platform Admin] -->|Plans, resource types, emission factors| SYS[(Platform setup)]
+    OA -->|Create departments, locations, staff| C[Contributor]
+    C -->|Enter data / CSV import + evidence| R1[Resource record]
+    R1 -->|Submit| REV[Reviewer]
+    REV -->|Approve| CALC[Auto-calculate emissions and lock record]
+    CALC --> AN[Analytics, targets, alerts]
+    AN --> REP[Reviewer drafts report]
+    REP -->|Submit| EX[Executive]
+    EX -->|Approve| DONE[Approved report snapshot]
+    SYS -.factors used by.-> CALC
+```
 
----
+Plain text:
+```
+Visitor -> registers organization, verifies email -> becomes Org Admin
+Platform Admin -> sets up plans, resource types, emission factors
+Org Admin -> creates departments, locations, staff
+Contributor -> enters data / imports CSV + evidence -> submits
+Reviewer -> approves -> emissions calculated, record locked
+Analytics / targets / alerts -> Reviewer drafts report -> Executive approves
+```
 
-## Chief Operations Officer (COO) Features
+### 6.3 Resource record (data entry) lifecycle
 
-**1. Manage Organizational Structure**
+Statuses: `DRAFT`, `SUBMITTED`, `APPROVED`, `REJECTED`, `CHANGES_REQUESTED`, `WITHDRAWN`, `LOCKED`.
 
-* Register and configure the organization within the platform
-* Create and manage departments
-* Assign staff roles and permissions
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT: Contributor creates entry / CSV import
+    DRAFT --> DRAFT: Edit, attach evidence
+    DRAFT --> [*]: Delete (never submitted only)
+    DRAFT --> SUBMITTED: Submit
+    CHANGES_REQUESTED --> SUBMITTED: Contributor fixes and resubmits
+    SUBMITTED --> WITHDRAWN: Contributor withdraws (reason kept)
+    SUBMITTED --> REJECTED: Reviewer rejects
+    SUBMITTED --> CHANGES_REQUESTED: Reviewer requests changes
+    SUBMITTED --> APPROVED: Reviewer approves
+    APPROVED --> LOCKED: Emissions auto-calculated, record locked
+    LOCKED --> LOCKED: Corrections only via amendment
+```
 
-**2. Monitor Organization-Wide Consumption**
+Key rules
+- Evidence is required above a threshold for some resource types; uploads are validated (type, size, content).
+- A Reviewer *claims* an entry (15-minute soft lease) before deciding; they can release it.
+- Approval needs an applicable emission factor for the resource type and period; otherwise it is refused.
+- **Segregation of duties:** you cannot approve/reject an entry you created yourself.
+- Usage anomalies raise alerts (INFO / WARNING / CRITICAL); Contributors respond, Reviewers acknowledge/resolve.
+- Submitted records are never hard-deleted; history, comments, evidence and audit trail are preserved.
 
-* Access consolidated dashboards showing fuel consumption across departments
-* Compare departmental resource usage
-* Monitor overall organizational performance
+### 6.4 Report lifecycle
 
-**3. Configure Targets and Alerts**
+Statuses: `DRAFT`, `PENDING_APPROVAL`, `REVISION_REQUESTED`, `APPROVED`, `SUPERSEDED`.
 
-* Define monthly fuel consumption targets for each department
-* Configure alert thresholds to detect abnormal usage
-* Receive automated notifications when departments exceed defined limits
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT: Reviewer creates report
+    DRAFT --> PENDING_APPROVAL: Reviewer submits
+    PENDING_APPROVAL --> APPROVED: Executive approves
+    PENDING_APPROVAL --> REVISION_REQUESTED: Executive requests revision
+    REVISION_REQUESTED --> PENDING_APPROVAL: Reviewer edits and resubmits
+    APPROVED --> DRAFT: New version (linked revision)
+    APPROVED --> SUPERSEDED: Newer version approved
+```
 
-**4. Approve Sustainability Reports**
+An approved report is an immutable snapshot; a correction creates a new linked version.
 
-* Review reports generated by sustainability analysts
-* Provide final approval before external submission
+### 6.5 Amendment lifecycle (correcting locked data)
 
----
+Statuses: `PENDING_APPROVAL`, `APPROVED`, `REJECTED`.
 
-## Platform Administrator Features
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING_APPROVAL: Reviewer proposes correction to a LOCKED record
+    PENDING_APPROVAL --> APPROVED: Executive approves
+    PENDING_APPROVAL --> REJECTED: Executive rejects
+    APPROVED --> [*]: Values corrected, emissions recalculated, affected reports revised
+```
 
-**1. System Maintenance**
+- An Executive cannot approve an amendment they proposed.
+- On approval the record is recalculated (it stays LOCKED); any report of that period waiting for approval is sent back for revision.
+- A material change (above the 5% materiality line) leaves the approved report untouched and creates a linked draft revision.
+- Previous calculations are kept (superseded, not deleted) so values stay traceable.
 
-* Monitor system health and operational status
-* Maintain platform reliability and performance
+### 6.6 Who can do what (summary)
 
-**2. Manage Platform Security**
+| Action | Contributor | Reviewer | Executive | Org Admin |
+|---|:--:|:--:|:--:|:--:|
+| Create / edit / submit / withdraw records | ✔ (own department) | | | |
+| Approve / reject / request changes on records | | ✔ | | |
+| Create, edit, submit reports | | ✔ | | |
+| Approve reports / request revision | | | ✔ | |
+| Propose amendment | | ✔ | | |
+| Approve / reject amendment | | | ✔ | |
+| Manage targets, recalculate | | ✔ | | |
+| View reports and amendments | | ✔ | ✔ | ✔ |
+| Departments, staff, locations, billing, announcements | | | | ✔ |
+| Respond to alerts | ✔ | ✔ | | ✔ |
 
-* Maintain audit logs and track user activities
-* Ensure secure access control and platform integrity
+### 6.7 Cross-cutting behaviour
+- **Multi-tenancy:** every request is scoped to the user's organization; cross-organization access returns 404.
+- **Authentication:** separate JWT secrets for the organization portal and the admin portal; roles are re-read from the database on every request.
+- **Audit log:** submissions, reviews, approvals, withdrawals, amendments and admin actions are logged (append-only).
+- **Collaboration:** comment threads on entries, reports and amendments; announcements from Org Admin; notifications bell in the UI.
+- **Plan limits:** user, department and resource-type quotas are enforced from the organization's billing plan.
 
-**3. Support System Operations**
-
-* Assist in troubleshooting technical issues
-* Maintain system configurations and updates
-
----
-
-# Use Case Diagram
-
-View Use Case Diagram here:
-[UseCase Diagram](https://drive.google.com/file/d/1a5xnI2hVCckz2RA_8PNn0IloUeCuR6et/view?usp=drive_link)
-
----
+## 7. Features at a glance
+- Organization portal with roles: Org Admin, Contributor, Reviewer, Executive
+- Resource record entry, evidence upload/download, CSV import (max 1000 rows)
+- Emission calculation with versioned factors and unit conversion
+- Review workflow, alerts, targets, reports (approval), amendments, comment threads, announcements
+- Billing plans with quota enforcement, per-organization audit log
+- Platform admin portal: organizations, resource governance, revenue/plans, platform audit log
+- Security: JWT sessions, role guards (deny by default), rate limiting, email verification, login lockout
