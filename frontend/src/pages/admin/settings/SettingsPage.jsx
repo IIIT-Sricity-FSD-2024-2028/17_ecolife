@@ -10,6 +10,8 @@ import { useConfirm } from '../../../components/shared/ConfirmProvider';
 import { useToast } from '../../../context/ToastContext';
 import { ApiError } from '../../../services/apiClient';
 import { PageHeader } from '../../../components/ui/PageHeader';
+import { useAdminAuth } from '../../../context/AdminAuthContext';
+import { PLATFORM_ROLES } from '../../../constants/roles';
 
 /** Whole number within [min, max], or an error message. Mirrors the backend DTO limits. */
 const checkInt = (value, min, max, label) => {
@@ -23,6 +25,10 @@ export function SettingsPage() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const confirm = useConfirm();
+  const { admin } = useAdminAuth();
+  // The backend returns 403 when a Platform Admin changes security or sign-up
+  // settings, so those controls are read-only unless the user is a Super Admin.
+  const canEditPolicy = admin?.role === PLATFORM_ROLES.SUPER_ADMIN;
   const { data: settings } = useQuery({ queryKey: ['platform-settings'], queryFn: platformAdminService.getSettings });
   const update = useMutation({
     mutationFn: platformAdminService.updateSettings,
@@ -137,31 +143,30 @@ export function SettingsPage() {
       </Card>
 
       <Card>
-        <CardHeader icon={ShieldCheck} title="Security" subtitle="Sign-in rules for organization users and platform admins." />
+        <CardHeader icon={ShieldCheck} title="Security" subtitle={canEditPolicy ? 'Sign-in rules for organization users and platform admins.' : 'Sign-in rules for organization users and platform admins. Only a Super Admin can change these.'} />
         <div className="split-2">
           <FormField label="Session length (minutes)" error={errors.sessionMin} hint="Users are signed out after this long. 5–1440.">
-            <TextInput type="number" min={5} max={1440} value={security.sessionMin} onChange={(e) => setSecurity({ ...security, sessionMin: e.target.value })} error={errors.sessionMin} />
+            <TextInput type="number" min={5} max={1440} value={security.sessionMin} onChange={(e) => setSecurity({ ...security, sessionMin: e.target.value })} error={errors.sessionMin} disabled={!canEditPolicy} />
           </FormField>
           <div />
           <FormField label="Failed sign-ins before lockout" error={errors.maxFailed} hint="Wrong passwords in a row. 3–20.">
-            <TextInput type="number" min={3} max={20} value={security.maxFailed} onChange={(e) => setSecurity({ ...security, maxFailed: e.target.value })} error={errors.maxFailed} />
+            <TextInput type="number" min={3} max={20} value={security.maxFailed} onChange={(e) => setSecurity({ ...security, maxFailed: e.target.value })} error={errors.maxFailed} disabled={!canEditPolicy} />
           </FormField>
           <FormField label="Lockout time (minutes)" error={errors.lockoutMin} hint="How long the account stays locked. Resetting the password unlocks it. 1–1440.">
-            <TextInput type="number" min={1} max={1440} value={security.lockoutMin} onChange={(e) => setSecurity({ ...security, lockoutMin: e.target.value })} error={errors.lockoutMin} />
+            <TextInput type="number" min={1} max={1440} value={security.lockoutMin} onChange={(e) => setSecurity({ ...security, lockoutMin: e.target.value })} error={errors.lockoutMin} disabled={!canEditPolicy} />
           </FormField>
         </div>
-        <Button icon={Save} onClick={saveSecurity} loading={update.isPending}>Save security settings</Button>
+        <Button icon={Save} onClick={saveSecurity} loading={update.isPending} disabled={!canEditPolicy}>Save security settings</Button>
       </Card>
 
       <Card>
-        <CardHeader icon={UserPlus} title="Sign-ups" subtitle="Who can create a new organization on Tropos." />
+        <CardHeader icon={UserPlus} title="Sign-ups" subtitle={canEditPolicy ? 'Who can create a new organization on Tropos.' : 'Who can create a new organization on Tropos. Only a Super Admin can change these.'} />
         <div className="stack" style={{ marginBottom: 'var(--space-4)' }}>
-          <Checkbox label="Allow new organizations to register" checked={access.allowRegistration} onChange={(e) => setAccess({ ...access, allowRegistration: e.target.checked })} />
-          <Checkbox label="Require a work email (blocks personal and disposable addresses)" checked={access.requireWorkEmail} onChange={(e) => setAccess({ ...access, requireWorkEmail: e.target.checked })} />
+          <Checkbox label="Allow new organizations to register" checked={access.allowRegistration} disabled={!canEditPolicy} onChange={(e) => setAccess({ ...access, allowRegistration: e.target.checked })} />
+          <Checkbox label="Require a work email (blocks personal and disposable addresses)" checked={access.requireWorkEmail} disabled={!canEditPolicy} onChange={(e) => setAccess({ ...access, requireWorkEmail: e.target.checked })} />
         </div>
-        <Button icon={Save} onClick={saveAccess} loading={update.isPending}>Save sign-up settings</Button>
+        <Button icon={Save} onClick={saveAccess} loading={update.isPending} disabled={!canEditPolicy}>Save sign-up settings</Button>
       </Card>
     </div>
   );
 }
-
