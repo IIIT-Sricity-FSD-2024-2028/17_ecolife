@@ -1,0 +1,1896 @@
+// ============================================================================
+// TROPOS — CLEAN-SLATE REAL-WORLD PRISMA SCHEMA (PostgreSQL + RLS)
+// Audited & Hardened: All relational FKs, retention locks, dual-regime math,
+//                     SME single-user flags, and regulatory bounds enforced.
+// Standards: GHG Protocol (Corp, Scope 2, Scope 3), India CEA v22.0,
+//            SEBI BRSR Core (2023/122 & 2025/42), BEE CCTS (AR2 / 0.727),
+//            MoEFCC Green Credit Programme (Aug 2025), COSO ICSR (2023),
+//            ISO 14064-1/3 & ISO/TS 14064-4:2025, ICAI SSAE 3000/3410, ISSA 5000
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum OrgStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  CLOSED
+}
+
+enum OrgPreset {
+  SME_STANDARD
+  MID_MARKET
+  ENTERPRISE_BRSR
+}
+
+enum TenantRole {
+  ORG_ADMIN
+  PLANT_MANAGER
+  FINANCE_MANAGER
+  SUSTAINABILITY_LEAD
+  INTERNAL_AUDITOR
+  EXECUTIVE_APPROVER
+  EXTERNAL_VERIFIER
+}
+
+enum ConsolidationApproach {
+  OPERATIONAL_CONTROL
+  FINANCIAL_CONTROL
+  EQUITY_SHARE
+}
+
+enum AssuranceStandard {
+  INTERNAL_TRACKING
+  SEBI_ISF_ASSESSMENT
+  ICAI_SSAE_3000
+  ICAI_SSAE_3410
+  ISO_14064_3
+  ISSA_5000
+  BEE_CCTS_ACVA
+}
+
+enum EngagementType {
+  ASSURANCE
+  ASSESSMENT
+  VALIDATION
+  VERIFICATION
+}
+
+enum AssuranceLevel {
+  LIMITED
+  REASONABLE
+}
+
+enum FacilityType {
+  MANUFACTURING_PLANT
+  OFFICE
+  WAREHOUSE
+  DATA_CENTER
+  MINE
+  UTILITY_PLANT
+  OTHER
+}
+
+enum ResourceDomain {
+  FUEL
+  ELECTRICITY_THERMAL
+  REFRIGERANT
+  WATER
+  WASTE
+  AIR_EMISSION
+  RAW_MATERIAL
+  LAND_GREENBELT
+}
+
+enum EmissionScope {
+  SCOPE_1
+  SCOPE_2
+  SCOPE_3
+  BIOGENIC
+  NON_GHG
+}
+
+enum FuelCategory {
+  SOLID_FOSSIL
+  LIQUID_FOSSIL
+  GASEOUS_FOSSIL
+  BIOGENIC
+  BLENDED_BIOFUEL
+}
+
+enum CombustionPurpose {
+  STATIONARY_BOILER
+  STATIONARY_FURNACE_KILN
+  DG_SET
+  CAPTIVE_POWER
+  MOBILE_FLEET
+  PROCESS_NON_COMBUSTION
+  NON_ENERGY_FEEDSTOCK
+  TRANSFERRED_OUT
+}
+
+enum CalorificBasis {
+  NCV
+  GCV_CONVERTED
+}
+
+enum MeteringMode {
+  STANDARD
+  GROSS_METERING
+  NET_METERING
+}
+
+enum WaterSource {
+  SURFACE
+  GROUNDWATER
+  THIRD_PARTY
+  SEAWATER_DESALINATED
+  OTHERS
+}
+
+enum WaterDestination {
+  SURFACE
+  GROUNDWATER
+  SEAWATER
+  THIRD_PARTY
+  OTHERS
+  ZLD_RECYCLED
+}
+
+enum WasteCategory {
+  PLASTIC
+  E_WASTE
+  BIO_MEDICAL
+  CONSTRUCTION_DEMOLITION
+  BATTERY
+  RADIOACTIVE
+  OTHER_HAZARDOUS
+  OTHER_NON_HAZARDOUS
+}
+
+enum WasteRoute {
+  RECYCLED
+  REUSED
+  OTHER_RECOVERY
+  INCINERATED_WITH_ENERGY
+  INCINERATED_WITHOUT_ENERGY
+  LANDFILLED
+  OTHER_SAFE_DISPOSAL
+}
+
+enum AirPollutant {
+  NOX
+  SOX
+  PM
+  PM10
+  PM2_5
+  VOC
+  POP
+  HAP
+}
+
+enum MaterialOrigin {
+  VIRGIN
+  RECYCLED
+  REUSED
+}
+
+enum FactorTier {
+  SITE_LAB_CUSTOM
+  SUPPLIER_PCF
+  NATIONAL_OFFICIAL
+  GLOBAL_OFFICIAL
+}
+
+enum FactorStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  PUBLISHED
+  SUPERSEDED
+}
+
+enum RegimeTag {
+  GENERAL
+  BRSR_GHG_PROTOCOL
+  BEE_CCTS
+}
+
+enum DataBasis {
+  ACTUAL_METERED
+  SUPPLIER_PRIMARY
+  SPEND_BASED
+  ESTIMATED_PROXY
+  NIL_ACTIVITY
+}
+
+enum RefrigerantMethod {
+  MATERIAL_BALANCE
+  SIMPLIFIED_MATERIAL_BALANCE
+  SALES_BASED
+  SCREENING
+}
+
+enum EntryStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum PeriodStatus {
+  OPEN
+  CLOSED
+  SIGNED_OFF
+  REOPENED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Note: ORGANIC_GROWTH is intentionally excluded per GHG Protocol Ch. 5
+enum RecalcTriggerType {
+  STRUCTURAL_ACQUISITION
+  STRUCTURAL_DIVESTMENT
+  OUTSOURCING_INSOURCING
+  METHODOLOGY_CHANGE
+  FACTOR_TRUE_UP
+  ERROR_CORRECTION
+  BOUNDARY_CHANGE
+}
+
+enum SupplierRequestStatus {
+  SENT
+  OTP_VERIFIED
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  REVOKED
+}
+
+enum Scope3Method {
+  SUPPLIER_PCF
+  HYBRID
+  AVERAGE_DATA
+  SPEND_BASED
+}
+
+enum GreenInstrumentClass {
+  BEE_CCTS_ICC
+  VOLUNTARY_CARBON_CREDIT
+  MOEFCC_GREEN_CREDIT
+}
+
+enum CreditStatus {
+  ISSUED
+  PROCURED
+  PENDING_RETIREMENT
+  RETIRED
+  EXTINGUISHED
+  TRANSFERRED_SUBSIDIARY
+}
+
+enum FindingSeverity {
+  CLARIFICATION
+  MATERIAL_MISSTATEMENT
+  NONCONFORMITY
+}
+
+enum FindingStatus {
+  OPEN
+  RESPONDED
+  RESOLVED
+  UNRESOLVED
+}
+
+enum EngagementStatus {
+  CREATED
+  IN_PROGRESS
+  OPINION_ISSUED
+  CANCELLED
+}
+
+enum AssuranceOpinion {
+  UNMODIFIED
+  QUALIFIED
+  ADVERSE
+  DISCLAIMER
+}
+
+enum InternalAuditStatus {
+  PASS
+  DEFICIENCY
+  REMEDIATION_REQUIRED
+  CLOSED
+}
+
+enum TargetType {
+  ABSOLUTE
+  INTENSITY
+}
+
+enum TargetScopeCoverage {
+  SCOPE_1
+  SCOPE_2_LOCATION
+  SCOPE_2_MARKET
+  SCOPE_1_AND_2_LOCATION
+  SCOPE_1_AND_2_MARKET
+  SCOPE_3
+  ALL_SCOPES_1_2_3
+}
+
+enum TargetFramework {
+  CUSTOM_INTERNAL
+  SBTI_SME_ROUTE
+  SBTI_NEAR_TERM
+  SBTI_NET_ZERO
+  BEE_CCTS_GEI
+}
+
+enum TargetStatus {
+  ON_TRACK
+  AT_RISK
+  OFF_TRACK
+  ACHIEVED
+  REGRESSED
+  MISSED
+  NEEDS_RESTATEMENT
+}
+
+enum ReductionLever {
+  FUEL_SWITCH
+  ENERGY_EFFICIENCY
+  ONSITE_SOLAR
+  PPA_OPEN_ACCESS
+  REFRIGERANT_SWAP
+  FLEET_ELECTRIFICATION
+  PROCESS_OPTIMIZATION
+  WATER_CIRCULARITY
+  WASTE_DIVERSION
+  SUPPLIER_ENGAGEMENT
+}
+
+enum ActionStatus {
+  PLANNED
+  IN_PROGRESS
+  DELAYED
+  COMPLETED
+  PARTIALLY_ACHIEVED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+enum ImportChannel {
+  CSV_EXCEL
+  TALLY_ERP
+  API_PUSH
+}
+
+enum ImportBatchStatus {
+  PREVIEW
+  COMMITTED
+  ROLLED_BACK
+  FAILED
+}
+
+enum ExportReportType {
+  SME_BUYER_SUMMARY_PDF
+  SEBI_BRSR_CORE_P6
+  BEE_CCTS_FORM_A
+  ISO_14064_INVENTORY
+  ASSURANCE_EVIDENCE_PACK
+}
+
+// ============================================================================
+// MODULE 1: PLATFORM PLANS, TENANT ORGANISATION & BILLING
+// ============================================================================
+
+model Plan {
+  id            String         @id @default(cuid())
+  code          String         @unique
+  name          String
+  priceInrMonth Decimal        @db.Decimal(12, 2)
+  maxFacilities Int
+  maxUsers      Int
+  featuresJson  Json           @default("{}")
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  organizations Organization[]
+  subscriptions Subscription[]
+}
+
+model Organization {
+  id                        String                @id @default(cuid())
+  name                      String
+  cin                       String?
+  gstin                     String?
+  industrySector            String?
+  preset                    OrgPreset             @default(SME_STANDARD)
+  status                    OrgStatus             @default(TRIAL)
+  trialEndsAt               DateTime?
+  closedAt                  DateTime?
+  retentionLockUntil        DateTime?             // 8-year statutory lock on close (enforced by DB trigger)
+  planId                    String
+  plan                      Plan                  @relation(fields: [planId], references: [id])
+  billingEmail              String?
+  billingAddress            String?
+
+  // Progressive Module Toggles (SME defaults vs Enterprise opt-in)
+  enabledModules            String[]              @default(["FUEL", "ELECTRICITY_THERMAL", "REFRIGERANT", "WATER", "WASTE"])
+  allowSingleUserMode       Boolean               @default(false) // DB CHECK: only valid when assuranceStandard == INTERNAL_TRACKING
+
+  // Accounting & Compliance Policy (Approved by Executive Approver)
+  fyStartMonth              Int                   @default(4) // April for India
+  consolidationApproach     ConsolidationApproach @default(OPERATIONAL_CONTROL)
+  consolidationApprovedById String?
+  consolidationApprovedAt   DateTime?
+  significanceThresholdPct  Decimal               @default(5.00) @db.Decimal(5, 2)
+  dataDueDays               Int                   @default(10) // days after month end by which data must be in
+  assuranceStandard         AssuranceStandard     @default(INTERNAL_TRACKING)
+  cctsObligated             Boolean               @default(false)
+  mfaRequiredForPrivileged  Boolean               @default(true)
+
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+
+  users                     User[]
+  userRoles                 UserRole[]
+  facilityAssignments       UserFacilityAssignment[]
+  invitations               Invitation[]
+  accessCertifications      AccessCertification[]
+  entities                  Entity[]
+  facilities                Facility[]
+  resourceSources           ResourceSource[]
+  boundaryExclusions        BoundaryExclusion[]
+  customFactors             EmissionFactor[]
+  periods                   ReportingPeriod[]
+  entries                   ResourceEntry[]
+  entryHistories            EntryHistory[]
+  evidenceFiles             EvidenceFile[]
+  refrigerantEquipment      RefrigerantEquipment[]
+  waterLogs                 WaterLog[]
+  wasteLogs                 WasteLog[]
+  airEmissionLogs           AirEmissionLog[]
+  materialLogs              MaterialLog[]
+  facilityOutputLogs        FacilityOutputLog[]
+  financialMetrics          FinancialYearMetrics[]
+  suppliers                 Supplier[]
+  supplierRequests          SupplierPcfRequest[]
+  scope3Purchases           Scope3Purchase[]
+  scope2Instruments         Scope2Instrument[]
+  scope2Allocations         Scope2Allocation[]
+  greenEconomyCredits       GreenEconomyCredit[]
+  cctsTargets               CctsComplianceTarget[]
+  snapshots                 PeriodSnapshot[]
+  recalculations            RecalculationRequest[]
+  targets                   Target[]
+  targetMilestones          TargetMilestone[]
+  reductionActions          ReductionAction[]
+  internalAuditFindings     InternalAuditFinding[]
+  assuranceEngagements      AssuranceEngagement[]
+  engagementPeriods         AssuranceEngagementPeriod[]
+  verificationFindings      VerificationFinding[]
+  auditLogs                 AuditLog[]
+  notifications             Notification[]
+  subscriptions             Subscription[]
+  invoices                  Invoice[]
+  platformApprovals         PlatformActionApproval[]
+  importBatches             ImportBatch[]
+  apiKeys                   ApiKey[]
+  exportReports             ExportReport[]
+  inventoryPlans            InventoryManagementPlan[]
+
+  @@index([status, planId])
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  organizationId     String
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  planId             String
+  plan               Plan               @relation(fields: [planId], references: [id])
+  status             SubscriptionStatus @default(TRIALING)
+  razorpaySubId      String?            @unique
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelledAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  invoices           Invoice[]
+
+  @@index([organizationId, status])
+}
+
+model Invoice {
+  id                String        @id @default(cuid())
+  organizationId    String
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  subscriptionId    String?
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
+  invoiceNumber     String        @unique
+  sacCode           String        @default("998314") // India SaaS SAC code
+  subtotalInr       Decimal       @db.Decimal(12, 2)
+  cgstInr           Decimal       @default(0) @db.Decimal(12, 2)
+  sgstInr           Decimal       @default(0) @db.Decimal(12, 2)
+  igstInr           Decimal       @default(0) @db.Decimal(12, 2) // Inter-state B2B GST
+  totalInr          Decimal       @db.Decimal(12, 2)
+  status            String        @default("PAID")
+  razorpayPaymentId String?       @unique
+  gatewayOrderId    String?       @unique // order created at the payment provider for this invoice
+  issuedAt          DateTime      @default(now())
+  // GST Rule 46 particulars, frozen on the invoice so later profile edits cannot change what was billed.
+  planId            String?
+  planName          String?
+  gstRatePct        Decimal?      @db.Decimal(5, 2)
+  placeOfSupply     String?       // 2-digit GST state code
+  supplierGstin     String?
+  customerName      String?
+  customerGstin     String?
+  customerAddress   String?
+  servicePeriodStart DateTime?
+  servicePeriodEnd   DateTime?
+  dueAt             DateTime?
+  paidAt            DateTime?
+  paymentMethod     String?
+  paymentReference  String?
+
+  @@index([organizationId, issuedAt])
+}
+
+// Gap-free invoice serial per financial year (GST Rule 46 asks for a consecutive number); incremented inside the invoice transaction so a rollback leaves no gap.
+model InvoiceCounter {
+  financialYear String @id
+  lastNumber    Int    @default(0)
+}
+
+model WebhookEvent {
+  id          String   @id @default(cuid())
+  provider    String   @default("RAZORPAY")
+  externalId  String   @unique
+  eventType   String
+  payload     Json
+  processedAt DateTime @default(now())
+
+  @@index([eventType, processedAt])
+}
+
+// ============================================================================
+// MODULE 2: IAM, MULTI-ROLE ASSIGNMENTS, FACILITY SCOPES & ITGC
+// ============================================================================
+
+model User {
+  id                      String                   @id @default(cuid())
+  organizationId          String?                  // Null ONLY for Platform Admins (enforced by CHECK)
+  organization            Organization?            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  email                   String                   @unique
+  fullName                String
+  passwordHash            String
+  isPlatformAdmin         Boolean                  @default(false)
+  isActive                Boolean                  @default(true)
+  emailVerifiedAt         DateTime?
+  twoFactorEnabled        Boolean                  @default(false)
+  twoFactorSecret         String?
+  recoveryCodeHashes      String[]                 @default([])
+  lastLoginAt             DateTime?
+  deactivatedAt           DateTime?
+  failedLoginCount        Int                      @default(0)
+  lockedUntil             DateTime?
+  twoFactorLastStep       Int?                     // last accepted TOTP time-step (blocks replay of a used code)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+
+  roles                   UserRole[]
+  facilityAssignments     UserFacilityAssignment[]
+  sessions                UserSession[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+  ownedSources            ResourceSource[]         @relation("SourceOwner")
+  submittedEntries        ResourceEntry[]          @relation("EntrySubmitter")
+  reviewedEntries         ResourceEntry[]          @relation("EntryReviewer")
+  verifierEngagements     AssuranceEngagement[]    @relation("EngagementVerifier")
+  notifications           Notification[]
+
+  @@index([organizationId, isActive])
+}
+
+model UserRole {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           TenantRole
+  assignedById   String?
+  assignedAt     DateTime     @default(now())
+
+  @@unique([userId, role])
+  @@index([organizationId, role])
+}
+
+model UserFacilityAssignment {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facilityId     String
+  facility       Facility     @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  assignedById   String?
+  assignedAt     DateTime     @default(now())
+
+  @@unique([userId, facilityId])
+  @@index([organizationId, facilityId])
+}
+
+model UserSession {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String    @unique
+  ipAddress    String?
+  userAgent    String?
+  lastActiveAt DateTime  @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+}
+
+model Invitation {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  roles          TenantRole[]
+  facilityIds    String[]     @default([])
+  tokenHash      String       @unique
+  invitedById    String
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, email])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// COSO ICSR ITGC: Periodic User Access Review (UAR) Certification
+model AccessCertification {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  periodLabel    String       // e.g. "FY2026-27 Q1"
+  certifiedById  String
+  snapshotJson   Json         // Frozen list of users, roles, facility scopes, MFA, lastLogin
+  notes          String?
+  certifiedAt    DateTime     @default(now())
+
+  @@index([organizationId, certifiedAt])
+}
+
+// ============================================================================
+// MODULE 3: MULTI-TIER HIERARCHY, FACILITIES, SOURCES & EXCLUSIONS
+// ============================================================================
+
+model Entity {
+  id                    String               @id @default(cuid())
+  organizationId        String
+  organization          Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  parentEntityId        String?
+  parentEntity          Entity?              @relation("EntityHierarchy", fields: [parentEntityId], references: [id])
+  childEntities         Entity[]             @relation("EntityHierarchy")
+  name                  String
+  cin                   String?
+  ownershipPct          Decimal              @default(100.00) @db.Decimal(5, 2)
+  hasOperationalControl Boolean              @default(true)
+  hasFinancialControl   Boolean              @default(true)
+  effectiveFrom         DateTime             @default(now())
+  effectiveTo           DateTime?
+  boundaryChangeNote    String?
+  approvalStatus        ApprovalStatus       @default(APPROVED)
+  approvedById          String?
+  approvedAt            DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  facilities            Facility[]
+  greenCredits          GreenEconomyCredit[] @relation("CreditHolder")
+  receivedGreenCredits  GreenEconomyCredit[] @relation("CreditTransferee")
+  counterpartyEntries   ResourceEntry[]      @relation("IntraGroupCounterparty")
+
+  @@index([organizationId, effectiveFrom, effectiveTo])
+}
+
+model Facility {
+  id                   String                   @id @default(cuid())
+  organizationId       String
+  organization         Organization             @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  entityId             String
+  entity               Entity                   @relation(fields: [entityId], references: [id], onDelete: Restrict)
+  name                 String
+  facilityType         FacilityType             @default(MANUFACTURING_PLANT)
+  businessUnit         String?
+  region               String?
+  city                 String
+  state                String
+
+  // Shared building & utility metadata
+  isSharedBuilding     Boolean                  @default(false)
+  floorAreaSharePct    Decimal?                 @db.Decimal(5, 2)
+  discomConsumerNo     String?
+  contractDemandKw     Decimal?                 @db.Decimal(12, 2) // >= 100 kW flags GEOA eligibility
+  rooftopSolarKwp      Decimal?                 @db.Decimal(12, 2)
+  meteringMode         MeteringMode             @default(STANDARD)
+
+  // Environmental & Land metadata (SPCB CTO / Water Stress / Greenbelt)
+  isWaterStressArea    Boolean                  @default(false)
+  spcbWaterLimitKl     Decimal?                 @db.Decimal(14, 2)
+  totalLandAreaHa      Decimal?                 @db.Decimal(12, 4)
+  greenbeltPct         Decimal?                 @db.Decimal(5, 2)
+  nearEcoSensitiveZone Boolean                  @default(false)
+
+  effectiveFrom        DateTime                 @default(now())
+  effectiveTo          DateTime?
+  approvalStatus       ApprovalStatus           @default(APPROVED)
+  approvedById         String?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+
+  assignments          UserFacilityAssignment[]
+  sources              ResourceSource[]
+  refrigerants         RefrigerantEquipment[]
+  waterLogs            WaterLog[]
+  wasteLogs            WasteLog[]
+  airEmissionLogs      AirEmissionLog[]
+  materialLogs         MaterialLog[]
+  outputLogs           FacilityOutputLog[]
+  scope2Instruments    Scope2Instrument[]
+  cctsTargets          CctsComplianceTarget[]
+  reductionActions     ReductionAction[]
+  boundaryExclusions   BoundaryExclusion[]
+
+  @@index([organizationId, entityId])
+  @@index([organizationId, effectiveFrom, effectiveTo])
+}
+
+model ResourceSource {
+  id                String             @id @default(cuid())
+  organizationId    String
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  facilityId        String
+  facility          Facility           @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  name              String
+  domain            ResourceDomain
+  scope             EmissionScope
+  scope3Category    Int?               // 1..15 for Scope 3 (enforced by CHECK)
+  fuelCategory      FuelCategory?
+  combustionPurpose CombustionPurpose?
+  bioBlendPct       Decimal?           @db.Decimal(5, 2) // e.g., 20.00 for E20 petrol
+  canonicalUnit     String             // e.g., litres, MT, SCM, kWh, kg
+  defaultFactorId   String?
+  defaultFactor     EmissionFactor?    @relation(fields: [defaultFactorId], references: [id])
+  meterSerialNo     String?
+  ownerId           String?
+  owner             User?              @relation("SourceOwner", fields: [ownerId], references: [id])
+  effectiveFrom     DateTime           @default(now())
+  effectiveTo       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  entries           ResourceEntry[]
+  reductionActions  ReductionAction[]
+
+  @@index([organizationId, facilityId, domain])
+  @@index([organizationId, ownerId])
+}
+
+// ISO/TS 14064-4:2025: Documented Significance & Exclusion Register
+model BoundaryExclusion {
+  id                      String         @id @default(cuid())
+  organizationId          String
+  organization            Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  financialYear           String
+  scope                   EmissionScope
+  scope3Category          Int?
+  facilityId              String?
+  facility                Facility?      @relation(fields: [facilityId], references: [id])
+  excludedItemName        String
+  justification           String
+  estimatedMaterialityPct Decimal?       @db.Decimal(5, 2)
+  status                  ApprovalStatus @default(PENDING)
+  requestedById           String
+  approvedById            String?
+  approvedAt              DateTime?
+  createdAt               DateTime       @default(now())
+
+  @@index([organizationId, financialYear])
+}
+
+// ============================================================================
+// MODULE 4: CENTRAL GWP TABLE & 4-TIER EMISSION FACTOR REGISTRY
+// ============================================================================
+
+model GwpTable {
+  id                   String                 @id @default(cuid())
+  gasCode              String                 @unique // CO2, CH4_FOSSIL, CH4_NON_FOSSIL, N2O, HFC_134A, R_410A, SF6...
+  gasName              String
+  isFossilMethane      Boolean                @default(false)
+  gwpAr6               Decimal                @db.Decimal(12, 4) // BRSR / GHG Protocol
+  gwpAr5               Decimal                @db.Decimal(12, 4)
+  gwpAr2               Decimal                @db.Decimal(12, 4) // BEE CCTS Compliance
+  sourceRef            String
+  updatedAt            DateTime               @updatedAt
+
+  emissionFactors      EmissionFactor[]
+  refrigerantEquipment RefrigerantEquipment[]
+}
+
+model EmissionFactor {
+  id                   String           @id @default(cuid())
+  organizationId       String?          // Null = Global Verified Registry
+  organization         Organization?    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  parentFactorId       String?          // Self-relation for version lineage (v1 -> v2)
+  parentFactor         EmissionFactor?  @relation("FactorLineage", fields: [parentFactorId], references: [id])
+  childFactors         EmissionFactor[] @relation("FactorLineage")
+  code                 String
+  name                 String
+  domain               ResourceDomain
+  scope                EmissionScope
+  scope3Category       Int?
+  tier                 FactorTier
+  status               FactorStatus     @default(DRAFT)
+  regimeTag            RegimeTag        @default(GENERAL)
+  region               String           @default("IN")
+  sourceAuthority      String           // e.g., "India CEA v22.0", "IPCC 2006 Vol 2 Ch 2", "NABL Lab Cert"
+  versionLabel         String
+  validFrom            DateTime
+  validTo              DateTime?
+
+  // Physical & Fuel Properties
+  canonicalUnit        String
+  calorificBasis       CalorificBasis   @default(NCV) // Prevents GCV lab certs being treated as NCV
+  ncvMjPerUnit         Decimal?         @db.Decimal(14, 6)
+  densityKgPerLitre    Decimal?         @db.Decimal(10, 6)
+  isRenewable          Boolean          @default(false)
+  isBiogenic           Boolean          @default(false)
+
+  // Gas-Level Decomposition (enables dual AR6 & AR2 math from one factor)
+  co2KgPerUnit         Decimal          @default(0) @db.Decimal(16, 8)
+  biogenicCo2KgPerUnit Decimal          @default(0) @db.Decimal(16, 8)
+  ch4KgPerUnit         Decimal          @default(0) @db.Decimal(16, 8)
+  isFossilMethane      Boolean          @default(false)
+  n2oKgPerUnit         Decimal          @default(0) @db.Decimal(16, 8)
+  hfcGasCode           String?          // FK to GwpTable.gasCode for F-gases
+  hfcGas               GwpTable?        @relation(fields: [hfcGasCode], references: [gasCode])
+  wttKgCo2ePerUnit     Decimal?         @db.Decimal(16, 8) // Optional Scope 3 Cat 3 Well-to-Tank
+
+  isLocked             Boolean          @default(false) // Immutable once referenced by any entry (DB trigger)
+  evidenceFileId       String?          // Mandatory NABL lab / LCA PDF for custom/PCF factors
+  evidenceFile         EvidenceFile?    @relation("FactorEvidence", fields: [evidenceFileId], references: [id])
+  createdById          String?
+  approvedById         String?
+  approvedAt           DateTime?
+  rejectionNote        String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  sources              ResourceSource[]
+  entries              ResourceEntry[]
+  suppliers            Supplier[]
+  scope3Purchases      Scope3Purchase[]
+
+  @@index([organizationId, code, status])
+  @@index([status, scope, validFrom, validTo])
+}
+
+// ============================================================================
+// MODULE 5: REPORTING PERIODS & UNIFIED SITE RESOURCE LEDGER
+// ============================================================================
+
+model ReportingPeriod {
+  id                String                      @id @default(cuid())
+  organizationId    String
+  organization      Organization                @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  financialYear     String                      // e.g., "FY2026-27"
+  month             Int                         // 1..12 (enforced by CHECK)
+  label             String                      // e.g., "Apr 2026"
+  startDate         DateTime
+  endDate           DateTime
+  status            PeriodStatus                @default(OPEN)
+  closedAt          DateTime?
+  closedById        String?
+  signedOffAt       DateTime?
+  signedOffById     String?
+  reopenCount       Int                         @default(0)
+  lastReopenNote    String?
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  entries           ResourceEntry[]
+  waterLogs         WaterLog[]
+  wasteLogs         WasteLog[]
+  airEmissionLogs   AirEmissionLog[]
+  materialLogs      MaterialLog[]
+  outputLogs        FacilityOutputLog[]
+  scope3Purchases   Scope3Purchase[]
+  scope2Allocations Scope2Allocation[]
+  snapshots         PeriodSnapshot[]
+  engagementLinks       AssuranceEngagementPeriod[]
+  internalAuditFindings InternalAuditFinding[]
+  verificationFindings  VerificationFinding[]
+  importBatches         ImportBatch[]
+  exportReports         ExportReport[]
+
+  @@unique([organizationId, financialYear, month])
+  @@index([organizationId, status])
+}
+
+model ResourceEntry {
+  id                         String                @id @default(cuid())
+  organizationId             String
+  organization               Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  periodId                   String
+  period                     ReportingPeriod       @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  sourceId                   String
+  source                     ResourceSource        @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  factorId                   String?
+  factor                     EmissionFactor?       @relation(fields: [factorId], references: [id])
+
+  status                     EntryStatus           @default(DRAFT)
+  version                    Int                   @default(1) // Optimistic concurrency lock
+  dataBasis                  DataBasis             @default(ACTUAL_METERED)
+  dataQualityTier            Int                   @default(1) // 1 (best) .. 5 (lowest)
+  estimationMethod           String?
+  needsTrueUp                Boolean               @default(false)
+  isProvisionalFactor        Boolean               @default(false)
+  isSelfReviewed             Boolean               @default(false) // DB trigger: only allowed in SME INTERNAL_TRACKING single-user mode
+
+  // Raw & Normalized Quantities + Optional SME Cost Tracking
+  rawQuantity                Decimal               @db.Decimal(16, 6)
+  rawUnit                    String
+  normalizedQuantity         Decimal               @db.Decimal(16, 6)
+  normalizedUnit             String
+  costInr                    Decimal?              @db.Decimal(14, 2)
+
+  // Bulk Fuel Stock Reconciliation & Lab Overrides (Primary Pillar)
+  calorificBasis             CalorificBasis        @default(NCV)
+  openingStockQty            Decimal?              @db.Decimal(16, 6)
+  purchasedQty               Decimal?              @db.Decimal(16, 6)
+  closingStockQty            Decimal?              @db.Decimal(16, 6)
+  nonEnergyDeductedQty       Decimal?              @db.Decimal(16, 6)
+  labNcvOverride             Decimal?              @db.Decimal(14, 6)
+  labDensityOverride         Decimal?              @db.Decimal(10, 6)
+
+  // Electricity Net-Metering & Split-Bill Metadata
+  grossGridImportKwh         Decimal?              @db.Decimal(16, 4)
+  onsiteSolarSelfConsumedKwh Decimal?              @db.Decimal(16, 4)
+  solarExportedKwh           Decimal?              @db.Decimal(16, 4) // Informational only
+  splitGroupId               String?
+  importBatchId              String?
+  importBatch                ImportBatch?          @relation(fields: [importBatchId], references: [id])
+  externalRefId              String?               // Idempotency key for REST API / IoT ingestion
+  ingestApiKeyId             String?               // API key that delivered this entry (no FK: keys can be revoked/deleted)
+
+  // Duplicate Invoice & Intra-Group Elimination Controls
+  invoiceNumber              String?
+  billingStartDate           DateTime?
+  billingEndDate             DateTime?
+  isIntraGroupTransfer       Boolean               @default(false)
+  counterpartyEntityId       String?
+  counterpartyEntity         Entity?               @relation("IntraGroupCounterparty", fields: [counterpartyEntityId], references: [id])
+
+  // Refrigerant Link (when domain == REFRIGERANT)
+  refrigerantEquipmentId     String?
+  refrigerantEquipment       RefrigerantEquipment? @relation(fields: [refrigerantEquipmentId], references: [id])
+  refrigerantMethod          RefrigerantMethod?
+
+  // Immutable Pinned Calculation Lineage & Dual-Regime Outputs
+  pinnedFactorSnapshot       Json                  @default("{}")
+  appliedFloorAreaSharePct   Decimal?              @db.Decimal(5, 2)
+  calculatedEnergyGj         Decimal               @default(0) @db.Decimal(16, 6)
+  calculatedCo2Kg            Decimal               @default(0) @db.Decimal(16, 6)
+  calculatedBiogenicCo2Kg    Decimal               @default(0) @db.Decimal(16, 6)
+  calculatedCh4Kg            Decimal               @default(0) @db.Decimal(16, 6)
+  calculatedN2oKg            Decimal               @default(0) @db.Decimal(16, 6)
+  calculatedTco2eAr6         Decimal               @default(0) @db.Decimal(16, 6) // BRSR / GHG Protocol
+  calculatedTco2eAr2         Decimal               @default(0) @db.Decimal(16, 6) // BEE CCTS
+  calculatedWttTco2e         Decimal               @default(0) @db.Decimal(16, 6) // Scope 3 Cat 3
+
+  // Quality & Maker-Checker Trail
+  qualityFlags               Json                  @default("[]")
+  outlierConfirmed           Boolean               @default(false)
+  outlierNote                String?               // why a flagged spike/drop is genuine (required to submit a flagged entry)
+  rejectionCount             Int                   @default(0)
+  reviewNote                 String?
+  submittedById              String?
+  submittedBy                User?                 @relation("EntrySubmitter", fields: [submittedById], references: [id])
+  submittedAt                DateTime?
+  reviewedById               String?
+  reviewedBy                 User?                 @relation("EntryReviewer", fields: [reviewedById], references: [id])
+  reviewedAt                 DateTime?
+  createdAt                  DateTime              @default(now())
+  updatedAt                  DateTime              @updatedAt
+
+  histories                  EntryHistory[]
+  evidenceFiles              EvidenceFile[]
+  verificationFindings       VerificationFinding[]
+
+  @@unique([organizationId, externalRefId])
+  @@index([organizationId, periodId, status])
+  @@index([organizationId, sourceId, invoiceNumber])
+  @@index([organizationId, splitGroupId])
+}
+
+// Strictly Append-Only Entry Change History (UPDATE/DELETE revoked & blocked by trigger)
+model EntryHistory {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  entryId        String
+  entry          ResourceEntry @relation(fields: [entryId], references: [id], onDelete: Restrict)
+  actorId        String
+  action         String
+  fromStatus     EntryStatus?
+  toStatus       EntryStatus?
+  diffJson       Json          @default("{}")
+  createdAt      DateTime      @default(now())
+
+  @@index([organizationId, entryId])
+}
+
+model EvidenceFile {
+  id             String         @id @default(cuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  entryId        String?
+  entry          ResourceEntry? @relation(fields: [entryId], references: [id], onDelete: Restrict)
+  fileName       String
+  mimeType       String
+  sizeBytes      Int
+  storageKey     String         @unique
+  fileSha256     String         // Tamper-evident chain-of-custody digest
+  isLocked       Boolean        @default(false) // Immutable once true (enforced by DB trigger)
+  uploadedById   String
+  uploadedAt     DateTime       @default(now())
+
+  factors              EmissionFactor[]      @relation("FactorEvidence")
+  waterLogs            WaterLog[]            @relation("WaterEvidence")
+  wasteLogs            WasteLog[]            @relation("WasteEvidence")
+  airEmissionLogs      AirEmissionLog[]      @relation("AirEvidence")
+  materialLogs         MaterialLog[]         @relation("MaterialEvidence")
+  supplierRequests     SupplierPcfRequest[]  @relation("SupplierEvidence")
+  scope2Instruments    Scope2Instrument[]    @relation("Scope2Evidence")
+  greenEconomyCredits  GreenEconomyCredit[]  @relation("GreenCreditEvidence")
+  reductionActions     ReductionAction[]     @relation("ActionEvidence")
+  assuranceReports     AssuranceEngagement[] @relation("AssuranceReportEvidence")
+
+  @@index([organizationId, entryId])
+}
+
+model RefrigerantEquipment {
+  id              String          @id @default(cuid())
+  organizationId  String
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  facilityId      String
+  facility        Facility        @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  equipmentName   String
+  refrigerantCode String          // FK to GwpTable.gasCode (e.g., R_410A, HFC_134A)
+  refrigerantGas  GwpTable        @relation(fields: [refrigerantCode], references: [gasCode])
+  nameplateKg     Decimal         @db.Decimal(12, 4)
+  defaultLeakPct  Decimal?        @db.Decimal(5, 2) // Fallback screening only
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+
+  entries         ResourceEntry[]
+
+  @@index([organizationId, facilityId])
+}
+
+model WaterLog {
+  id                   String            @id @default(cuid())
+  organizationId       String
+  organization         Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  facilityId           String
+  facility             Facility          @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  periodId             String
+  period               ReportingPeriod   @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  withdrawalSource     WaterSource
+  withdrawalKl         Decimal           @db.Decimal(14, 4)
+  dischargeDestination WaterDestination?
+  treatmentLevel       String?
+  dischargeKl          Decimal           @default(0) @db.Decimal(14, 4)
+  recycledKl           Decimal           @default(0) @db.Decimal(14, 4)
+  consumptionKl        Decimal           @db.Decimal(14, 4) // Validated: withdrawalKl - dischargeKl
+  costInr              Decimal?          @db.Decimal(14, 2)
+  dataBasis            DataBasis         @default(ACTUAL_METERED)
+  status               EntryStatus       @default(DRAFT)
+  isSelfReviewed       Boolean           @default(false)
+  reviewNote           String?
+  submittedById        String?
+  reviewedById         String?
+  evidenceFileId       String?
+  evidenceFile         EvidenceFile?     @relation("WaterEvidence", fields: [evidenceFileId], references: [id])
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  @@index([organizationId, periodId, facilityId])
+}
+
+model WasteLog {
+  id                String          @id @default(cuid())
+  organizationId    String
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  facilityId        String
+  facility          Facility        @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  periodId          String
+  period            ReportingPeriod @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  wasteCategory     WasteCategory
+  treatmentRoute    WasteRoute
+  isOnsite          Boolean         @default(false)
+  quantityMt        Decimal         @db.Decimal(14, 6)
+  costInr           Decimal?        @db.Decimal(14, 2)
+  manifestRef       String?         // Form 10 / weighbridge slip
+  linkedScope3Tco2e Decimal         @default(0) @db.Decimal(14, 6) // Auto-linked Cat 5 if off-site
+  status            EntryStatus     @default(DRAFT)
+  isSelfReviewed    Boolean         @default(false)
+  reviewNote        String?
+  submittedById     String?
+  reviewedById      String?
+  evidenceFileId    String?
+  evidenceFile      EvidenceFile?   @relation("WasteEvidence", fields: [evidenceFileId], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([organizationId, periodId, facilityId])
+}
+
+model AirEmissionLog {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  facilityId     String
+  facility       Facility        @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  periodId       String
+  period         ReportingPeriod @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  stackId        String
+  pollutant      AirPollutant
+  quantityKg     Decimal         @db.Decimal(14, 4)
+  spcbLimitKg    Decimal?        @db.Decimal(14, 4) // Mass permitted for the period when the consent (CTO) can be expressed that way
+  spcbLimitNote  String?
+  status         EntryStatus     @default(DRAFT)
+  isSelfReviewed Boolean         @default(false)
+  reviewNote     String?
+  submittedById  String?
+  reviewedById   String?
+  evidenceFileId String?
+  evidenceFile   EvidenceFile?   @relation("AirEvidence", fields: [evidenceFileId], references: [id])
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([organizationId, periodId, facilityId])
+}
+
+model MaterialLog {
+  id                String          @id @default(cuid())
+  organizationId    String
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  facilityId        String
+  facility          Facility        @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  periodId          String
+  period            ReportingPeriod @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  materialName      String
+  isPackagingEpr    Boolean         @default(false)
+  origin            MaterialOrigin
+  quantityMt        Decimal         @db.Decimal(14, 6)
+  linkedScope3Tco2e Decimal         @default(0) @db.Decimal(14, 6)
+  status            EntryStatus     @default(DRAFT)
+  isSelfReviewed    Boolean         @default(false)
+  reviewNote        String?
+  submittedById     String?
+  reviewedById      String?
+  evidenceFileId    String?
+  evidenceFile      EvidenceFile?   @relation("MaterialEvidence", fields: [evidenceFileId], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([organizationId, periodId, facilityId])
+}
+
+model FacilityOutputLog {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  facilityId     String
+  facility       Facility        @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  periodId       String
+  period         ReportingPeriod @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  productName    String
+  outputValue    Decimal         @db.Decimal(16, 4)
+  outputUnit     String          // e.g., MT steel, units
+  status         EntryStatus     @default(DRAFT)
+  isSelfReviewed Boolean         @default(false)
+  reviewNote     String?
+  submittedById  String?
+  reviewedById   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([organizationId, periodId, facilityId])
+}
+
+// ============================================================================
+// MODULE 6: FINANCIAL DENOMINATORS, SUPPLIERS & SCOPE 3 VALUE CHAIN
+// ============================================================================
+
+model FinancialYearMetrics {
+  id                      String       @id @default(cuid())
+  organizationId          String
+  organization            Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  financialYear           String
+  revenueInr              Decimal      @db.Decimal(18, 2)
+  imfPppFactor            Decimal      @db.Decimal(10, 4)
+  pppReferenceYear        Int
+  pppAdjustedRevenueUsd   Decimal      @db.Decimal(18, 2)
+  consolidatedOutputValue Decimal?     @db.Decimal(16, 4)
+  consolidatedOutputUnit  String?
+  valueChainCoveragePct   Decimal?     @db.Decimal(5, 2)
+  certifiedById           String
+  certifiedAt             DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+
+  @@unique([organizationId, financialYear])
+}
+
+model Supplier {
+  id               String               @id @default(cuid())
+  organizationId   String
+  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  name             String
+  contactEmail     String
+  category         String
+  isTop2PctPartner Boolean              @default(false) // SEBI >= 2% purchases/sales threshold
+  tradeSharePct    Decimal?             @db.Decimal(5, 2)
+  approvedFactorId String?
+  approvedFactor   EmissionFactor?      @relation(fields: [approvedFactorId], references: [id])
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  requests         SupplierPcfRequest[]
+  purchases        Scope3Purchase[]
+
+  @@index([organizationId, isTop2PctPartner])
+}
+
+model SupplierPcfRequest {
+  id                 String                @id @default(cuid())
+  organizationId     String
+  organization       Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  supplierId         String
+  supplier           Supplier              @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  productDescription String
+  tokenHash          String                @unique
+  otpHash            String?
+  otpExpiresAt       DateTime?
+  otpVerifiedAt      DateTime?
+  otpAttempts        Int                   @default(0)
+  otpSentAt          DateTime?
+  expiresAt          DateTime
+  status             SupplierRequestStatus @default(SENT)
+  submittedFactorVal Decimal?              @db.Decimal(16, 8)
+  submittedUnit      String?
+  methodologyNote    String?
+  evidenceFileId     String?               // Mandatory LCA/lab PDF
+  evidenceFile       EvidenceFile?         @relation("SupplierEvidence", fields: [evidenceFileId], references: [id])
+  requestedById      String
+  reviewedById       String?
+  reviewNote         String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  @@index([organizationId, supplierId, status])
+}
+
+model Scope3Purchase {
+  id                 String          @id @default(cuid())
+  organizationId     String
+  organization       Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  periodId           String
+  period             ReportingPeriod @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  supplierId         String?
+  supplier           Supplier?       @relation(fields: [supplierId], references: [id])
+  scope3Category     Int             // 1..15 (enforced by CHECK)
+  method             Scope3Method
+  description        String
+  quantity           Decimal         @db.Decimal(16, 4)
+  unit               String
+  spendInr           Decimal?        @db.Decimal(16, 2)
+  factorId           String
+  factor             EmissionFactor  @relation(fields: [factorId], references: [id])
+  calculatedTco2eAr6 Decimal         @db.Decimal(16, 6)
+  dataQualityTier    Int             @default(3)
+  status             EntryStatus     @default(SUBMITTED)
+  isSelfReviewed     Boolean         @default(false)
+  reviewNote         String?
+  importBatchId      String?
+  importBatch        ImportBatch?    @relation(fields: [importBatchId], references: [id])
+  enteredById        String
+  reviewedById       String?
+  reviewedAt         DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([organizationId, periodId, scope3Category])
+}
+
+// ============================================================================
+// MODULE 7: GREEN ECONOMY (SCOPE 2 MWH LEDGER + NON-NETTED CREDITS + CCTS)
+// ============================================================================
+
+model Scope2Instrument {
+  id                 String             @id @default(cuid())
+  organizationId     String
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  facilityId         String
+  facility           Facility           @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  instrumentType     String             // I_REC, GEOA_PPA, GREEN_TARIFF
+  providerName       String
+  certificateRef     String
+  validFrom          DateTime
+  validTo            DateTime
+  totalMwh           Decimal            @db.Decimal(14, 4)
+  remainingMwh       Decimal            @db.Decimal(14, 4) // Decremented atomically at period close
+  factorKgCo2ePerKwh Decimal            @db.Decimal(16, 8)
+  qualityCriteria    Json               @default("{}") // 8 GHG Protocol Scope 2 checks
+  passesAllChecks    Boolean            @default(false)
+  evidenceFileId     String?
+  evidenceFile       EvidenceFile?      @relation("Scope2Evidence", fields: [evidenceFileId], references: [id])
+  createdAt          DateTime           @default(now())
+
+  allocations        Scope2Allocation[]
+
+  @@unique([organizationId, certificateRef])
+  @@index([organizationId, facilityId, validFrom, validTo])
+}
+
+model Scope2Allocation {
+  id             String           @id @default(cuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  instrumentId   String
+  instrument     Scope2Instrument @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+  periodId       String
+  period         ReportingPeriod  @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  allocatedMwh   Decimal          @db.Decimal(14, 4)
+  isReversed     Boolean          @default(false) // Set true & balance restored if period reopened
+  createdAt      DateTime         @default(now())
+
+  @@index([organizationId, periodId, isReversed])
+}
+
+// Strictly Non-Netted Parallel Register (BEE CCTS ICCs, Voluntary Offsets, MoEFCC Green Credits)
+model GreenEconomyCredit {
+  id                    String               @id @default(cuid())
+  organizationId        String
+  organization          Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  entityId              String
+  entity                Entity               @relation("CreditHolder", fields: [entityId], references: [id], onDelete: Restrict)
+  transferredToEntityId String?              // MoEFCC Green Credits: parent-subsidiary transfer only
+  transferredToEntity   Entity?              @relation("CreditTransferee", fields: [transferredToEntityId], references: [id])
+  instrumentClass       GreenInstrumentClass
+  registryName          String               // BEE_ICM, VERRA, GOLD_STANDARD, ICFRE_GCP
+  projectId             String
+  serialRange           String
+  vintageYear           Int
+  quantity              Decimal              @db.Decimal(14, 4)
+  status                CreditStatus         @default(ISSUED)
+  restorationParcelId   String?              // MoEFCC GCP parcel tracking
+  canopyDensityPct      Decimal?             @db.Decimal(5, 2) // >= 40% required for MoEFCC GCP
+  restorationYears      Int?                 // >= 5 years required for MoEFCC GCP
+  evidenceFileId        String?
+  evidenceFile          EvidenceFile?        @relation("GreenCreditEvidence", fields: [evidenceFileId], references: [id])
+  createdById           String
+  approvedById          String?              // Executive Approver for retirement/extinguishment
+  approvedAt            DateTime?
+  createdAt             DateTime             @default(now())
+
+  @@unique([organizationId, registryName, serialRange])
+  @@index([organizationId, instrumentClass, status])
+}
+
+model CctsComplianceTarget {
+  id                    String       @id @default(cuid())
+  organizationId        String
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  facilityId            String
+  facility              Facility     @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  financialYear         String
+  sectorName            String
+  baselineGei           Decimal      @db.Decimal(12, 6) // FY 2023-24 baseline
+  targetGei             Decimal      @db.Decimal(12, 6)
+  achievedGei           Decimal?     @db.Decimal(12, 6)
+  equivalentOutput      Decimal?     @db.Decimal(16, 4)
+  iccSurplusOrShortfall Decimal?     @db.Decimal(14, 4)
+  signedOffById         String?
+  signedOffAt           DateTime?
+  createdAt             DateTime     @default(now())
+
+  @@unique([facilityId, financialYear])
+  @@index([organizationId, financialYear])
+}
+
+// ============================================================================
+// MODULE 8: IMMUTABLE SNAPSHOTS, RESTATEMENTS & TARGETS
+// ============================================================================
+
+// Strictly Append-Only Period Snapshot (UPDATE/DELETE revoked & blocked by trigger)
+model PeriodSnapshot {
+  id                     String                @id @default(cuid())
+  organizationId         String
+  organization           Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  periodId               String
+  period                 ReportingPeriod       @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  version                Int
+  isRestatement          Boolean               @default(false)
+  recalculationRequestId String?
+  recalculationRequest   RecalculationRequest? @relation(fields: [recalculationRequestId], references: [id])
+
+  // Regime 1: SEBI BRSR Core / GHG Protocol (IPCC AR6 + Reporting-Year CEA)
+  scope1Ar6Tco2e         Decimal               @db.Decimal(16, 6)
+  scope2LocationAr6Tco2e Decimal               @db.Decimal(16, 6)
+  scope2MarketAr6Tco2e   Decimal               @db.Decimal(16, 6)
+  scope3Ar6Tco2e         Decimal               @db.Decimal(16, 6)
+  biogenicCo2Tco2e       Decimal               @db.Decimal(16, 6)
+
+  // Regime 2: BEE CCTS Compliance (IPCC AR2 + Frozen 0.727 CEA, Biomass/RE excluded)
+  cctsScope1And2Ar2Tco2e Decimal               @default(0) @db.Decimal(16, 6)
+
+  // Resource Totals
+  totalEnergyGj          Decimal               @db.Decimal(16, 6)
+  renewableEnergyGj      Decimal               @db.Decimal(16, 6)
+  waterWithdrawalKl      Decimal               @default(0) @db.Decimal(16, 4)
+  waterConsumptionKl     Decimal               @default(0) @db.Decimal(16, 4)
+  waterDischargeKl       Decimal               @default(0) @db.Decimal(16, 4)
+  wasteGeneratedMt       Decimal               @default(0) @db.Decimal(16, 6)
+  wasteRecoveredMt       Decimal               @default(0) @db.Decimal(16, 6)
+  wasteDisposedMt        Decimal               @default(0) @db.Decimal(16, 6)
+
+  isSelfReviewedOnly     Boolean               @default(false) // True if SINGLE_USER_MODE used
+  snapshotPayload        Json                  @default("{}")
+  createdById            String
+  createdAt              DateTime              @default(now())
+
+  @@unique([periodId, version])
+  @@index([organizationId, periodId])
+}
+
+model RecalculationRequest {
+  id                  String            @id @default(cuid())
+  organizationId      String
+  organization        Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  triggerType         RecalcTriggerType
+  affectedPeriodIds   String[]          @default([])
+  estimatedImpactPct  Decimal           @db.Decimal(6, 2)
+  cumulativeImpactPct Decimal           @db.Decimal(6, 2)
+  reason              String
+  status              ApprovalStatus    @default(PENDING)
+  requestedById       String
+  decidedById         String?
+  decidedAt           DateTime?
+  decisionNote        String?
+  createdAt           DateTime          @default(now())
+
+  restatedSnapshots   PeriodSnapshot[]
+
+  @@index([organizationId, status])
+}
+
+model Target {
+  id                   String              @id @default(cuid())
+  organizationId       String
+  organization         Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  name                 String
+  targetType           TargetType          @default(ABSOLUTE)
+  scopeCoverage        TargetScopeCoverage @default(SCOPE_1_AND_2_LOCATION)
+  framework            TargetFramework     @default(CUSTOM_INTERNAL)
+  baseYear             String              // e.g., "FY2025-26"
+  targetYear           String              // e.g., "FY2029-30" (CHECK: > baseYear)
+  baseValue            Decimal             @db.Decimal(16, 4) // tCO2e or intensity denominator value
+  originalBaseValue    Decimal             @db.Decimal(16, 4) // Pre-restatement audit baseline
+  intensityUnit        String?             // Required when targetType == INTENSITY (e.g., "tCO2e / MT")
+  targetReductionPct   Decimal             @db.Decimal(5, 2)
+  targetValue          Decimal             @db.Decimal(16, 4) // Computed: baseValue * (1 - pct/100)
+  status               TargetStatus        @default(ON_TRACK)
+  needsBaseRestatement Boolean             @default(false) // Set true if baseYear RecalculationRequest approved
+  missedExplanation    String?             // Required narrative if status == MISSED
+  ownerId              String?
+  approvedById         String?
+  approvedAt           DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  milestones           TargetMilestone[]
+  actions              ReductionAction[]
+
+  @@index([organizationId, status])
+}
+
+// Annual glidepath checkpoints evaluated against closed PeriodSnapshot actuals
+model TargetMilestone {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  targetId       String
+  target         Target       @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  financialYear  String
+  plannedValue   Decimal      @db.Decimal(16, 4)
+  actualValue    Decimal?     @db.Decimal(16, 4)
+  variancePct    Decimal?     @db.Decimal(7, 2)
+  status         TargetStatus @default(ON_TRACK)
+  evaluatedAt    DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([targetId, financialYear])
+  @@index([organizationId, financialYear])
+}
+
+// Operational Decarbonization Actions (Non-offset; linked to Facility/Source, MACC & cross-scope effects)
+model ReductionAction {
+  id                      String          @id @default(cuid())
+  organizationId          String
+  organization            Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  targetId                String
+  target                  Target          @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  facilityId              String?
+  facility                Facility?       @relation(fields: [facilityId], references: [id])
+  sourceId                String?
+  source                  ResourceSource? @relation(fields: [sourceId], references: [id])
+  domain                  ResourceDomain  @default(FUEL)
+  lever                   ReductionLever  @default(ENERGY_EFFICIENCY)
+  title                   String
+  ownerId                 String?
+  status                  ActionStatus    @default(PLANNED)
+
+  // Gross Abatement, Cross-Scope Shift & Biogenic Side-Effects
+  expectedSavingTco2e     Decimal         @db.Decimal(14, 4) // Annual gross reduction on primary scope
+  secondaryScope          EmissionScope?  // e.g., SCOPE_2 when electrifying a diesel boiler
+  secondaryScopeShiftTco2e Decimal        @default(0) @db.Decimal(14, 4) // Additional emissions caused in secondary scope
+  biogenicShiftTco2e      Decimal         @default(0) @db.Decimal(14, 4) // Separate Outside-of-Scopes biogenic CO2 shift
+  netExpectedSavingTco2e  Decimal         @db.Decimal(14, 4) // CHECK: expectedSavingTco2e - secondaryScopeShiftTco2e
+  achievedSavingTco2e     Decimal?        @db.Decimal(14, 4) // Verified post-implementation annual net saving
+
+  // Financial & MACC Metrics (negative annualOpexDeltaInr = annual fuel/power savings)
+  capexInr                Decimal?        @db.Decimal(16, 2)
+  annualOpexDeltaInr      Decimal?        @db.Decimal(16, 2)
+  lifetimeYears           Int             @default(5)
+  paybackYears            Decimal?        @db.Decimal(8, 2)  // Null if no financial savings (opexDelta >= 0)
+  macInrPerTco2e          Decimal?        @db.Decimal(14, 2) // Null if netExpectedSavingTco2e <= 0
+
+  implementationDate      DateTime?
+  endDate                 DateTime
+  revisedEndDate          DateTime?
+  delayReason             String?
+  cancellationReason      String?
+  evidenceFileId          String?
+  evidenceFile            EvidenceFile?   @relation("ActionEvidence", fields: [evidenceFileId], references: [id])
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  @@index([organizationId, targetId, status])
+  @@index([organizationId, facilityId, sourceId])
+}
+
+// ============================================================================
+// MODULE 9: 3RD-LINE INTERNAL AUDIT, EXTERNAL ASSURANCE & APPEND-ONLY LOGS
+// ============================================================================
+
+model InternalAuditFinding {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  periodId       String?
+  period         ReportingPeriod?    @relation(fields: [periodId], references: [id])
+  controlDomain  String              // e.g., "CUSTOM_FACTORS", "WATER_BALANCE", "ITGC_ACCESS"
+  status         InternalAuditStatus @default(DEFICIENCY)
+  summary        String
+  remediation    String?
+  auditorId      String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([organizationId, status])
+}
+
+model AssuranceEngagement {
+  id                      String                      @id @default(cuid())
+  organizationId          String
+  organization            Organization                @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  verifierUserId          String
+  verifier                User                        @relation("EngagementVerifier", fields: [verifierUserId], references: [id])
+  verifierFirmName        String
+  acvaAccreditationNo     String?                     // BEE ACVA ID (enforces Validation ACVA != Verification ACVA)
+  engagementType          EngagementType              @default(ASSURANCE)
+  assuranceLevel          AssuranceLevel              @default(LIMITED)
+  standard                AssuranceStandard
+  materialityThresholdPct Decimal                     @default(5.00) @db.Decimal(5, 2)
+  isPreAssurance          Boolean                     @default(false)
+  status                  EngagementStatus            @default(CREATED)
+  periodModifiedAlert     Boolean                     @default(false) // Triggered if a shared period is reopened mid-audit
+  opinion                 AssuranceOpinion?
+  opinionNotes            String?
+  signedReportFileId      String?
+  signedReportFile        EvidenceFile?               @relation("AssuranceReportEvidence", fields: [signedReportFileId], references: [id])
+  opinionIssuedAt         DateTime?
+  createdById             String
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+
+  periods                 AssuranceEngagementPeriod[]
+  findings                VerificationFinding[]
+
+  @@index([organizationId, verifierUserId, status])
+}
+
+model AssuranceEngagementPeriod {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  engagementId   String
+  engagement     AssuranceEngagement @relation(fields: [engagementId], references: [id], onDelete: Restrict)
+  periodId       String
+  period         ReportingPeriod     @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  sharedAt       DateTime            @default(now())
+
+  @@unique([engagementId, periodId])
+  @@index([organizationId, periodId])
+}
+
+model VerificationFinding {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  engagementId   String
+  engagement     AssuranceEngagement @relation(fields: [engagementId], references: [id], onDelete: Restrict)
+  periodId       String
+  period         ReportingPeriod     @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  entryId        String?
+  entry          ResourceEntry?      @relation(fields: [entryId], references: [id])
+  severity       FindingSeverity     @default(CLARIFICATION)
+  status         FindingStatus       @default(OPEN)
+  questionText   String
+  raisedById     String
+  responseText   String?
+  respondedById  String?
+  respondedAt    DateTime?
+  closedAt       DateTime?
+  createdAt      DateTime            @default(now())
+
+  @@index([organizationId, engagementId, status])
+}
+
+// Append-Only Tenant Audit Trail (UPDATE/DELETE revoked & blocked by trigger)
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actorId        String
+  action         String
+  resourceType   String
+  resourceId     String?
+  metadata       Json         @default("{}")
+  ipAddress      String?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+}
+
+// Append-Only Platform Audit Trail (UPDATE/DELETE revoked & blocked by trigger)
+model PlatformAuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String
+  targetOrg String?
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model PlatformActionApproval {
+  id             String         @id @default(cuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actionType     String         // e.g., "TENANT_OFFBOARD_CLOSE"
+  reason         String
+  status         ApprovalStatus @default(PENDING)
+  requestedById  String
+  approvedById   String?
+  decidedAt      DateTime?
+  createdAt      DateTime       @default(now())
+
+  @@index([status])
+}
+
+model Notification {
+  id             String        @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category       String
+  title          String
+  body           String
+  isRead         Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+
+  @@index([userId, isRead, createdAt])
+}
+
+// Durable Transactional Email Outbox (replaces volatile in-memory queue)
+model EmailOutbox {
+  id          String       @id @default(cuid())
+  organizationId String?   // null only for platform-level mail; tenant mail is isolated by RLS
+  toEmail     String
+  subject     String
+  bodyText    String
+  bodyHtml    String?
+  category    String       @default("SYSTEM")
+  status      OutboxStatus @default(PENDING)
+  attempts    Int          @default(0)
+  lastError   String?
+  nextRetryAt DateTime     @default(now())
+  sentAt      DateTime?
+  createdAt   DateTime     @default(now())
+
+  @@index([status, nextRetryAt])
+  @@index([organizationId, createdAt])
+}
+
+// ============================================================================
+// MODULE 10: DATA INGESTION (BULK IMPORTS, API KEYS), IMP & EXPORT LEDGER
+// ============================================================================
+
+model ImportBatch {
+  id               String            @id @default(cuid())
+  organizationId   String
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  periodId         String
+  period           ReportingPeriod   @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  channel          ImportChannel     @default(CSV_EXCEL)
+  domain           ResourceDomain?
+  fileName         String
+  fileSha256       String
+  totalRows        Int               @default(0)
+  validRows        Int               @default(0)
+  errorRows        Int               @default(0)
+  errorSummaryJson Json              @default("[]")
+  status           ImportBatchStatus @default(PREVIEW)
+  uploadedById     String
+  committedAt      DateTime?
+  rolledBackAt     DateTime?
+  createdAt        DateTime          @default(now())
+
+  entries          ResourceEntry[]
+  scope3Purchases  Scope3Purchase[]
+
+  @@index([organizationId, periodId, status])
+}
+
+model ApiKey {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  keyPrefix      String       // First 8 chars for UI identification
+  keyHash        String       @unique
+  facilityIds    String[]     @default([]) // Empty = org-wide ingest scope
+  scopes         String[]     @default(["ingest:entries"])
+  isActive       Boolean      @default(true)
+  expiresAt      DateTime?
+  lastUsedAt     DateTime?
+  createdById    String
+  revokedById    String?
+  revokedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, isActive])
+}
+
+// ISO 14064-1 / GHG Protocol Inventory Management Plan (IMP)
+model InventoryManagementPlan {
+  id                     String         @id @default(cuid())
+  organizationId         String
+  organization           Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  financialYear          String
+  version                Int            @default(1)
+  consolidationNarrative String
+  methodologyNarrative   String
+  qaQcProcedures         String
+  exclusionPolicy        String
+  status                 ApprovalStatus @default(PENDING)
+  authoredById           String
+  approvedById           String?
+  approvedAt             DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  @@unique([organizationId, financialYear, version])
+  @@index([organizationId, financialYear])
+}
+
+// Append-Only Ledger of Generated Reports & Evidence Packs
+model ExportReport {
+  id              String           @id @default(cuid())
+  organizationId  String
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  financialYear   String
+  periodId        String?
+  period          ReportingPeriod? @relation(fields: [periodId], references: [id])
+  reportType      ExportReportType
+  fileName        String
+  storageKey      String           @unique
+  fileSha256      String
+  snapshotVersion Int?
+  generatedById   String
+  createdAt       DateTime         @default(now())
+
+  @@index([organizationId, financialYear, reportType])
+}
