@@ -1,0 +1,13 @@
+import React from 'react';
+
+/** Mark: a ledger line rising into a leaf-shaped gap. Flat, one colour on dark, readable at 24px. */
+export const TroposLogo = React.memo(function TroposLogo({ variant = 'sidebar' }) {
+  const onDark = variant !== 'light';
+  return (
+    <svg viewBox="0 0 32 32" className="w-8 h-8 shrink-0" aria-hidden="true">
+      <rect width="32" height="32" rx="7" fill={'#047857'} />
+      <path d="M8 22.5h16" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M9.5 18.5c1.2-4.6 4.6-7.6 9.8-7.9 1.3-.1 2.6.1 3.4.4-.1 1-.3 2.2-.8 3.4-1.7 3.4-5.6 4.4-12.4 4.1Z" fill="#FFFFFF" />
+    </svg>
+  );
+});
