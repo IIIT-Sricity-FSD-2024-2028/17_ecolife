@@ -1,0 +1,17 @@
+import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
+
+@Injectable()
+export class HttpLoggerMiddleware implements NestMiddleware {
+  private readonly logger = new Logger('HTTP');
+
+  use(req: Request, res: Response, next: NextFunction) {
+    const start = Date.now();
+    res.on('finish', () => {
+      const ms = Date.now() - start;
+      const reqId = (req as Request & { requestId?: string }).requestId || '-';
+      this.logger.log(`[${reqId}] ${req.method} ${req.originalUrl} ${res.statusCode} (${ms}ms)`);
+    });
+    next();
+  }
+}
