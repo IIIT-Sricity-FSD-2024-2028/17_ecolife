@@ -1,68 +1,68 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Inject } from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger as WinstonLogger } from 'winston';
+import { ZodError } from 'zod';
 
-interface FieldError {
-  field: string;
-  message: string;
-}
-
-/**
- * Catches every exception and normalizes the response to
- * { success: false, message, errors }. Unexpected errors are logged in
- * full but return a generic message to the client, so stack traces never
- * leak; operational errors (validation, not found, forbidden) return
- * their real, clean message.
- */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  constructor(@Inject(WINSTON_MODULE_PROVIDER) private readonly logger?: WinstonLogger) {}
-
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const res = ctx.getResponse<Response>();
+    const req = ctx.getRequest<Request & { requestId?: string }>();
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Something went wrong. Please try again.';
-    let errors: FieldError[] = [];
+    if (exception instanceof ZodError) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        error: 'Validation failed',
+        details: exception.flatten().fieldErrors,
+        requestId: req.requestId
+      });
+    }
 
     if (exception instanceof HttpException) {
-      status = exception.getStatus();
+      const status = exception.getStatus();
       const body = exception.getResponse();
-
-      if (typeof body === 'string') {
-        message = body;
-      } else if (typeof body === 'object' && body !== null) {
-        const b = body as any;
-        if (Array.isArray(b.message)) {
-          message = 'Validation failed';
-          errors = b.message.map((m: string) => ({ field: m.split(' ')[0] || 'unknown', message: m }));
-        } else {
-          message = b.message || message;
-          // Services can attach field-level errors, e.g. { field: 'email', message }.
-          if (Array.isArray(b.errors)) errors = b.errors;
-        }
-      }
-    } else if (exception instanceof Error) {
-      this.log('error', exception.message, { stack: exception.stack, path: request.url });
+      const b = body as { error?: string; message?: string | string[] };
+      // Nest puts the human text in `message` and only the status name in `error`; show the human text.
+      const message =
+        typeof body === 'string'
+          ? body
+          : (Array.isArray(b.message) ? b.message.join(', ') : b.message) || b.error || exception.message;
+      return res.status(status).json({
+        error: message,
+        details: typeof body === 'object' && body !== null && 'details' in body ? (body as { details: unknown }).details : undefined,
+        requestId: req.requestId
+      });
     }
 
-    if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.log('error', message, { path: request.url, method: request.method });
-    } else {
-      this.log('warn', message, { status, path: request.url, method: request.method });
+    // Anything below is not an HttpException. Never echo internals (SQL, Prisma, stack) to the client.
+    const err = exception as { code?: string; name?: string; message?: string; meta?: any; stack?: string };
+    const code = err?.code;
+    const send = (status: number, error: string) => res.status(status).json({ error, requestId: req.requestId });
+
+    if (code === 'P2002') return send(HttpStatus.CONFLICT, 'A record with the same unique value already exists.');
+    if (code === 'P2003') return send(HttpStatus.BAD_REQUEST, 'A referenced record does not exist, or this record is still in use.');
+    if (code === 'P2025') return send(HttpStatus.NOT_FOUND, 'Record not found.');
+    if (code === 'P2000' || code === 'P2006' || code === 'P2007' || code === 'P2020') return send(HttpStatus.BAD_REQUEST, 'One of the submitted values is out of range or invalid.');
+    if (typeof err?.name === 'string' && err.name.startsWith('PrismaClient') && /Argument|Invalid `|Unknown|Expected/.test(err.message || '')) {
+      return send(HttpStatus.BAD_REQUEST, 'The request contains an invalid or unsupported value.');
     }
 
-    response.status(status).json({ success: false, message, errors });
-  }
-
-  private log(level: 'error' | 'warn', message: string, meta: object) {
-    if (this.logger) {
-      this.logger.log(level, message, meta);
-    } else {
-      console.warn(message, meta);
+    // Database rules raised on purpose (CHECK constraints / compliance triggers) carry a readable rule text.
+    const raw = err?.message || '';
+    const ruleMatch = raw.match(/(?:ERROR:|Raw query failed\..*?message: ")\s*([^\n"]{8,300})/);
+    const lowerRaw = raw.toLowerCase();
+    if (lowerRaw.includes('violates check constraint') || lowerRaw.includes('separation of duties') || lowerRaw.includes('append-only') || lowerRaw.includes('is immutable') || lowerRaw.includes('mutually exclusive')) {
+      return send(HttpStatus.BAD_REQUEST, ruleMatch ? ruleMatch[1].trim() : 'This change breaks a compliance rule enforced by the database.');
     }
+
+    // Business-rule errors thrown by application code as plain Errors.
+    if (exception instanceof Error && exception.constructor === Error) {
+      const lower = raw.toLowerCase();
+      const isRule = ['cannot', 'must be', 'must ', 'requires', 'insufficient', 'separation of duties', 'already exists', 'not allowed', 'is not'].some((k) => lower.includes(k));
+      if (isRule) return send(HttpStatus.BAD_REQUEST, raw);
+    }
+
+    // eslint-disable-next-line no-console
+    console.error(`[${req.requestId ?? '-'}] Unhandled error:`, exception);
+    return send(HttpStatus.INTERNAL_SERVER_ERROR, 'Something went wrong on our side. Please try again; if it keeps happening quote the request id.');
   }
 }
