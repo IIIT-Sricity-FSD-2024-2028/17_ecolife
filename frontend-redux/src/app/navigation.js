@@ -44,16 +44,28 @@ export const ACTOR_LABELS = {
 // group = heading in the sidebar. Labels use the words people use at work, not system terms.
 export const ACTOR_NAV = {
   PLANT_MANAGER: [
+    { path: '/plant/dashboard', label: 'To do', icon: ListTodo },
+    { path: '/plant/fuels-energy', label: 'Energy and fuel', modules: ['FUELS', 'ELECTRICITY'], icon: Flame, group: 'Monthly data' },
+    { path: '/plant/water-waste', label: 'Water and waste', modules: ['WATER', 'WASTE'], icon: Droplets, group: 'Monthly data' },
+    { path: '/plant/air-materials', label: 'Air, materials, cooling', modules: ['AIR', 'MATERIALS', 'REFRIGERANTS'], icon: Wind, group: 'Monthly data' },
+    { path: '/documents', label: 'Documents', icon: FolderOpen, group: 'Records' }
   ],
   SUSTAINABILITY_LEAD: [
+    { path: '/sustainability/dashboard', label: 'To do', icon: ListTodo },
+    { path: '/plant/fuels-energy', label: 'Energy and fuel', modules: ['FUELS', 'ELECTRICITY'], icon: Flame, group: 'Every month' },
+    { path: '/documents', label: 'Documents', icon: FolderOpen, group: 'Set up' },
   ],
   FINANCE_MANAGER: [
+    { path: '/documents', label: 'Documents', icon: FolderOpen }
   ],
   EXECUTIVE_APPROVER: [
+    { path: '/sustainability/dashboard', label: 'To do', icon: ListTodo },
   ],
   INTERNAL_AUDITOR: [
+    { path: '/documents', label: 'Documents', icon: FolderOpen }
   ],
   EXTERNAL_VERIFIER: [
+    { path: '/documents', label: 'Documents', icon: FolderOpen }
   ],
   ORG_ADMIN: [
     { path: '/admin/team', label: 'Team and access', icon: Users },

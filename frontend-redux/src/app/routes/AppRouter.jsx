@@ -20,7 +20,12 @@ const ForbiddenPage = lazy(() => import('../../actors/public/ForbiddenPage'));
 const SetupGuidePage = lazy(() => import('../../actors/shared/SetupGuidePage'));
 const SearchResultsPage = lazy(() => import('../../actors/shared/SearchResultsPage'));
 
+const TodayPage = lazy(() => import('../../actors/shared/TodayPage'));
+const FuelsEnergyPage = lazy(() => import('../../actors/plant-manager/FuelsEnergyPage'));
+const WaterWastePage = lazy(() => import('../../actors/plant-manager/WaterWastePage'));
+const RefrigerantsAirMaterialsPage = lazy(() => import('../../actors/plant-manager/RefrigerantsAirMaterialsPage'));
 
+const DocumentsPage = lazy(() => import('../../actors/shared/DocumentsPage'));
 const NotificationsPage = lazy(() => import('../../actors/shared/NotificationsPage'));
 const HelpPage = lazy(() => import('../../actors/shared/HelpPage'));
 
@@ -68,8 +73,20 @@ export function AppRouter() {
               <Route path="/profile" element={<ProfileSecurityPage />} />
               <Route path="/setup" element={<SetupGuidePage />} />
               <Route path="/search" element={<SearchResultsPage />} />
+              <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/help" element={<HelpPage />} />
+
+              <Route element={<RoleRoute allow={['PLANT_MANAGER', 'SUSTAINABILITY_LEAD', 'ORG_ADMIN']} />}>
+                <Route path="/plant/dashboard" element={<TodayPage />} />
+                <Route path="/plant/fuels-energy" element={<FuelsEnergyPage />} />
+                <Route path="/plant/water-waste" element={<WaterWastePage />} />
+                <Route path="/plant/air-materials" element={<RefrigerantsAirMaterialsPage />} />
+              </Route>
+
+              <Route element={<RoleRoute allow={['SUSTAINABILITY_LEAD', 'EXECUTIVE_APPROVER', 'ORG_ADMIN', 'PLANT_MANAGER']} />}>
+                <Route path="/sustainability/dashboard" element={<TodayPage />} />
+              </Route>
 
               <Route element={<RoleRoute allow={['ORG_ADMIN', 'SUSTAINABILITY_LEAD']} />}>
                 <Route path="/admin/team" element={<TeamRbacUarPage />} />

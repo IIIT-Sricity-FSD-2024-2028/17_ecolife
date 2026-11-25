@@ -7,5 +7,6 @@ import toast from './toastSlice';
 import options from './optionsSlice';
 import forms from './formsSlice';
 import meta from './metaSlice';
+import dashboard from './dashboardSlice';
 import scope from './scopeSlice';
-export default { 'notifications': notifications, 'search': search, 'auth': auth, 'ui': ui, 'toasts': toast, 'options': options, 'forms': forms, 'meta': meta, 'scope': scope };
+export default { 'notifications': notifications, 'search': search, 'auth': auth, 'ui': ui, 'toasts': toast, 'options': options, 'forms': forms, 'meta': meta, 'dashboard': dashboard, 'scope': scope };

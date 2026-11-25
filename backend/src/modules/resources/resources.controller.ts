@@ -19,8 +19,7 @@ type Tx = any;
 const FY = z.string().regex(/^FY\d{4}-\d{2}$/, 'Use the format FY2025-26');
 const fyStart = (fy: string) => Number(fy.slice(2, 6));
 const fyName = (start: number) => `FY${start}-${String((start + 1) % 100).padStart(2, '0')}`;
-export const TREATMENT_LEVELS = ['NONE', 'PRIMARY', 'SECONDARY', 'TERTIARY'] as const;
-export const HAZARDOUS_WASTE = ['E_WASTE', 'BIO_MEDICAL', 'BATTERY', 'RADIOACTIVE', 'OTHER_HAZARDOUS'];
+import { TREATMENT_LEVELS, HAZARDOUS_WASTE } from '../../common/utils/waste.constants';
 const HAZARDOUS = HAZARDOUS_WASTE;
 
 // ---------------------------------------------------------------------------------------------------------
@@ -361,6 +360,7 @@ export class ResourcesController {
       if (!cur) throw new NotFoundException('Record not found.');
       if (!assertFacilityScope(user, cur.facilityId)) throw new ForbiddenException('You are not assigned to that facility.');
       if (!['OPEN', 'REOPENED'].includes(cur.period.status)) throw new ConflictException(`${cur.period.label} is closed.`);
+      if (cur.reviewedById && cur.reviewedById === user.userId && !cur.isSelfReviewed && cur.status === 'REJECTED') throw new ConflictException('You sent this record back yourself, so you cannot send it for review again. Ask the person who entered it to correct it and send it.');
       const r = await tx[kind.delegate].updateMany({ where: { id, status: { in: ['DRAFT', 'REJECTED'] } }, data: { status: 'SUBMITTED', submittedById: user.userId, reviewNote: null } });
       if (r.count === 0) throw new ConflictException('Only a draft or rejected record can be submitted.');
       await writeAuditLog(tx, { organizationId: orgId, actorId: user.userId, action: `${k.toUpperCase().replace('-', '_')}_LOG_SUBMITTED`, resourceType: kind.delegate, resourceId: id });

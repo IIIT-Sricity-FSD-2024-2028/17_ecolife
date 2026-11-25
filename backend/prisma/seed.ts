@@ -250,7 +250,7 @@ async function main() {
       status: 'PUBLISHED',
       regimeTag: 'GENERAL',
       region: 'IN',
-      sourceAuthority: 'IPCC AR6 / GwpTable (R_410A)',
+      sourceAuthority: 'IPCC Sixth Assessment Report, warming value for R-410A',
       versionLabel: 'IPCC-AR6',
       validFrom: valid2023,
       canonicalUnit: 'kg',

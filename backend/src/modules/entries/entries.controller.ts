@@ -198,6 +198,9 @@ export class EntriesController {
       const prev = await loadEntryInScope(tx, user, id);
       if (prev.status !== 'DRAFT' && prev.status !== 'REJECTED') throw new ConflictException(`This entry is ${prev.status.toLowerCase()} and cannot be submitted.`);
       await loadOpenPeriod(tx, prev.periodId);
+      if (prev.reviewedById && prev.reviewedById === user.userId && !prev.isSelfReviewed) {
+        throw new ConflictException('You sent this record back yourself, so you cannot send it for review again. Ask the person who entered it to correct it and send it.');
+      }
       const flagged = anomalyFlags(prev.qualityFlags);
       let outlierConfirmed = prev.outlierConfirmed;
       let outlierNote = prev.outlierNote;

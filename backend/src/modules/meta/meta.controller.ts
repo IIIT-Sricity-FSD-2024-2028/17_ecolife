@@ -5,7 +5,7 @@ import * as generated from '../../generated/prisma';
 import { INDIAN_STATES, TRIAL_DAYS } from '../../config/platform.constants';
 import { listUnits } from '../../common/utils/units';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { HAZARDOUS_WASTE, TREATMENT_LEVELS } from '../resources/resources.controller';
+import { HAZARDOUS_WASTE, TREATMENT_LEVELS } from '../../common/utils/waste.constants';
 
 /** Every choice list the screens need, read from the database schema itself so the UI never carries its own copy. */
 const ENUMS: Record<string, string[]> = {};
