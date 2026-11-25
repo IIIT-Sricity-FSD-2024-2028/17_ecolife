@@ -44,12 +44,17 @@ export const ACTOR_LABELS = {
 // group = heading in the sidebar. Labels use the words people use at work, not system terms.
 export const ACTOR_NAV = {
   PLANT_MANAGER: [
+    { path: '/plant/dashboard', label: 'To do', icon: ListTodo },
+    { path: '/plant/fuels-energy', label: 'Energy and fuel', modules: ['FUELS', 'ELECTRICITY'], icon: Flame, group: 'Monthly data' },
   ],
   SUSTAINABILITY_LEAD: [
+    { path: '/sustainability/dashboard', label: 'To do', icon: ListTodo },
+    { path: '/plant/fuels-energy', label: 'Energy and fuel', modules: ['FUELS', 'ELECTRICITY'], icon: Flame, group: 'Every month' },
   ],
   FINANCE_MANAGER: [
   ],
   EXECUTIVE_APPROVER: [
+    { path: '/sustainability/dashboard', label: 'To do', icon: ListTodo },
   ],
   INTERNAL_AUDITOR: [
   ],
