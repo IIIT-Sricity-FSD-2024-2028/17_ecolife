@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { isValidGstin } from '../common/utils/gstin.util';
 
+/** A blank line in .env (KEY="") means "not set yet", so it must not be validated or read as 0. */
+const blankIsUnset = <T extends z.ZodTypeAny>(schema: T) => z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), schema);
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(10, 'DATABASE_URL must be a valid PostgreSQL connection string'),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
@@ -22,11 +25,11 @@ const envSchema = z.object({
   UPLOAD_DIR: z.string().default('./uploads'),
   MAX_UPLOAD_MB: z.coerce.number().int().min(1).max(50).default(10),
   // Billing identity. All three must be set before the platform can issue a GST invoice; none is assumed.
-  BILLING_SUPPLIER_GSTIN: z.string().trim().toUpperCase().refine(isValidGstin, 'BILLING_SUPPLIER_GSTIN must be a valid GSTIN').optional(),
-  BILLING_SUPPLIER_NAME: z.string().trim().min(2).optional(),
-  BILLING_SUPPLIER_ADDRESS: z.string().trim().min(5).optional(),
-  BILLING_SAC_CODE: z.string().trim().regex(/^\d{6}$/, 'BILLING_SAC_CODE must be 6 digits').optional(),
-  BILLING_GST_RATE_PCT: z.coerce.number().min(0).max(40).optional(),
+  BILLING_SUPPLIER_GSTIN: blankIsUnset(z.string().trim().toUpperCase().refine(isValidGstin, 'BILLING_SUPPLIER_GSTIN must be a valid GSTIN').optional()),
+  BILLING_SUPPLIER_NAME: blankIsUnset(z.string().trim().min(2).optional()),
+  BILLING_SUPPLIER_ADDRESS: blankIsUnset(z.string().trim().min(5).optional()),
+  BILLING_SAC_CODE: blankIsUnset(z.string().trim().regex(/^\d{6}$/, 'BILLING_SAC_CODE must be 6 digits').optional()),
+  BILLING_GST_RATE_PCT: blankIsUnset(z.coerce.number().min(0).max(40).optional()),
   BILLING_PAYMENT_TERMS_DAYS: z.coerce.number().int().min(0).max(120).default(15),
   // Online payment. Keys come from the environment only; never from the app or chat. Use Razorpay TEST keys until launch.
   // Shown to customers on the billing page when online payment is off: bank or UPI details, or who to contact.

@@ -56,6 +56,9 @@ export const ACTOR_NAV = {
   EXTERNAL_VERIFIER: [
   ],
   ORG_ADMIN: [
+    { path: '/admin/team', label: 'Team and access', icon: Users },
+    { path: '/admin/security', label: 'Security and API keys', icon: KeyRound },
+    { path: '/admin/settings', label: 'Company settings', icon: Settings },
   ],
   PLATFORM_ADMIN: [
   ]

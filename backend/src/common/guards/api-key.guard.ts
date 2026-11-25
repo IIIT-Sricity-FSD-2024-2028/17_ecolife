@@ -22,7 +22,7 @@ export class ApiKeyGuard implements CanActivate {
     // ApiKey is under FORCE RLS: resolve it by exact hash first, then touch it inside its own tenant context.
     const key = await this.prisma.withTokenLookupTx('app.api_key_hash', keyHash, (tx) => tx.apiKey.findUnique({ where: { keyHash } }));
     if (!key || !key.isActive || key.revokedAt || (key.expiresAt && key.expiresAt < new Date())) {
-      throw new UnauthorizedException('Invalid, revoked, or expired API key');
+      throw new UnauthorizedException('This access key is not valid. It may have been revoked or expired. Create a new key in Settings.');
     }
     if (!key.scopes.includes('ingest:entries')) throw new ForbiddenException('This API key is not allowed to ingest entries.');
     await this.prisma.withTenantTx(key.organizationId, async (tx) => {

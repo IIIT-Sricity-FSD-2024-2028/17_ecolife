@@ -28,6 +28,9 @@ const HelpPage = lazy(() => import('../../actors/shared/HelpPage'));
 
 
 
+const TeamRbacUarPage = lazy(() => import('../../actors/org-admin/TeamRbacUarPage'));
+const SecurityOutboxPage = lazy(() => import('../../actors/org-admin/SecurityOutboxPage'));
+const WorkspaceSettingsPage = lazy(() => import('../../actors/org-admin/WorkspaceSettingsPage'));
 
 
 function RootEntry() {
@@ -67,6 +70,12 @@ export function AppRouter() {
               <Route path="/search" element={<SearchResultsPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/help" element={<HelpPage />} />
+
+              <Route element={<RoleRoute allow={['ORG_ADMIN', 'SUSTAINABILITY_LEAD']} />}>
+                <Route path="/admin/team" element={<TeamRbacUarPage />} />
+                <Route path="/admin/security" element={<SecurityOutboxPage />} />
+                <Route path="/admin/settings" element={<WorkspaceSettingsPage />} />
+              </Route>
 
             </Route>
           </Route>
