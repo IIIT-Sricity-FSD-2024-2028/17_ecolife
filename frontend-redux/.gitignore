@@ -1,0 +1,14 @@
+node_modules/
+dist/
+uploads/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+*.sql.gz
+*.dump
+*.bak
+.DS_Store
+.vscode/
+.idea/

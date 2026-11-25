@@ -454,7 +454,7 @@ export class AuthService {
       tx.invitation.findUnique({ where: { tokenHash }, include: { organization: { select: { name: true, preset: true } } } })
     );
     if (!invite || invite.acceptedAt || invite.revokedAt || invite.expiresAt < new Date()) {
-      throw new NotFoundException('Invitation not found, revoked, or expired');
+      throw new NotFoundException('This invitation link no longer works. It may have expired or been cancelled. Ask your company administrator to send a new one.');
     }
     return { email: invite.email, organizationName: invite.organization.name, roles: invite.roles, expiresAt: invite.expiresAt };
   }
@@ -465,7 +465,7 @@ export class AuthService {
       tx.invitation.findUnique({ where: { tokenHash } })
     );
     if (!invite || invite.acceptedAt || invite.revokedAt || invite.expiresAt < new Date()) {
-      throw new BadRequestException('Invitation is invalid, revoked, or expired');
+      throw new BadRequestException('This invitation link no longer works. It may have expired or been cancelled. Ask your company administrator to send a new one.');
     }
     assertPasswordPolicy(password, invite.email);
     const passwordHash = await bcrypt.hash(password, BCRYPT_COST);

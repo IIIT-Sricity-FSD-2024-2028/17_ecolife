@@ -1,0 +1,28 @@
+Tropos (Redux frontend) - how to run and check
+
+Needs: Node 20+ and PostgreSQL 14+ running on localhost:5432.
+
+ONE-TIME DATABASE SETUP (once per machine)
+  PGPASSWORD=<your postgres password> bash setup.sh
+  This creates the database, writes backend/.env with fresh random secrets, runs the migration
+  and loads the demo data. (If you prefer to do it by hand: copy backend/.env.example to
+  backend/.env, fill the database URLs and the two secrets, then in backend/ run
+  npm run db:setup, start the API once, then npm run db:seed-demo and npm run db:seed-history.)
+
+RUN (every time, two terminals)
+  Backend:   cd backend && npm install && npm run start:dev      -> http://localhost:4000
+  Frontend:  cd frontend-redux && npm install && npm run dev     -> http://localhost:5173
+
+Open http://localhost:5173 and sign in (password for all: Tropos@2026)
+  admin@bharatgears.in       Organisation admin
+  lead@bharatgears.in        Sustainability lead
+  plant@bharatgears.in       Plant manager
+  finance@bharatgears.in     Finance manager
+  auditor@bharatgears.in     Internal auditor
+  exec@bharatgears.in        Executive approver
+  verifier@acva-india.in     External verifier
+  platform.admin@tropos.in   Platform administrator
+
+Payments use a practice payment page (PAYMENT_PROVIDER=demo): no real money moves, and invoices are marked DEMO.
+Files are stored on local disk, and e-mails and
+one-time codes print in the backend terminal. Real keys go only in backend/.env, never in chat or Git.
