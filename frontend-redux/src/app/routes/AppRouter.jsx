@@ -38,6 +38,11 @@ const ValueChainSuppliersPage = lazy(() => import('../../actors/sustainability-l
 const GreenEconomyCctsPage = lazy(() => import('../../actors/sustainability-lead/GreenEconomyCctsPage'));
 const ReportsExportsPage = lazy(() => import('../../actors/sustainability-lead/ReportsExportsPage'));
 
+const FinancialMetricsPppPage = lazy(() => import('../../actors/finance-manager/FinancialMetricsPppPage'));
+const TallyErpImportPage = lazy(() => import('../../actors/finance-manager/TallyErpImportPage'));
+const Scope2InstrumentsPage = lazy(() => import('../../actors/finance-manager/Scope2InstrumentsPage'));
+const BillingInvoicesPage = lazy(() => import('../../actors/finance-manager/BillingInvoicesPage'));
+const PayInvoicePage = lazy(() => import('../../actors/finance-manager/PayInvoicePage'));
 
 const ExecutiveSignOffPage = lazy(() => import('../../actors/executive-approver/ExecutiveSignOffPage'));
 const RestatementsDecisionsPage = lazy(() => import('../../actors/executive-approver/RestatementsDecisionsPage'));
@@ -107,6 +112,14 @@ export function AppRouter() {
                 <Route path="/sustainability/value-chain" element={<ValueChainSuppliersPage />} />
                 <Route path="/sustainability/green-economy" element={<GreenEconomyCctsPage />} />
                 <Route path="/sustainability/reports" element={<ReportsExportsPage />} />
+              </Route>
+
+              <Route element={<RoleRoute allow={['FINANCE_MANAGER', 'SUSTAINABILITY_LEAD', 'EXECUTIVE_APPROVER', 'ORG_ADMIN']} />}>
+                <Route path="/finance/metrics" element={<FinancialMetricsPppPage />} />
+                <Route path="/finance/tally-import" element={<TallyErpImportPage />} />
+                <Route path="/finance/scope2-instruments" element={<Scope2InstrumentsPage />} />
+                <Route path="/finance/billing" element={<BillingInvoicesPage />} />
+                <Route path="/finance/billing/pay/:invoiceId" element={<PayInvoicePage />} />
               </Route>
 
               <Route element={<RoleRoute allow={['EXECUTIVE_APPROVER', 'ORG_ADMIN']} />}>

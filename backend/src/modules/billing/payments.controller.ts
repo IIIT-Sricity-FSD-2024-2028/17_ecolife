@@ -12,6 +12,7 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { getEnv } from '../../config/env.validation';
 import { settleInvoice } from '../../common/payments/settle-invoice';
 
+const demoPaySchema = z.object({ method: z.enum(['CARD', 'UPI', 'NETBANKING']) });
 const confirmSchema = z.object({ orderId: z.string().min(5).max(100), paymentId: z.string().min(5).max(100), signature: z.string().min(10).max(200) });
 
 function hmac(secret: string, data: string | Buffer) { return crypto.createHmac('sha256', secret).update(data).digest('hex'); }
@@ -27,7 +28,7 @@ export class PaymentsController {
   private config() {
     const e = getEnv();
     const on = e.PAYMENT_PROVIDER === 'razorpay' && !!e.RAZORPAY_KEY_ID && !!e.RAZORPAY_KEY_SECRET;
-    return { on, e, mode: e.RAZORPAY_KEY_ID.startsWith('rzp_live_') ? 'live' : 'test' };
+    return { on, demo: e.PAYMENT_PROVIDER === 'demo', e, mode: e.RAZORPAY_KEY_ID.startsWith('rzp_live_') ? 'live' : 'test' };
   }
 
   @ApiBearerAuth()
@@ -37,7 +38,24 @@ export class PaymentsController {
   paymentConfig() {
     const c = this.config();
     // Only the public key id is ever shown. The secret never leaves the server.
+    if (c.demo) return { enabled: true, provider: 'demo', mode: 'demo', keyId: null, instructions: null };
     return { enabled: c.on, provider: c.on ? 'razorpay' : 'none', mode: c.on ? c.mode : null, keyId: c.on ? c.e.RAZORPAY_KEY_ID : null, instructions: c.on ? null : (c.e.PAYMENT_INSTRUCTIONS || null) };
+  }
+
+  /** Simulated payment portal: no money moves. Marks the invoice paid straight away, exactly as a real gateway confirmation would. */
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
+  @Roles('ORG_ADMIN', 'FINANCE_MANAGER')
+  @Post('invoices/:id/demo-pay')
+  async demoPay(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body(new ZodValidationPipe(demoPaySchema)) input: z.infer<typeof demoPaySchema>) {
+    if (!this.config().demo) throw new ServiceUnavailableException('The demo payment portal is switched off.');
+    const orgId = user.organizationId!;
+    const inv = await this.prisma.withTenantTx(orgId, (tx) => tx.invoice.findFirst({ where: { id, organizationId: orgId } }));
+    if (!inv) throw new NotFoundException('Invoice not found.');
+    if (inv.status === 'PAID') return { status: 'PAID', invoiceNumber: inv.invoiceNumber, reference: inv.paymentReference, method: inv.paymentMethod };
+    const reference = `DEMO-${crypto.randomBytes(5).toString('hex').toUpperCase()}`;
+    await this.prisma.withPlatformTx((tx) => settleInvoice(tx, inv.id, { method: input.method === 'UPI' ? 'UPI' : input.method === 'CARD' ? 'CARD' : 'GATEWAY', reference, actorId: null, gatewayPaymentId: reference }));
+    return { status: 'PAID', invoiceNumber: inv.invoiceNumber, reference, method: input.method, amountInr: Number(inv.totalInr) };
   }
 
   /** Creates (or reuses) a payment order for one unpaid invoice of the caller's company. */

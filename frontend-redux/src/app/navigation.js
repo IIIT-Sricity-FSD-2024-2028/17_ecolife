@@ -65,6 +65,10 @@ export const ACTOR_NAV = {
     { path: '/sustainability/reports', label: 'Reports', icon: FileText, group: 'Report' }
   ],
   FINANCE_MANAGER: [
+    { path: '/finance/metrics', label: 'Financial figures', icon: Landmark },
+    { path: '/finance/tally-import', label: 'Import data', icon: FileSpreadsheet },
+    { path: '/finance/scope2-instruments', label: 'Green power certificates', icon: Zap },
+    { path: '/finance/billing', label: 'Plan and invoices', icon: Receipt },
     { path: '/documents', label: 'Documents', icon: FolderOpen }
   ],
   EXECUTIVE_APPROVER: [
@@ -84,6 +88,7 @@ export const ACTOR_NAV = {
     { path: '/admin/team', label: 'Team and access', icon: Users },
     { path: '/admin/security', label: 'Security and API keys', icon: KeyRound },
     { path: '/admin/settings', label: 'Company settings', icon: Settings },
+    { path: '/finance/billing', label: 'Plan and invoices', icon: Receipt }
   ],
   PLATFORM_ADMIN: [
   ]
