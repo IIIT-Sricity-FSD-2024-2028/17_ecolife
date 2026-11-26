@@ -17,7 +17,7 @@ const GROUPS: Record<string, { key: Prisma.Sql; label: Prisma.Sql; order: Prisma
 };
 const SCOPES = ['SCOPE_1', 'SCOPE_2', 'SCOPE_3', 'BIOGENIC', 'NON_GHG'];
 const DOMAINS = ['FUEL', 'ELECTRICITY_THERMAL', 'REFRIGERANT', 'WATER', 'WASTE', 'AIR_EMISSION', 'RAW_MATERIAL', 'LAND_GREENBELT', 'PURCHASED_GOODS_SERVICES'];
-const STATUSES = ['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED'];
+const STATUSES = ['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'ALL'];
 
 @ApiTags('Emissions explorer')
 @ApiBearerAuth()
@@ -71,7 +71,7 @@ export class ExplorerController {
           JOIN "ResourceSource" s ON s.id = e."sourceId"
           JOIN "Facility" f ON f.id = s."facilityId"
           JOIN "ReportingPeriod" p ON p.id = e."periodId"
-          WHERE e."organizationId" = ${orgId} AND e.status::text = ${status}
+          WHERE e."organizationId" = ${orgId} AND ((${status} = 'ALL' AND e.status::text <> 'WITHDRAWN') OR e.status::text = ${status})
           UNION ALL
           SELECT sp."periodId", p.label, p."startDate", p."financialYear",
                  NULL, NULL, COALESCE(sup.name, sp.description),
@@ -80,7 +80,7 @@ export class ExplorerController {
           FROM "Scope3Purchase" sp
           JOIN "ReportingPeriod" p ON p.id = sp."periodId"
           LEFT JOIN "Supplier" sup ON sup.id = sp."supplierId"
-          WHERE sp."organizationId" = ${orgId} AND sp.status::text = ${status}
+          WHERE sp."organizationId" = ${orgId} AND ((${status} = 'ALL' AND sp.status::text <> 'WITHDRAWN') OR sp.status::text = ${status})
         )`;
       const rows = await tx.$queryRaw<any[]>(Prisma.sql`${base}
         SELECT ${g.key} AS key, ${g.label} AS label, SUM(u.tco2e)::float8 AS tco2e, SUM(u.gj)::float8 AS "energyGj", SUM(u.cost)::float8 AS "costInr", COUNT(*)::int AS records
