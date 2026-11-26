@@ -97,6 +97,12 @@ export const ACTOR_NAV = {
     { path: '/finance/billing', label: 'Plan and invoices', icon: Receipt }
   ],
   PLATFORM_ADMIN: [
+    { path: '/platform/overview', label: 'To do', icon: ListTodo },
+    { path: '/platform/organizations', label: 'Companies', icon: Globe },
+    { path: '/platform/users', label: 'Find a person', icon: Users },
+    { path: '/platform/invoices', label: 'Invoices', icon: Receipt },
+    { path: '/platform/factors-gwp', label: 'Emission factor library', icon: FlaskConical },
+    { path: '/platform/activity', label: 'Platform activity', icon: History }
   ]
 };
 

@@ -57,6 +57,13 @@ const TeamRbacUarPage = lazy(() => import('../../actors/org-admin/TeamRbacUarPag
 const SecurityOutboxPage = lazy(() => import('../../actors/org-admin/SecurityOutboxPage'));
 const WorkspaceSettingsPage = lazy(() => import('../../actors/org-admin/WorkspaceSettingsPage'));
 
+const PlatformOverviewPage = lazy(() => import('../../actors/platform-admin/PlatformOverviewPage'));
+const OrganizationsPage = lazy(() => import('../../actors/platform-admin/OrganizationsPage'));
+const OrganizationDetailPage = lazy(() => import('../../actors/platform-admin/OrganizationDetailPage'));
+const SupportUsersPage = lazy(() => import('../../actors/platform-admin/SupportUsersPage'));
+const PlatformInvoicesPage = lazy(() => import('../../actors/platform-admin/PlatformInvoicesPage'));
+const PlatformActivityPage = lazy(() => import('../../actors/platform-admin/PlatformActivityPage'));
+const GlobalFactorsGwpPage = lazy(() => import('../../actors/platform-admin/GlobalFactorsGwpPage'));
 
 function RootEntry() {
   const { user, booting } = useAuth();
@@ -144,6 +151,16 @@ export function AppRouter() {
                 <Route path="/admin/settings" element={<WorkspaceSettingsPage />} />
               </Route>
 
+              <Route element={<RoleRoute allow={['PLATFORM_ADMIN']} />}>
+                <Route path="/platform/overview" element={<PlatformOverviewPage />} />
+                <Route path="/platform/organizations" element={<OrganizationsPage />} />
+                <Route path="/platform/organizations/:id" element={<OrganizationDetailPage />} />
+                <Route path="/platform/users" element={<SupportUsersPage />} />
+                <Route path="/platform/invoices" element={<PlatformInvoicesPage />} />
+                <Route path="/platform/activity" element={<PlatformActivityPage />} />
+                <Route path="/platform/tenants" element={<Navigate to="/platform/organizations" replace />} />
+                <Route path="/platform/factors-gwp" element={<GlobalFactorsGwpPage />} />
+              </Route>
             </Route>
           </Route>
 
