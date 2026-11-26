@@ -143,7 +143,9 @@ export async function evaluatePeriodReadiness(tx: Prisma.TransactionClient, orga
   const completenessRatio = sources.length > 0 ? (sources.length - missingSources.length) / sources.length : 1;
   const approvalRatio = entries.length > 0 ? (entries.length - unapprovedEntries.length) / entries.length : 1;
   const evidenceRatio = approved.length > 0 ? 1 - missingMaterialEvidence.length / approved.length : 1;
-  const readinessScorePct = Math.round((completenessRatio * 0.4 + approvalRatio * 0.4 + evidenceRatio * 0.2) * 100);
+  // Never show 100% while anything still blocks the close (a few records among thousands would round up to 100).
+  const rawScore = Math.round((completenessRatio * 0.4 + approvalRatio * 0.4 + evidenceRatio * 0.2) * 100);
+  const readinessScorePct = blockers.length > 0 ? Math.min(rawScore, 99) : rawScore;
 
   return {
     readinessScorePct,

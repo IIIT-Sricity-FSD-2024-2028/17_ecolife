@@ -52,7 +52,11 @@ export const ACTOR_NAV = {
   ],
   SUSTAINABILITY_LEAD: [
     { path: '/sustainability/dashboard', label: 'To do', icon: ListTodo },
+    { path: '/sustainability/this-month', label: 'This month', icon: ListChecks, group: 'Every month' },
     { path: '/plant/fuels-energy', label: 'Energy and fuel', modules: ['FUELS', 'ELECTRICITY'], icon: Flame, group: 'Every month' },
+    { path: '/sustainability/review', label: 'Review', icon: CheckCircle2, group: 'Every month' },
+    { path: '/sustainability/close', label: 'Month-end close', icon: Lock, group: 'Every month' },
+    { path: '/sustainability/boundary', label: 'Sites and emission factors', icon: Building2, group: 'Set up' },
     { path: '/documents', label: 'Documents', icon: FolderOpen, group: 'Set up' },
   ],
   FINANCE_MANAGER: [
@@ -60,6 +64,8 @@ export const ACTOR_NAV = {
   ],
   EXECUTIVE_APPROVER: [
     { path: '/sustainability/dashboard', label: 'To do', icon: ListTodo },
+    { path: '/executive/sign-off', label: 'Sign off the year', icon: ShieldCheck },
+    { path: '/executive/restatements', label: 'Corrections to past figures', icon: RefreshCw },
   ],
   INTERNAL_AUDITOR: [
     { path: '/documents', label: 'Documents', icon: FolderOpen }

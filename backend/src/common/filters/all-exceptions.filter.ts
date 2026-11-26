@@ -42,16 +42,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (code === 'P2003') return send(HttpStatus.BAD_REQUEST, 'A referenced record does not exist, or this record is still in use.');
     if (code === 'P2025') return send(HttpStatus.NOT_FOUND, 'Record not found.');
     if (code === 'P2000' || code === 'P2006' || code === 'P2007' || code === 'P2020') return send(HttpStatus.BAD_REQUEST, 'One of the submitted values is out of range or invalid.');
-    if (typeof err?.name === 'string' && err.name.startsWith('PrismaClient') && /Argument|Invalid `|Unknown|Expected/.test(err.message || '')) {
-      return send(HttpStatus.BAD_REQUEST, 'The request contains an invalid or unsupported value.');
-    }
-
     // Database rules raised on purpose (CHECK constraints / compliance triggers) carry a readable rule text.
     const raw = err?.message || '';
     const ruleMatch = raw.match(/(?:ERROR:|Raw query failed\..*?message: ")\s*([^\n"]{8,300})/);
     const lowerRaw = raw.toLowerCase();
     if (lowerRaw.includes('violates check constraint') || lowerRaw.includes('separation of duties') || lowerRaw.includes('append-only') || lowerRaw.includes('is immutable') || lowerRaw.includes('mutually exclusive')) {
-      return send(HttpStatus.BAD_REQUEST, ruleMatch ? ruleMatch[1].trim() : 'This change breaks a compliance rule enforced by the database.');
+      return send(HttpStatus.BAD_REQUEST, ruleMatch ? ruleMatch[1].trim() : (/no_self_review/.test(raw) ? 'The person who sent a record for review cannot be the one who approves it. Ask another reviewer.' : 'This change breaks a compliance rule enforced by the database.'));
+    }
+
+    if (typeof err?.name === 'string' && err.name.startsWith('PrismaClient') && /Argument|Invalid `|Unknown|Expected/.test(err.message || '')) {
+      return send(HttpStatus.BAD_REQUEST, 'The request contains an invalid or unsupported value.');
     }
 
     // Business-rule errors thrown by application code as plain Errors.
