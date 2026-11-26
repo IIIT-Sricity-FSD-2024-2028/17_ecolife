@@ -4,13 +4,15 @@ import app from './slices/app';
 import workspace from './slices/workspace';
 import dataCollection from './slices/dataCollection';
 import monthEnd from './slices/monthEnd';
+import planning from './slices/planning';
+import valueChain from './slices/valueChain';
 import { toastMiddleware } from './middleware';
 
 /**
  * One reducer per backend resource. Each area keeps its slices in its own folder under ./slices and lists them in that folder's index.js,
  * so people working on different areas never edit the same line.
  */
-const appReducer = combineReducers({ ...app, ...workspace, ...dataCollection, ...monthEnd });
+const appReducer = combineReducers({ ...app, ...workspace, ...dataCollection, ...monthEnd, ...planning, ...valueChain });
 
 /** Signing out empties every slice, so one company's data can never show to the next person. */
 const rootReducer = (state, action) => appReducer(signOut.fulfilled.match(action) ? undefined : state, action);
@@ -26,7 +28,8 @@ export const store = configureStore({
 // so no component touches browser storage.
 let last = {};
 store.subscribe(() => {
-  const { scope } = store.getState();
+  const { scope, savedViews } = store.getState();
   if (scope !== last.scope && (scope.facilityId || scope.periodId)) { try { localStorage.setItem('tropos_scope', JSON.stringify(scope)); } catch { /* storage full or blocked */ } }
-  last = { scope };
+  if (savedViews !== last.savedViews) { try { localStorage.setItem('tropos_explorer_views', JSON.stringify(savedViews.views)); } catch { /* storage full or blocked */ } }
+  last = { scope, savedViews };
 });

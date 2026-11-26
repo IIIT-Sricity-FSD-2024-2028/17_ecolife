@@ -103,6 +103,47 @@ export class ValueChainController {
     });
   }
 
+  @Get('suppliers')
+  suppliersList(@CurrentUser() user: AuthUser, @Query() q: Record<string, any>) {
+    const text = typeof q.q === 'string' ? q.q.trim().slice(0, 80) : '';
+    const where: any = { organizationId: user.organizationId!, ...(text ? { OR: [{ name: { contains: text, mode: 'insensitive' } }, { category: { contains: text, mode: 'insensitive' } }, { contactEmail: { contains: text, mode: 'insensitive' } }] } : {}) };
+    const paging = parsePaging(q);
+    return this.prisma.withTenantTx(user.organizationId!, async (tx) => {
+      const [items, total] = await Promise.all([
+        tx.supplier.findMany({ where, include: { requests: { orderBy: { createdAt: 'desc' }, take: 1 } }, orderBy: [{ name: 'asc' }, { id: 'asc' }], skip: paging.skip, take: paging.take }),
+        tx.supplier.count({ where })
+      ]);
+      return pageResult(paging, items, total);
+    });
+  }
+
+  @Get('supplier-requests')
+  supplierRequestsList(@CurrentUser() user: AuthUser, @Query() q: Record<string, any>) {
+    const where: any = { organizationId: user.organizationId!, ...(q.status ? { status: String(q.status) } : {}) };
+    const paging = parsePaging(q);
+    return this.prisma.withTenantTx(user.organizationId!, async (tx) => {
+      const [items, total] = await Promise.all([
+        tx.supplierPcfRequest.findMany({ where, include: { supplier: { select: { name: true } } }, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], skip: paging.skip, take: paging.take }),
+        tx.supplierPcfRequest.count({ where })
+      ]);
+      return pageResult(paging, items, total);
+    });
+  }
+
+  @Get('scope3-purchases')
+  scope3List(@CurrentUser() user: AuthUser, @Query() q: Record<string, any>) {
+    const text = typeof q.q === 'string' ? q.q.trim().slice(0, 80) : '';
+    const where: any = { organizationId: user.organizationId!, ...(q.status ? { status: String(q.status) } : {}), ...(q.periodId ? { periodId: String(q.periodId) } : {}), ...(text ? { description: { contains: text, mode: 'insensitive' } } : {}) };
+    const paging = parsePaging(q);
+    return this.prisma.withTenantTx(user.organizationId!, async (tx) => {
+      const [items, total] = await Promise.all([
+        tx.scope3Purchase.findMany({ where, include: { supplier: { select: { name: true } }, period: { select: { label: true } } }, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], skip: paging.skip, take: paging.take }),
+        tx.scope3Purchase.count({ where })
+      ]);
+      return pageResult(paging, items, total);
+    });
+  }
+
   @Post('suppliers')
   @Roles('SUSTAINABILITY_LEAD', 'FINANCE_MANAGER')
   createSupplier(@CurrentUser() user: AuthUser, @Body(new ZodValidationPipe(supplierSchema)) input: z.infer<typeof supplierSchema>) {
@@ -141,8 +182,8 @@ export class ValueChainController {
         data: {
           organizationId: orgId,
           toEmail: supplier.contactEmail,
-          subject: `PCF Request: ${body.productDescription}`,
-          bodyText: `Please submit your Product Carbon Footprint here:\n${appLink('/supplier/' + rawToken)}\n\nYou will be asked for a one-time code sent to this email address.`,
+          subject: `Carbon footprint request: ${body.productDescription}`,
+          bodyText: `Please tell us the carbon footprint of the product we buy from you (the emissions caused by making one unit). You can enter it here:\n${appLink('/supplier/' + rawToken)}\n\nYou will be asked for a one-time code sent to this email address.`,
           category: 'SUPPLIER_PCF_REQUEST',
           status: 'PENDING'
         }
@@ -186,8 +227,8 @@ export class ValueChainController {
             status: 'APPROVED',
             regimeTag: 'BRSR_GHG_PROTOCOL',
             region: 'IN',
-            sourceAuthority: `${reqRow.supplier.name} (supplier-declared PCF)`,
-            versionLabel: 'PCF-v1',
+            sourceAuthority: `${reqRow.supplier.name} (figure declared by the supplier)`,
+            versionLabel: 'Supplier figure v1',
             validFrom: from,
             validTo: to, // supplier values go stale: re-request every year
             canonicalUnit: perUnit,

@@ -56,16 +56,23 @@ export const ACTOR_NAV = {
     { path: '/plant/fuels-energy', label: 'Energy and fuel', modules: ['FUELS', 'ELECTRICITY'], icon: Flame, group: 'Every month' },
     { path: '/sustainability/review', label: 'Review', icon: CheckCircle2, group: 'Every month' },
     { path: '/sustainability/close', label: 'Month-end close', icon: Lock, group: 'Every month' },
+    { path: '/sustainability/explorer', label: 'Emissions explorer', icon: ChartNoAxesCombined, group: 'Explore' },
+    { path: '/sustainability/targets', label: 'Targets and projects', modules: ['TARGETS'], icon: Target, group: 'Plan' },
+    { path: '/sustainability/value-chain', label: 'Suppliers', modules: ['VALUE_CHAIN'], icon: Truck, group: 'Plan' },
+    { path: '/sustainability/green-economy', label: 'Carbon credits', modules: ['GREEN_ECONOMY'], icon: Leaf, group: 'Plan' },
     { path: '/sustainability/boundary', label: 'Sites and emission factors', icon: Building2, group: 'Set up' },
     { path: '/documents', label: 'Documents', icon: FolderOpen, group: 'Set up' },
+    { path: '/sustainability/reports', label: 'Reports', icon: FileText, group: 'Report' }
   ],
   FINANCE_MANAGER: [
     { path: '/documents', label: 'Documents', icon: FolderOpen }
   ],
   EXECUTIVE_APPROVER: [
     { path: '/sustainability/dashboard', label: 'To do', icon: ListTodo },
+    { path: '/sustainability/explorer', label: 'Emissions explorer', icon: ChartNoAxesCombined },
     { path: '/executive/sign-off', label: 'Sign off the year', icon: ShieldCheck },
     { path: '/executive/restatements', label: 'Corrections to past figures', icon: RefreshCw },
+    { path: '/sustainability/reports', label: 'Reports', icon: FileText }
   ],
   INTERNAL_AUDITOR: [
     { path: '/documents', label: 'Documents', icon: FolderOpen }
