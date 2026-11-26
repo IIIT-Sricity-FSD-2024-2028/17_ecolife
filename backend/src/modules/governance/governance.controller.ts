@@ -143,6 +143,9 @@ export class GovernanceController {
     const invitation = await this.prisma.withTenantTx(orgId, async (tx) => {
       const email = input.email.toLowerCase();
       if (await tx.user.findFirst({ where: { organizationId: orgId, email } })) throw new ConflictException('A user with this email is already on your team.');
+      const orgPlan = await tx.organization.findUniqueOrThrow({ where: { id: orgId }, include: { plan: true } });
+      const [people, waiting] = await Promise.all([tx.user.count({ where: { organizationId: orgId, isActive: true } }), tx.invitation.count({ where: { organizationId: orgId, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } } })]);
+      if (people + waiting >= orgPlan.plan.maxUsers) throw new ConflictException(`${orgPlan.plan.name} allows ${orgPlan.plan.maxUsers} people and you have ${people} active plus ${waiting} invited. Choose a larger plan under Plan and invoices to add more.`);
       const globallyTaken = await this.prisma.withAuthTx({ email }, (atx) => atx.user.findUnique({ where: { email }, select: { id: true } }));
       if (globallyTaken) throw new ConflictException('This email already has a Tropos account. Ask them to use a different address.');
       if (input.facilityIds.length > 0) {
@@ -310,6 +313,9 @@ export class GovernanceController {
       const entity = await tx.entity.findFirst({ where: { id: input.entityId, organizationId: orgId } });
       if (!entity) throw new BadRequestException('The entity is not in your organization.');
       if (entity.approvalStatus === 'REJECTED') throw new BadRequestException('That entity was rejected.');
+      const org = await tx.organization.findUniqueOrThrow({ where: { id: orgId }, include: { plan: true } });
+      const sites = await tx.facility.count({ where: { organizationId: orgId, effectiveTo: null, approvalStatus: { not: 'REJECTED' } } });
+      if (sites >= org.plan.maxFacilities) throw new ConflictException(`${org.plan.name} allows ${org.plan.maxFacilities} sites and you already have ${sites}. Choose a larger plan under Plan and invoices to add more.`);
       const { effectiveFrom, ...rest } = input;
       const f = await tx.facility.create({ data: { organizationId: orgId, ...rest, effectiveFrom: await this.boundaryStart(tx, orgId, effectiveFrom), approvalStatus: 'PENDING' } });
       await writeAuditLog(tx, { organizationId: orgId, actorId: user.userId, action: 'FACILITY_CREATED', resourceType: 'Facility', resourceId: f.id, metadata: { name: input.name } });

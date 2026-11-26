@@ -1,4 +1,5 @@
-import { BadRequestException, Body, ConflictException, Controller, ForbiddenException, Get, NotFoundException, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Prisma } from '../../generated/prisma';
+import { BadRequestException, Body, ConflictException, Controller, ForbiddenException, Get, NotFoundException, Param, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { appLink } from '../../config/platform.constants';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
@@ -9,8 +10,9 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import crypto from 'crypto';
 import { sha256 } from '../../common/utils/crypto.util';
-import { devPreviewEnabled } from '../../config/env.validation';
+import { devPreviewEnabled, getEnv } from '../../config/env.validation';
 import { settleInvoice } from '../../common/payments/settle-invoice';
+import { renderInvoicePdf, supplierFromEnv } from '../../common/payments/invoice-pdf';
 import { LEGACY_CAP, pageResult, parsePaging } from '../../common/utils/paging.util';
 import { AuthUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -61,6 +63,33 @@ export class PlatformController {
         tx.platformAuditLog.findMany({ orderBy: { createdAt: 'desc' }, take: 40 })
       ]);
       return { organizations, plans, approvals, globalFactors, gwpTable, platformLogs };
+    });
+  }
+
+  /** Companies, plans, money and usage over time for the platform dashboard. Small answers: one row per month, status or plan. */
+  @Get('analytics')
+  analytics() {
+    return this.prisma.withPlatformTx(async (tx) => {
+      const [signups, byStatus, byPlan, invoices, volume, growth] = await Promise.all([
+        tx.$queryRaw<any[]>(Prisma.sql`SELECT to_char(m, 'Mon YY') AS label, COALESCE(c.n,0)::int AS n FROM generate_series(date_trunc('month', now()) - interval '11 months', date_trunc('month', now()), interval '1 month') m
+          LEFT JOIN (SELECT date_trunc('month', "createdAt") AS mo, COUNT(*) AS n FROM "Organization" GROUP BY 1) c ON c.mo = m ORDER BY m`),
+        tx.organization.groupBy({ by: ['status'], _count: { _all: true } }),
+        tx.$queryRaw<any[]>(Prisma.sql`SELECT p.name, p."priceInrMonth"::float8 AS price, COUNT(o.id)::int AS orgs, COUNT(o.id) FILTER (WHERE o.status = 'ACTIVE')::int AS paying
+          FROM "Plan" p LEFT JOIN "Organization" o ON o."planId" = p.id GROUP BY p.id ORDER BY p."priceInrMonth"`),
+        tx.$queryRaw<any[]>(Prisma.sql`SELECT to_char(m, 'Mon YY') AS label, COALESCE(c.paid,0)::float8 AS paid, COALESCE(c.open,0)::float8 AS open FROM generate_series(date_trunc('month', now()) - interval '11 months', date_trunc('month', now()), interval '1 month') m
+          LEFT JOIN (SELECT date_trunc('month', "issuedAt") AS mo, SUM("totalInr") FILTER (WHERE status = 'PAID') AS paid, SUM("totalInr") FILTER (WHERE status <> 'PAID') AS open FROM "Invoice" GROUP BY 1) c ON c.mo = m ORDER BY m`),
+        tx.$queryRaw<any[]>(Prisma.sql`SELECT to_char(m, 'Mon YY') AS label, COALESCE(c.n,0)::int AS n FROM generate_series(date_trunc('month', now()) - interval '11 months', date_trunc('month', now()), interval '1 month') m
+          LEFT JOIN (SELECT date_trunc('month', "createdAt") AS mo, COUNT(*) AS n FROM "ResourceEntry" GROUP BY 1) c ON c.mo = m ORDER BY m`),
+        tx.$queryRaw<any[]>(Prisma.sql`SELECT o.name, (SELECT COUNT(*) FROM "ResourceEntry" e WHERE e."organizationId" = o.id)::int AS records, (SELECT COUNT(*) FROM "User" u WHERE u."organizationId" = o.id)::int AS users
+          FROM "Organization" o ORDER BY records DESC LIMIT 8`)
+      ]);
+      const mrr = byPlan.reduce((s, p) => s + p.price * p.paying, 0);
+      return {
+        signups, invoices, recordsPerMonth: volume, mrrInr: Math.round(mrr),
+        byStatus: Object.fromEntries(byStatus.map((r: any) => [r.status, r._count._all])),
+        byPlan: byPlan.map((p) => ({ name: p.name, orgs: p.orgs, paying: p.paying, priceInrMonth: p.price })),
+        topOrganizations: growth
+      };
     });
   }
 
@@ -167,11 +196,11 @@ export class PlatformController {
       const [rows, total] = await Promise.all([
         tx.user.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip: paging.skip, take: paging.take,
           select: { id: true, email: true, fullName: true, isActive: true, emailVerifiedAt: true, twoFactorEnabled: true, lastLoginAt: true, lockedUntil: true, failedLoginCount: true, createdAt: true,
-            organization: { select: { id: true, name: true, status: true } }, roles: { select: { role: true } } } }),
+            organization: { select: { id: true, name: true, status: true } } } }),
         tx.user.count({ where })
       ]);
       const now = Date.now();
-      return pageResult(paging, rows.map((u: any) => ({ ...u, isLocked: !!u.lockedUntil && u.lockedUntil.getTime() > now, roles: u.roles.map((r: any) => r.role) })), total);
+      return pageResult(paging, rows.map((u: any) => ({ ...u, isLocked: !!u.lockedUntil && u.lockedUntil.getTime() > now })), total);
     });
   }
 
@@ -273,6 +302,16 @@ export class PlatformController {
       const [items, total] = await Promise.all([tx.invoice.findMany({ where, include, orderBy: [{ issuedAt: 'desc' }, { id: 'desc' }], skip: paging.skip, take: paging.take }), tx.invoice.count({ where })]);
       return pageResult(paging, items, total);
     });
+  }
+
+  @Get('invoices/:id/pdf')
+  async invoicePdf(@Param('id') id: string, @Res() res: any) {
+    const inv = await this.prisma.withPlatformTx((tx) => tx.invoice.findUnique({ where: { id } }));
+    if (!inv) throw new NotFoundException('Invoice not found.');
+    const pdf = await renderInvoicePdf(inv, supplierFromEnv(getEnv()));
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${inv.invoiceNumber.replace('/', '-')}.pdf"`);
+    res.send(pdf);
   }
 
   /** Records that payment arrived (bank transfer reference, UPI, gateway id...) and only then switches the customer's plan. */

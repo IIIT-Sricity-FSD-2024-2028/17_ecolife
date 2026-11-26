@@ -81,6 +81,8 @@ async function main() {
   if (await prisma.supplier.findFirst({ where: { organizationId: org.id, name: 'Shree Steel Traders' } }).catch(() => null)) { console.log('Demo data already present. Nothing to do.'); return; }
 
   // Settings that unlock every module for the demonstration company.
+  // The demo shows every module and more sites and people than the starter plan allows, so it begins on the largest plan.
+  await step('Start the demo company on the largest plan', () => sqlAsOwner((tx) => tx.$executeRaw`UPDATE "Organization" SET "planId" = (SELECT id FROM "Plan" WHERE code = 'ENTERPRISE_BRSR') WHERE name ILIKE 'Bharat%'`));
   await step('Company settings: all modules on, CCTS obligated', () => patch(U.lead, '/org/settings', { preset: 'ENTERPRISE_BRSR', cctsObligated: true, assuranceStandard: 'ISO_14064_3' }));
 
   const periods = rows(await get(U.lead, '/periods'));

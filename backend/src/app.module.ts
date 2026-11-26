@@ -20,6 +20,7 @@ import { BillingModule } from './modules/billing/billing.module';
 import { SupplierPortalModule } from './modules/supplier-portal/supplier-portal.module';
 import { MetaModule } from './modules/meta/meta.module';
 import { ExplorerModule } from './modules/explorer/explorer.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { PlatformModule } from './modules/platform/platform.module';
 
 @Module({
@@ -43,6 +44,7 @@ import { PlatformModule } from './modules/platform/platform.module';
     SupplierPortalModule,
     PlatformModule,
     ExplorerModule,
+    AnalyticsModule,
     MetaModule
   ]
 })

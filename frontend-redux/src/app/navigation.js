@@ -44,6 +44,7 @@ export const ACTOR_LABELS = {
 // group = heading in the sidebar. Labels use the words people use at work, not system terms.
 export const ACTOR_NAV = {
   PLANT_MANAGER: [
+    { path: '/dashboard', label: 'Dashboard', icon: ChartPie },
     { path: '/plant/dashboard', label: 'To do', icon: ListTodo },
     { path: '/plant/fuels-energy', label: 'Energy and fuel', modules: ['FUELS', 'ELECTRICITY'], icon: Flame, group: 'Monthly data' },
     { path: '/plant/water-waste', label: 'Water and waste', modules: ['WATER', 'WASTE'], icon: Droplets, group: 'Monthly data' },
@@ -51,6 +52,7 @@ export const ACTOR_NAV = {
     { path: '/documents', label: 'Documents', icon: FolderOpen, group: 'Records' }
   ],
   SUSTAINABILITY_LEAD: [
+    { path: '/dashboard', label: 'Dashboard', icon: ChartPie },
     { path: '/sustainability/dashboard', label: 'To do', icon: ListTodo },
     { path: '/sustainability/this-month', label: 'This month', icon: ListChecks, group: 'Every month' },
     { path: '/plant/fuels-energy', label: 'Energy and fuel', modules: ['FUELS', 'ELECTRICITY'], icon: Flame, group: 'Every month' },
@@ -66,6 +68,7 @@ export const ACTOR_NAV = {
     { path: '/sustainability/reports', label: 'Reports', icon: FileText, group: 'Report' }
   ],
   FINANCE_MANAGER: [
+    { path: '/dashboard', label: 'Dashboard', icon: ChartPie },
     { path: '/finance/metrics', label: 'Financial figures', icon: Landmark },
     { path: '/finance/tally-import', label: 'Import data', icon: FileSpreadsheet },
     { path: '/finance/scope2-instruments', label: 'Green power certificates', icon: Zap },
@@ -73,6 +76,7 @@ export const ACTOR_NAV = {
     { path: '/documents', label: 'Documents', icon: FolderOpen }
   ],
   EXECUTIVE_APPROVER: [
+    { path: '/dashboard', label: 'Dashboard', icon: ChartPie },
     { path: '/sustainability/dashboard', label: 'To do', icon: ListTodo },
     { path: '/sustainability/explorer', label: 'Emissions explorer', icon: ChartNoAxesCombined },
     { path: '/executive/sign-off', label: 'Sign off the year', icon: ShieldCheck },
@@ -81,22 +85,32 @@ export const ACTOR_NAV = {
     { path: '/sustainability/reports', label: 'Reports', icon: FileText }
   ],
   INTERNAL_AUDITOR: [
+    { path: '/dashboard', label: 'Dashboard', icon: ChartPie },
     { path: '/internal-audit/findings', label: 'Audit findings', icon: ClipboardCheck },
     { path: '/internal-audit/trail', label: 'Activity log', icon: History },
     { path: '/documents', label: 'Documents', icon: FolderOpen }
   ],
   EXTERNAL_VERIFIER: [
+    { path: '/dashboard', label: 'Dashboard', icon: ChartPie },
     { path: '/verifier/room', label: 'Verification', icon: ShieldCheck },
     { path: '/internal-audit/trail', label: 'Activity log', icon: History },
     { path: '/documents', label: 'Documents', icon: FolderOpen }
   ],
   ORG_ADMIN: [
+    { path: '/dashboard', label: 'Dashboard', icon: ChartPie },
     { path: '/admin/team', label: 'Team and access', icon: Users },
     { path: '/admin/security', label: 'Security and API keys', icon: KeyRound },
     { path: '/admin/settings', label: 'Company settings', icon: Settings },
     { path: '/finance/billing', label: 'Plan and invoices', icon: Receipt }
   ],
   PLATFORM_ADMIN: [
+    { path: '/platform/dashboard', label: 'Dashboard', icon: ChartPie },
+    { path: '/platform/overview', label: 'To do', icon: ListTodo },
+    { path: '/platform/organizations', label: 'Companies', icon: Globe },
+    { path: '/platform/users', label: 'Find a person', icon: Users },
+    { path: '/platform/invoices', label: 'Invoices', icon: Receipt },
+    { path: '/platform/factors-gwp', label: 'Emission factor library', icon: FlaskConical },
+    { path: '/platform/activity', label: 'Platform activity', icon: History }
   ]
 };
 

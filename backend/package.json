@@ -23,6 +23,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-large": "tsx prisma/seed-large.ts",
     "db:seed-demo": "tsx prisma/seed-demo.ts",
+    "db:seed-history": "tsx prisma/seed-history.ts",
     "db:setup": "npm run prisma:generate && npm run prisma:migrate && npm run db:rls && npm run db:seed"
   },
   "dependencies": {
