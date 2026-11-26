@@ -22,6 +22,7 @@ const SearchResultsPage = lazy(() => import('../../actors/shared/SearchResultsPa
 const SupplierOtpPortalPage = lazy(() => import('../../actors/external-supplier/SupplierOtpPortalPage'));
 
 const TodayPage = lazy(() => import('../../actors/shared/TodayPage'));
+const DashboardPage = lazy(() => import('../../actors/shared/DashboardPage'));
 const FuelsEnergyPage = lazy(() => import('../../actors/plant-manager/FuelsEnergyPage'));
 const WaterWastePage = lazy(() => import('../../actors/plant-manager/WaterWastePage'));
 const RefrigerantsAirMaterialsPage = lazy(() => import('../../actors/plant-manager/RefrigerantsAirMaterialsPage'));
@@ -104,6 +105,7 @@ export function AppRouter() {
               <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/help" element={<HelpPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/sustainability/explorer" element={<ExplorerPage />} />
 
               <Route element={<RoleRoute allow={['PLANT_MANAGER', 'SUSTAINABILITY_LEAD', 'ORG_ADMIN']} />}>
@@ -152,6 +154,7 @@ export function AppRouter() {
               </Route>
 
               <Route element={<RoleRoute allow={['PLATFORM_ADMIN']} />}>
+                <Route path="/platform/dashboard" element={<DashboardPage />} />
                 <Route path="/platform/overview" element={<PlatformOverviewPage />} />
                 <Route path="/platform/organizations" element={<OrganizationsPage />} />
                 <Route path="/platform/organizations/:id" element={<OrganizationDetailPage />} />
