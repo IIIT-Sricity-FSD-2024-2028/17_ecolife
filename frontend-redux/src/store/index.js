@@ -7,13 +7,14 @@ import monthEnd from './slices/monthEnd';
 import planning from './slices/planning';
 import valueChain from './slices/valueChain';
 import finance from './slices/finance';
+import assurance from './slices/assurance';
 import { toastMiddleware } from './middleware';
 
 /**
  * One reducer per backend resource. Each area keeps its slices in its own folder under ./slices and lists them in that folder's index.js,
  * so people working on different areas never edit the same line.
  */
-const appReducer = combineReducers({ ...app, ...workspace, ...dataCollection, ...monthEnd, ...planning, ...valueChain, ...finance });
+const appReducer = combineReducers({ ...app, ...workspace, ...dataCollection, ...monthEnd, ...planning, ...valueChain, ...finance, ...assurance });
 
 /** Signing out empties every slice, so one company's data can never show to the next person. */
 const rootReducer = (state, action) => appReducer(signOut.fulfilled.match(action) ? undefined : state, action);

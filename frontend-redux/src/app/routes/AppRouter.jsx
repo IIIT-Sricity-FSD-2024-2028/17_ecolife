@@ -19,6 +19,7 @@ const NotFoundPage = lazy(() => import('../../actors/public/NotFoundPage'));
 const ForbiddenPage = lazy(() => import('../../actors/public/ForbiddenPage'));
 const SetupGuidePage = lazy(() => import('../../actors/shared/SetupGuidePage'));
 const SearchResultsPage = lazy(() => import('../../actors/shared/SearchResultsPage'));
+const SupplierOtpPortalPage = lazy(() => import('../../actors/external-supplier/SupplierOtpPortalPage'));
 
 const TodayPage = lazy(() => import('../../actors/shared/TodayPage'));
 const FuelsEnergyPage = lazy(() => import('../../actors/plant-manager/FuelsEnergyPage'));
@@ -47,7 +48,10 @@ const PayInvoicePage = lazy(() => import('../../actors/finance-manager/PayInvoic
 const ExecutiveSignOffPage = lazy(() => import('../../actors/executive-approver/ExecutiveSignOffPage'));
 const RestatementsDecisionsPage = lazy(() => import('../../actors/executive-approver/RestatementsDecisionsPage'));
 
+const InternalAuditFindingsPage = lazy(() => import('../../actors/internal-auditor/InternalAuditFindingsPage'));
+const AuditTrailExplorerPage = lazy(() => import('../../actors/internal-auditor/AuditTrailExplorerPage'));
 
+const VerifierRoomPage = lazy(() => import('../../actors/external-verifier/VerifierRoomPage'));
 
 const TeamRbacUarPage = lazy(() => import('../../actors/org-admin/TeamRbacUarPage'));
 const SecurityOutboxPage = lazy(() => import('../../actors/org-admin/SecurityOutboxPage'));
@@ -78,6 +82,7 @@ export function AppRouter() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/invite/:token" element={<InviteAcceptPage />} />
+            <Route path="/supplier/:token" element={<SupplierOtpPortalPage />} />
             <Route path="/terms" element={<LegalPage kind="terms" />} />
             <Route path="/privacy" element={<LegalPage kind="privacy" />} />
             <Route path="/403" element={<ForbiddenPage />} />
@@ -125,6 +130,12 @@ export function AppRouter() {
               <Route element={<RoleRoute allow={['EXECUTIVE_APPROVER', 'ORG_ADMIN']} />}>
                 <Route path="/executive/sign-off" element={<ExecutiveSignOffPage />} />
                 <Route path="/executive/restatements" element={<RestatementsDecisionsPage />} />
+              </Route>
+
+              <Route element={<RoleRoute allow={['INTERNAL_AUDITOR', 'EXTERNAL_VERIFIER', 'SUSTAINABILITY_LEAD', 'EXECUTIVE_APPROVER', 'ORG_ADMIN']} />}>
+                <Route path="/internal-audit/findings" element={<InternalAuditFindingsPage />} />
+                <Route path="/internal-audit/trail" element={<AuditTrailExplorerPage />} />
+                <Route path="/verifier/room" element={<VerifierRoomPage />} />
               </Route>
 
               <Route element={<RoleRoute allow={['ORG_ADMIN', 'SUSTAINABILITY_LEAD']} />}>

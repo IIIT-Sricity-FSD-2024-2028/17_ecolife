@@ -62,6 +62,7 @@ export const ACTOR_NAV = {
     { path: '/sustainability/green-economy', label: 'Carbon credits', modules: ['GREEN_ECONOMY'], icon: Leaf, group: 'Plan' },
     { path: '/sustainability/boundary', label: 'Sites and emission factors', icon: Building2, group: 'Set up' },
     { path: '/documents', label: 'Documents', icon: FolderOpen, group: 'Set up' },
+    { path: '/verifier/room', label: 'Verification', modules: ['ASSURANCE'], icon: ShieldCheck, group: 'Report' },
     { path: '/sustainability/reports', label: 'Reports', icon: FileText, group: 'Report' }
   ],
   FINANCE_MANAGER: [
@@ -76,12 +77,17 @@ export const ACTOR_NAV = {
     { path: '/sustainability/explorer', label: 'Emissions explorer', icon: ChartNoAxesCombined },
     { path: '/executive/sign-off', label: 'Sign off the year', icon: ShieldCheck },
     { path: '/executive/restatements', label: 'Corrections to past figures', icon: RefreshCw },
+    { path: '/verifier/room', label: 'Verification', modules: ['ASSURANCE'], icon: ShieldCheck, group: 'Report' },
     { path: '/sustainability/reports', label: 'Reports', icon: FileText }
   ],
   INTERNAL_AUDITOR: [
+    { path: '/internal-audit/findings', label: 'Audit findings', icon: ClipboardCheck },
+    { path: '/internal-audit/trail', label: 'Activity log', icon: History },
     { path: '/documents', label: 'Documents', icon: FolderOpen }
   ],
   EXTERNAL_VERIFIER: [
+    { path: '/verifier/room', label: 'Verification', icon: ShieldCheck },
+    { path: '/internal-audit/trail', label: 'Activity log', icon: History },
     { path: '/documents', label: 'Documents', icon: FolderOpen }
   ],
   ORG_ADMIN: [

@@ -43,7 +43,7 @@ export class SupplierPortalController {
   async inspect(@Param('token') rawToken: string) {
     const reqRow = await this.loadWithParties(sha256(rawToken));
     if (!reqRow || reqRow.status === 'REVOKED' || reqRow.expiresAt < new Date()) {
-      throw new NotFoundException('Supplier request link is invalid, revoked, or expired.');
+      throw new NotFoundException('This link no longer works. It may have expired or been replaced. Ask the company that sent it to send you a new one.');
     }
     return {
       id: reqRow.id,
