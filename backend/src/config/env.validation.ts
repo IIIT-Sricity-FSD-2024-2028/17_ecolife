@@ -34,7 +34,7 @@ const envSchema = z.object({
   // Online payment. Keys come from the environment only; never from the app or chat. Use Razorpay TEST keys until launch.
   // Shown to customers on the billing page when online payment is off: bank or UPI details, or who to contact.
   PAYMENT_INSTRUCTIONS: z.string().trim().max(600).optional().default(''),
-  PAYMENT_PROVIDER: z.enum(['none', 'razorpay']).default('none'),
+  PAYMENT_PROVIDER: z.enum(['none', 'demo', 'razorpay']).default('demo'),
   RAZORPAY_KEY_ID: z.string().optional().default(''),
   RAZORPAY_KEY_SECRET: z.string().optional().default(''),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional().default(''),

@@ -1,4 +1,6 @@
-import { BadRequestException, Body, ConflictException, Controller, Get, Post, Query, ServiceUnavailableException, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Get, NotFoundException, Param, Post, Query, Res, ServiceUnavailableException, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
+import { renderInvoicePdf, supplierFromEnv } from '../../common/payments/invoice-pdf';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -54,6 +56,19 @@ export class BillingController {
       const [items, total] = await Promise.all([tx.invoice.findMany({ where, orderBy: [{ issuedAt: 'desc' }, { id: 'asc' }], skip: paging.skip, take: paging.take }), tx.invoice.count({ where })]);
       return pageResult(paging, items, total);
     });
+  }
+
+  /** The GST tax invoice as a PDF, for one of this company's invoices. */
+  @Get('invoices/:id/pdf')
+  @Roles('ORG_ADMIN', 'FINANCE_MANAGER', 'EXECUTIVE_APPROVER')
+  async invoicePdf(@CurrentUser() user: AuthUser, @Param('id') id: string, @Res() res: Response) {
+    const orgId = user.organizationId!;
+    const inv = await this.prisma.withTenantTx(orgId, (tx) => tx.invoice.findFirst({ where: { id, organizationId: orgId } }));
+    if (!inv) throw new NotFoundException('Invoice not found.');
+    const pdf = await renderInvoicePdf(inv, supplierFromEnv(getEnv()));
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${inv.invoiceNumber.replace('/', '-')}.pdf"`);
+    res.send(pdf);
   }
 
   /**
